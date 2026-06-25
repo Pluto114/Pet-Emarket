@@ -8,11 +8,13 @@ class ProductsPage extends StatefulWidget {
   const ProductsPage({
     required this.apiClient,
     required this.sessionStore,
+    this.filterType = '',
     super.key,
   });
 
   final ApiClient apiClient;
   final SessionStore sessionStore;
+  final String filterType;
 
   @override
   State<ProductsPage> createState() => _ProductsPageState();
@@ -175,7 +177,7 @@ class _ProductsPageState extends State<ProductsPage> {
       errorText = null;
     });
     try {
-      products = await widget.apiClient.listProducts(keyword: keywordController.text);
+      products = await widget.apiClient.listProducts(keyword: keywordController.text, type: widget.filterType);
     } catch (error) {
       errorText = error.toString();
     } finally {
@@ -349,6 +351,114 @@ class _ProductDialogState extends State<_ProductDialog> {
           child: const Text('保存'),
         ),
       ],
+    );
+  }
+}
+
+// ==================== Product Detail Page ====================
+class ProductDetailPage extends StatelessWidget {
+  const ProductDetailPage({required this.product, required this.apiClient, super.key});
+  final Product product;
+  final ApiClient apiClient;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(product.name)),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            height: 220,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Icon(product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined, size: 80, color: theme.colorScheme.primary),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Text(product.name, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+              Text('¥' + product.price.toStringAsFixed(2), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: theme.colorScheme.primary)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Chip(label: Text(product.type == 'PET_LIVE' ? '活体宠物' : '周边商品')),
+              Chip(label: Text(product.category)),
+              Chip(label: Text('库存 ' + product.stock.toString())),
+              Chip(label: Text(product.status)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (product.description.isNotEmpty) ...[
+            Text('商品描述', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text(product.description),
+            const SizedBox(height: 16),
+          ],
+          if (product.livePet != null) ...[
+            const Divider(),
+            const SizedBox(height: 12),
+            Text('活体宠物档案', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            _DetailRow(label: '宠物编号', value: product.livePet!['petCode']?.toString() ?? '-'),
+            _DetailRow(label: '健康状态', value: product.livePet!['healthStatus']?.toString() ?? '-'),
+            _DetailRow(label: '疫苗证明', value: product.livePet!['vaccineCertNo']?.toString() ?? '-'),
+            _DetailRow(label: '检疫证明', value: product.livePet!['quarantineCertNo']?.toString() ?? '-'),
+            const SizedBox(height: 12),
+            const Text('⚠️ 活体宠物购买后请及时确认健康状况', style: TextStyle(color: Colors.orange, fontSize: 13)),
+          ],
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: product.stock > 0
+                ? () async {
+                    try {
+                      await apiClient.addCartItem(productId: product.id, quantity: 1);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(product.name + ' 已加入购物车')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      }
+                    }
+                  }
+                : null,
+            icon: const Icon(Icons.add_shopping_cart),
+            label: Text(product.stock > 0 ? '加入购物车' : '已售罄'),
+            style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          SizedBox(width: 80, child: Text(label, style: const TextStyle(color: Colors.grey))),
+          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+        ],
+      ),
     );
   }
 }

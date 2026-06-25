@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
+import '../../models/product.dart';
 import '../cart/cart_page.dart';
 import '../order/order_page.dart';
 import '../product/product_detail_page.dart';
-import '../users/users_page.dart';
+import '../store/nearby_store_page.dart';
+import '../ai_assistant/ai_assistant_page.dart';
+import '../recommendation/recommendation_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -27,165 +30,230 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      DashboardPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
-      ProductsPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
+      HomeTab(apiClient: widget.apiClient, sessionStore: widget.sessionStore, onNavigate: (i) => setState(() => selectedIndex = i)),
+      NearbyStorePage(apiClient: widget.apiClient),
       CartPage(apiClient: widget.apiClient),
       OrderPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
-      UsersPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
-    ];
-    final destinations = const [
-      NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: '总览'),
-      NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: '商品'),
-      NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: '购物车'),
-      NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: '订单'),
-      NavigationDestination(icon: Icon(Icons.group_outlined), selectedIcon: Icon(Icons.group), label: '用户'),
+      ProfileTab(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 860;
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Pet-Emarket 控制台'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Center(child: Text(widget.sessionStore.user?.displayName ?? '')),
-              ),
-              IconButton(
-                tooltip: '退出登录',
-                onPressed: widget.sessionStore.clear,
-                icon: const Icon(Icons.logout),
-              ),
-            ],
-          ),
-          body: Row(
-            children: [
-              if (wide)
-                NavigationRail(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) => setState(() => selectedIndex = index),
-                  labelType: NavigationRailLabelType.all,
-                  destinations: const [
-                    NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('总览')),
-                    NavigationRailDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: Text('商品')),
-                    NavigationRailDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: Text('购物车')),
-                    NavigationRailDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: Text('订单')),
-                    NavigationRailDestination(icon: Icon(Icons.group_outlined), selectedIcon: Icon(Icons.group), label: Text('用户')),
-                  ],
-                ),
-              Expanded(child: pages[selectedIndex]),
-            ],
-          ),
-          bottomNavigationBar: wide
-              ? null
-              : NavigationBar(
-                  selectedIndex: selectedIndex,
-                  destinations: destinations,
-                  onDestinationSelected: (index) => setState(() => selectedIndex = index),
-                ),
-        );
-      },
+    final destinations = const [
+      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '首页'),
+      NavigationDestination(icon: Icon(Icons.store_outlined), selectedIcon: Icon(Icons.store), label: '附近'),
+      NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: '购物车'),
+      NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: '订单'),
+      NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: '我的'),
+    ];
+
+    return Scaffold(
+      body: IndexedStack(index: selectedIndex, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        destinations: destinations,
+        onDestinationSelected: (i) => setState(() => selectedIndex = i),
+      ),
     );
   }
 }
 
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({
-    required this.apiClient,
-    required this.sessionStore,
-    super.key,
-  });
-
+// ==================== Consumer Home Tab ====================
+class HomeTab extends StatefulWidget {
+  const HomeTab({required this.apiClient, required this.sessionStore, required this.onNavigate, super.key});
   final ApiClient apiClient;
   final SessionStore sessionStore;
+  final ValueChanged<int> onNavigate;
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  bool loading = true;
+  String? errorText;
+  List<Product> hotProducts = [];
+  List<Product> livePets = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    setState(() { loading = true; errorText = null; });
+    try {
+      final products = await widget.apiClient.listProducts(keyword: '');
+      hotProducts = products.where((p) => p.status == 'ON_SALE').take(6).toList();
+      livePets = products.where((p) => p.type == 'PET_LIVE').take(4).toList();
+    } catch (e) {
+      errorText = e.toString();
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = sessionStore.user;
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Text('基础骨架已连接', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Text('当前阶段先跑通登录、鉴权、用户 CRUD 和商品 CRUD，订单与推荐后续接入。', style: theme.textTheme.bodyMedium),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _InfoCard(
-              icon: Icons.verified_user,
-              title: '登录账号',
-              value: '${user?.username ?? '-'} / ${user?.role ?? '-'}',
-            ),
-            _InfoCard(
-              icon: Icons.workspace_premium,
-              title: '会员等级',
-              value: user?.memberLevel ?? '-',
-            ),
-            _InfoCard(
-              icon: Icons.api,
-              title: 'API 地址',
-              value: apiClient.baseUrl,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('当前可演示链路', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                SizedBox(height: 10),
-                _CheckLine(text: '管理员登录获取 Token'),
-                _CheckLine(text: 'Token 鉴权访问用户列表'),
-                _CheckLine(text: '创建、修改、删除用户'),
-                _CheckLine(text: '游客浏览商品列表'),
-                _CheckLine(text: '管理员创建、修改、删除商品'),
-                _CheckLine(text: '活体宠物商品保留检疫、疫苗、健康状态字段'),
-              ],
+    final user = widget.sessionStore.user;
+
+    return RefreshIndicator(
+      onRefresh: loadData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Welcome card
+          Card(
+            color: theme.colorScheme.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  CircleAvatar(child: Text(user != null && user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?')),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user != null ? '你好, ' + user.displayName : '欢迎来到 Pet-Emarket', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(user != null ? user.memberLevel + ' 会员' : '登录后享受更多权益', style: theme.textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+
+          // Quick actions
+          Row(
+            children: [
+              _QuickAction(icon: Icons.store, label: '附近商店', onTap: () => widget.onNavigate(1)),
+              _QuickAction(icon: Icons.smart_toy_outlined, label: 'AI 问答', onTap: () => _push(context, AiAssistantPage(apiClient: widget.apiClient))),
+              _QuickAction(icon: Icons.recommend_outlined, label: '商品推荐', onTap: () => _push(context, RecommendationPage(apiClient: widget.apiClient))),
+              _QuickAction(icon: Icons.pets, label: '活体宠物', onTap: () => _push(context, ProductsPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore, filterType: 'PET_LIVE'))),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (loading)
+            const Center(child: Padding(padding: EdgeInsets.all(28), child: CircularProgressIndicator()))
+          else ...[
+            // Hot products
+            _SectionHeader(title: '热门商品', onTap: () => _push(context, ProductsPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore))),
+            const SizedBox(height: 8),
+            if (hotProducts.isEmpty)
+              const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('暂无商品，请先添加商品')))
+            else
+              SizedBox(
+                height: 200,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: hotProducts.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (ctx, i) => _ProductCard(product: hotProducts[i], apiClient: widget.apiClient),
+                ),
+              ),
+            const SizedBox(height: 20),
+
+            // Live pets
+            _SectionHeader(title: '精选活体宠物', onTap: () => _push(context, ProductsPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore, filterType: 'PET_LIVE'))),
+            const SizedBox(height: 8),
+            if (livePets.isEmpty)
+              const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('暂无活体宠物')))
+            else
+              SizedBox(
+                height: 200,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: livePets.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (ctx, i) => _ProductCard(product: livePets[i], apiClient: widget.apiClient),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _push(BuildContext context, Widget page) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.onTap});
+  final String title;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+        TextButton(onPressed: onTap, child: const Text('更多 >')),
       ],
     );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({required this.icon, required this.label, this.onTap});
   final IconData icon;
-  final String title;
-  final String value;
+  final String label;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Column(
+            children: [
+              Icon(icon, size: 28, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 6),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+class _ProductCard extends StatelessWidget {
+  const _ProductCard({required this.product, required this.apiClient});
+  final Product product;
+  final ApiClient apiClient;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SizedBox(
-      width: 260,
+      width: 160,
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductDetailPage(product: product, apiClient: apiClient))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: theme.colorScheme.primary),
-              const SizedBox(width: 12),
-              Expanded(
+              Container(
+                height: 100,
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                child: Center(child: Icon(product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined, size: 40, color: theme.colorScheme.primary)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: theme.textTheme.labelMedium),
+                    Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     const SizedBox(height: 4),
-                    Text(value, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text('¥' + product.price.toStringAsFixed(2), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -197,21 +265,82 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-class _CheckLine extends StatelessWidget {
-  const _CheckLine({required this.text});
-
-  final String text;
+// ==================== Profile Tab ====================
+class ProfileTab extends StatelessWidget {
+  const ProfileTab({required this.apiClient, required this.sessionStore, super.key});
+  final ApiClient apiClient;
+  final SessionStore sessionStore;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(Icons.check_circle, size: 18, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text)),
-        ],
+    final theme = Theme.of(context);
+    final user = sessionStore.user;
+    if (user == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_outline, size: 64, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(height: 16),
+            Text('请先登录', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: () => sessionStore.clear(), child: const Text('去登录')),
+          ],
+        ),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                CircleAvatar(radius: 30, child: Text(user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?', style: const TextStyle(fontSize: 24))),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(user.displayName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text('@' + user.username + '  |  ' + user.role + '  |  ' + user.memberLevel, style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _InfoTile(icon: Icons.phone, title: '手机号', value: user.phone.isNotEmpty ? user.phone : '未设置'),
+        _InfoTile(icon: Icons.email, title: '邮箱', value: user.email.isNotEmpty ? user.email : '未设置'),
+        _InfoTile(icon: Icons.verified_user, title: '角色', value: user.role),
+        _InfoTile(icon: Icons.workspace_premium, title: '会员等级', value: user.memberLevel),
+        const SizedBox(height: 24),
+        OutlinedButton.icon(
+          onPressed: () => sessionStore.clear(),
+          icon: const Icon(Icons.logout),
+          label: const Text('退出登录'),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({required this.icon, required this.title, required this.value});
+  final IconData icon;
+  final String title;
+  final String value;
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        trailing: Text(value),
       ),
     );
   }

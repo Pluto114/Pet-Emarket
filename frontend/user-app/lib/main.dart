@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'core/api/api_client.dart';
 import 'core/session/session_store.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/auth_page.dart';
 import 'features/home/home_page.dart';
 
 void main() {
@@ -37,9 +36,7 @@ class _PetEmarketAppState extends State<PetEmarketApp> {
           title: 'Pet-Emarket',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(),
-          home: sessionStore.isAuthenticated
-              ? HomePage(apiClient: apiClient, sessionStore: sessionStore)
-              : AuthPage(apiClient: apiClient, sessionStore: sessionStore),
+          home: HomePage(apiClient: apiClient, sessionStore: sessionStore),
         );
       },
     );
