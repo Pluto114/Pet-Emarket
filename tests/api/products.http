@@ -36,13 +36,11 @@ Content-Type: application/json
   "stock": 1,
   "status": "ON_SALE",
   "description": "Live pet with vaccine and quarantine certificates.",
-  "livePet": {
-    "petCode": "PET-CAT-0002",
-    "breed": "Ragdoll",
-    "healthStatus": "Healthy",
-    "vaccineCertNo": "VAC-2026-0002",
-    "quarantineCertNo": "QUA-2026-0002"
-  }
+  "petCode": "PET-CAT-0002",
+  "breed": "Ragdoll",
+  "healthStatus": "Healthy",
+  "vaccineCertNo": "VAC-2026-0002",
+  "quarantineCertNo": "QUA-2026-0002"
 }
 
 ### Read product

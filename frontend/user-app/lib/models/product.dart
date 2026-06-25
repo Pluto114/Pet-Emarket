@@ -42,7 +42,7 @@ class Product {
       description: json['description']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
       tags: (json['tags'] is List) ? (json['tags'] as List).map((item) => item.toString()).toList() : const [],
-      livePet: json['livePet'] is Map ? Map<String, dynamic>.from(json['livePet'] as Map) : null,
+      livePet: _livePetFromJson(json),
     );
   }
 
@@ -62,6 +62,23 @@ class Product {
       'livePet': livePet,
     };
   }
+}
+
+Map<String, dynamic>? _livePetFromJson(Map<String, dynamic> json) {
+  if (json['livePet'] is Map) {
+    return Map<String, dynamic>.from(json['livePet'] as Map);
+  }
+  if (json['type']?.toString() != 'PET_LIVE') {
+    return null;
+  }
+  return {
+    'petCode': json['petCode']?.toString() ?? '',
+    'breed': json['breed']?.toString() ?? '',
+    'healthStatus': json['healthStatus']?.toString() ?? '',
+    'vaccineCertNo': json['vaccineCertNo']?.toString() ?? '',
+    'quarantineCertNo': json['quarantineCertNo']?.toString() ?? '',
+    'traceSource': json['traceSource']?.toString() ?? '',
+  };
 }
 
 class NumberParser {
