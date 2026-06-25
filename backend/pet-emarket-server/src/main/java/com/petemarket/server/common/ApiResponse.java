@@ -12,18 +12,18 @@ public record ApiResponse<T>(
         long timestamp
 ) {
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(true, "000000", "success", data, traceId(), Instant.now().toEpochMilli());
+        return new ApiResponse<>(true, "000000", "success", data, newTraceId(), Instant.now().toEpochMilli());
     }
 
     public static <T> ApiResponse<T> ok(T data, String message) {
-        return new ApiResponse<>(true, "000000", message, data, traceId(), Instant.now().toEpochMilli());
+        return new ApiResponse<>(true, "000000", message, data, newTraceId(), Instant.now().toEpochMilli());
     }
 
     public static ApiResponse<Void> fail(String code, String message) {
-        return new ApiResponse<>(false, code, message, null, traceId(), Instant.now().toEpochMilli());
+        return new ApiResponse<>(false, code, message, null, newTraceId(), Instant.now().toEpochMilli());
     }
 
-    private static String traceId() {
+    private static String newTraceId() {
         return UUID.randomUUID().toString().replace("-", "");
     }
 }

@@ -30,6 +30,9 @@ frontend/user-app/windows/
 target/
 .gradle/
 
+# Local tooling
+.tools/
+
 # Runtime data
 *.db
 *.sqlite
