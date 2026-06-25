@@ -1,0 +1,64 @@
+@baseUrl = http://localhost:8080
+@token =
+@productId =
+
+### List products
+GET {{baseUrl}}/api/v1/products
+
+### Search products
+GET {{baseUrl}}/api/v1/products?keyword=cat
+
+### Create goods
+POST {{baseUrl}}/api/v1/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Smart Cat Bowl",
+  "type": "GOODS",
+  "category": "Device",
+  "price": 199,
+  "stock": 30,
+  "status": "ON_SALE",
+  "description": "Smart feeding bowl for cats."
+}
+
+### Create live pet
+POST {{baseUrl}}/api/v1/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ragdoll Kitten",
+  "type": "PET_LIVE",
+  "category": "Cat",
+  "price": 3880,
+  "stock": 1,
+  "status": "ON_SALE",
+  "description": "Live pet with vaccine and quarantine certificates.",
+  "livePet": {
+    "petCode": "PET-CAT-0002",
+    "breed": "Ragdoll",
+    "healthStatus": "Healthy",
+    "vaccineCertNo": "VAC-2026-0002",
+    "quarantineCertNo": "QUA-2026-0002"
+  }
+}
+
+### Read product
+GET {{baseUrl}}/api/v1/products/{{productId}}
+
+### Update product
+PUT {{baseUrl}}/api/v1/products/{{productId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 3699,
+  "stock": 1,
+  "status": "ON_SALE"
+}
+
+### Delete product
+DELETE {{baseUrl}}/api/v1/products/{{productId}}
+Authorization: Bearer {{token}}

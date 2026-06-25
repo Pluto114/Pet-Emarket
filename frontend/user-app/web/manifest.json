@@ -1,0 +1,9 @@
+{
+  "name": "Pet-Emarket",
+  "short_name": "Pet-Emarket",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2A7A6F",
+  "description": "Pet-Emarket user app for web and Android."
+}

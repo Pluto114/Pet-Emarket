@@ -1,0 +1,30 @@
+@baseUrl = http://localhost:8080
+@token =
+
+### Health
+GET {{baseUrl}}/api/v1/health
+
+### Login as admin
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@123456"
+}
+
+### Register customer
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "new_customer",
+  "password": "User@123456",
+  "displayName": "New Customer",
+  "phone": "18800000009",
+  "email": "new_customer@pet-emarket.local"
+}
+
+### Current user
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{token}}

@@ -1,0 +1,16 @@
+{
+  "name": "pet-emarket-api-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-dependency API skeleton for Pet-Emarket early integration.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "test": "node tests/smoke.test.js",
+    "check": "node --check src/server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

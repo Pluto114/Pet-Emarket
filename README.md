@@ -2,6 +2,46 @@
 
 Pet-Emarket 是软件工程实训课程的宠物商店电商系统。系统目标不是做一个简单商品展示页，而是完成“用户端体验、后台管理、订单交易闭环、AI 推荐问答、工程化交付”五条主线，最终能支撑课程设计文档、代码演示、团队协作展示和答辩。
 
+## 0. 当前可运行骨架
+
+当前第一阶段已经落地一个可联调骨架：
+
+- 后端：`backend/api-server`，零 npm 依赖 Node API，支持登录、注册、鉴权、用户 CRUD、商品 CRUD。
+- 前端：`frontend/user-app`，Flutter 单项目，预留 Web 与 Android 平台，支持登录、总览、用户管理、商品管理。
+- 默认管理员账号：`admin / Admin@123456`。
+- Web 默认 API：`http://localhost:8080`。
+- Android 模拟器默认 API：`http://10.0.2.2:8080`。
+
+启动后端：
+
+```powershell
+cd backend/api-server
+node src/server.js
+```
+
+运行后端冒烟测试：
+
+```powershell
+cd backend/api-server
+node tests/smoke.test.js
+```
+
+Flutter 启动命令（需要本机已安装 Flutter SDK）：
+
+```powershell
+cd frontend/user-app
+flutter pub get
+flutter run -d chrome
+flutter run -d android
+```
+
+如果后端地址不同，可以在 Flutter 启动时覆盖：
+
+```powershell
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080
+flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:8080
+```
+
 ## 1. 项目目标
 
 本项目按高分课程设计标准搭建，核心验收目标如下：

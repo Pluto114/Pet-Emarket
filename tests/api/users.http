@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:8080
+@token =
+@userId =
+
+### List users
+GET {{baseUrl}}/api/v1/users
+Authorization: Bearer {{token}}
+
+### Create user
+POST {{baseUrl}}/api/v1/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "username": "merchant01",
+  "password": "Merchant@123456",
+  "displayName": "Merchant One",
+  "phone": "18800000011",
+  "email": "merchant01@pet-emarket.local",
+  "role": "MERCHANT",
+  "memberLevel": "NORMAL",
+  "status": "ACTIVE"
+}
+
+### Read user
+GET {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### Update user
+PUT {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "displayName": "Updated Merchant",
+  "memberLevel": "VIP",
+  "status": "ACTIVE"
+}
+
+### Delete user
+DELETE {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}

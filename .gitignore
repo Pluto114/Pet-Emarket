@@ -1,0 +1,37 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+frontend/user-app/android/local.properties
+frontend/user-app/ios/
+frontend/user-app/linux/
+frontend/user-app/macos/
+frontend/user-app/windows/
+
+# Java
+target/
+.gradle/
+
+# Runtime data
+*.db
+*.sqlite
+.env
+!.env.example
