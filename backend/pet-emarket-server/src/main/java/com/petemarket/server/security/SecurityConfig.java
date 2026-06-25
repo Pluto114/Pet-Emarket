@@ -1,13 +1,23 @@
 package com.petemarket.server.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petemarket.server.common.ApiResponse;
 import com.petemarket.server.config.PetEmarketProperties;
+import com.petemarket.server.user.AccountStatus;
+import com.petemarket.server.user.UserRepository;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -21,10 +31,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final PetEmarketProperties properties;
+    private final ObjectMapper objectMapper;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, PetEmarketProperties properties) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          PetEmarketProperties properties,
+                          ObjectMapper objectMapper) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.properties = properties;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -32,7 +46,16 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) ->
+                                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "100401", "Unauthorized"))
+                        .accessDeniedHandler((request, response, exception) ->
+                                writeError(response, HttpServletResponse.SC_FORBIDDEN, "100403", "Forbidden"))
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/health", "/h2-console/**").permitAll()
@@ -59,5 +82,22 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        return username -> userRepository.findByUsername(username)
+                .map(account -> User.withUsername(account.getUsername())
+                        .password(account.getPasswordHash())
+                        .roles(account.getRole().name())
+                        .disabled(account.getStatus() != AccountStatus.ACTIVE)
+                        .build())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    private void writeError(HttpServletResponse response, int status, String code, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(code, message)));
     }
 }
