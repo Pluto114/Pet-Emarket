@@ -56,7 +56,7 @@ class _ProductManagePageState extends State<ProductManagePage> {
               child: ListTile(
                 leading: Icon(p.isLivePet ? Icons.pets : Icons.shopping_bag, color: theme.colorScheme.primary),
                 title: Text(p.name),
-                subtitle: Text(p.type + ' | ' + p.category + ' | ¥' + p.price.toStringAsFixed(2) + ' | 库存' + p.stock.toString()),
+                subtitle: Text('${p.type} | ${p.category} | ¥${p.price.toStringAsFixed(2)} | 库存${p.stock}'),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   IconButton(icon: const Icon(Icons.edit), onPressed: () => _showDialog(product: p)),
                   IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _delete(p)),
@@ -127,9 +127,9 @@ class _ProductDialogState extends State<_ProductDialog> {
         TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '商品名称')),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: DropdownButtonFormField<String>(value: type, decoration: const InputDecoration(labelText: '类型'), items: const [DropdownMenuItem(value: 'GOODS', child: Text('周边商品')), DropdownMenuItem(value: 'PET_LIVE', child: Text('活体宠物'))], onChanged: (v) => setState(() => type = v ?? type))),
+          Expanded(child: DropdownButtonFormField<String>(initialValue: type, decoration: const InputDecoration(labelText: '类型'), items: const [DropdownMenuItem(value: 'GOODS', child: Text('周边商品')), DropdownMenuItem(value: 'PET_LIVE', child: Text('活体宠物'))], onChanged: (v) => setState(() => type = v ?? type))),
           const SizedBox(width: 10),
-          Expanded(child: DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: '状态'), items: const [DropdownMenuItem(value: 'DRAFT', child: Text('草稿')), DropdownMenuItem(value: 'ON_SALE', child: Text('上架')), DropdownMenuItem(value: 'OFF_SALE', child: Text('下架'))], onChanged: (v) => setState(() => status = v ?? status))),
+          Expanded(child: DropdownButtonFormField<String>(initialValue: status, decoration: const InputDecoration(labelText: '状态'), items: const [DropdownMenuItem(value: 'DRAFT', child: Text('草稿')), DropdownMenuItem(value: 'ON_SALE', child: Text('上架')), DropdownMenuItem(value: 'OFF_SALE', child: Text('下架'))], onChanged: (v) => setState(() => status = v ?? status))),
         ]),
         const SizedBox(height: 10),
         TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类')),

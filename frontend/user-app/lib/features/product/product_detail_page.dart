@@ -283,7 +283,7 @@ class _ProductDialogState extends State<_ProductDialog> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: type,
+                      initialValue: type,
                       decoration: const InputDecoration(labelText: '商品类型'),
                       items: const [
                         DropdownMenuItem(value: 'GOODS', child: Text('周边商品')),
@@ -295,7 +295,7 @@ class _ProductDialogState extends State<_ProductDialog> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: status,
+                      initialValue: status,
                       decoration: const InputDecoration(labelText: '状态'),
                       items: const ['DRAFT', 'ON_SALE', 'OFF_SALE'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
                       onChanged: (value) => setState(() => status = value ?? status),

@@ -40,8 +40,8 @@ class _MemberManagePageState extends State<MemberManagePage> {
         ...users.map((u) => Card(
           child: ListTile(
             leading: CircleAvatar(child: Text(u.username.isNotEmpty ? u.username[0].toUpperCase() : '?')),
-            title: Text(u.displayName + ' (' + u.username + ')'),
-            subtitle: Text(u.role + ' | ' + u.memberLevel + ' | ' + u.status),
+            title: Text('${u.displayName} (${u.username})'),
+            subtitle: Text('${u.role} | ${u.memberLevel} | ${u.status}'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               IconButton(icon: const Icon(Icons.edit), onPressed: () => _showDialog(user: u)),
               IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _delete(u)),
@@ -105,11 +105,11 @@ class _UserDialogState extends State<_UserDialog> {
         const SizedBox(height: 8),
         TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: '邮箱')),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(value: role, decoration: const InputDecoration(labelText: '角色'), items: const [DropdownMenuItem(value: 'ADMIN', child: Text('管理员')), DropdownMenuItem(value: 'MERCHANT', child: Text('商家')), DropdownMenuItem(value: 'CUSTOMER', child: Text('用户'))], onChanged: (v) => setState(() => role = v ?? role)),
+        DropdownButtonFormField<String>(initialValue: role, decoration: const InputDecoration(labelText: '角色'), items: const [DropdownMenuItem(value: 'ADMIN', child: Text('管理员')), DropdownMenuItem(value: 'MERCHANT', child: Text('商家')), DropdownMenuItem(value: 'CUSTOMER', child: Text('用户'))], onChanged: (v) => setState(() => role = v ?? role)),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(value: level, decoration: const InputDecoration(labelText: '会员等级'), items: const [DropdownMenuItem(value: 'NORMAL', child: Text('普通')), DropdownMenuItem(value: 'VIP', child: Text('VIP')), DropdownMenuItem(value: 'SVIP', child: Text('SVIP'))], onChanged: (v) => setState(() => level = v ?? level)),
+        DropdownButtonFormField<String>(initialValue: level, decoration: const InputDecoration(labelText: '会员等级'), items: const [DropdownMenuItem(value: 'NORMAL', child: Text('普通')), DropdownMenuItem(value: 'VIP', child: Text('VIP')), DropdownMenuItem(value: 'SVIP', child: Text('SVIP'))], onChanged: (v) => setState(() => level = v ?? level)),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: '状态'), items: const [DropdownMenuItem(value: 'ACTIVE', child: Text('正常')), DropdownMenuItem(value: 'DISABLED', child: Text('禁用'))], onChanged: (v) => setState(() => status = v ?? status)),
+        DropdownButtonFormField<String>(initialValue: status, decoration: const InputDecoration(labelText: '状态'), items: const [DropdownMenuItem(value: 'ACTIVE', child: Text('正常')), DropdownMenuItem(value: 'DISABLED', child: Text('禁用'))], onChanged: (v) => setState(() => status = v ?? status)),
       ]))),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),

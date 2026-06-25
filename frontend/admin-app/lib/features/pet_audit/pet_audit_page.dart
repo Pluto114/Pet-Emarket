@@ -43,8 +43,8 @@ class _PetAuditPageState extends State<PetAuditPage> {
               Chip(label: Text(p.status)),
             ]),
             const SizedBox(height: 8),
-            Text('编号: ' + (p.livePet?['petCode']?.toString() ?? '-') + '  健康: ' + (p.livePet?['healthStatus']?.toString() ?? '-')),
-            Text('疫苗: ' + (p.livePet?['vaccineCertNo']?.toString() ?? '-') + '  检疫: ' + (p.livePet?['quarantineCertNo']?.toString() ?? '-')),
+            Text('编号: ${p.livePet?['petCode']?.toString() ?? '-'}  健康: ${p.livePet?['healthStatus']?.toString() ?? '-'}'),
+            Text('疫苗: ${p.livePet?['vaccineCertNo']?.toString() ?? '-'}  检疫: ${p.livePet?['quarantineCertNo']?.toString() ?? '-'}'),
             if (p.status == 'DRAFT') ...[
               const SizedBox(height: 8),
               FilledButton(onPressed: () => _approve(p), child: const Text('审核上架')),

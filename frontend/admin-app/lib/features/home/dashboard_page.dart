@@ -72,7 +72,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ...recentOrders.map((o) => Card(
               child: ListTile(
                 title: Text(o.orderNo ?? ''),
-                subtitle: Text('状态: ' + (o.statusName ?? '') + '  金额: ¥' + (o.payAmount?.toStringAsFixed(2) ?? '0.00')),
+                subtitle: Text('状态: ${o.statusName ?? ''}  金额: ¥${o.payAmount?.toStringAsFixed(2) ?? '0.00'}'),
                 trailing: Chip(label: Text(o.statusName ?? '')),
               ),
             )),

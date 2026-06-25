@@ -45,8 +45,8 @@ class _OrderManagePageState extends State<OrderManagePage> {
               Chip(label: Text(o.statusName), backgroundColor: _statusColor(o.status).withValues(alpha: 0.2)),
             ]),
             const SizedBox(height: 6),
-            Text('¥' + o.payAmount.toStringAsFixed(2)),
-            ...o.items.map((i) => Text('  ' + i.productName + ' x' + i.quantity.toString())),
+            Text('¥${o.payAmount.toStringAsFixed(2)}'),
+            ...o.items.map((i) => Text('  ${i.productName} x${i.quantity}')),
             if (o.status == 1) ...[
               const SizedBox(height: 8),
               FilledButton(onPressed: () => _ship(o), child: const Text('发货')),

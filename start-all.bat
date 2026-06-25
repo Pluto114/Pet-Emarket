@@ -6,8 +6,14 @@ echo.
 
 set BASE=%~dp0
 
+if exist "%BASE%.tools\apache-maven-3.9.9\bin\mvn.cmd" (
+  set "MVN=%BASE%.tools\apache-maven-3.9.9\bin\mvn.cmd"
+) else (
+  set "MVN=mvn.cmd"
+)
+
 echo [1/3] 启动后端 API (端口 8080)...
-start "Backend-API" cmd /c "cd /d %BASE%backend\api-server && node src/server.js"
+start "Backend-API" cmd /c "cd /d %BASE%backend\pet-emarket-server && call %MVN% spring-boot:run"
 
 echo [2/3] 启动管理后台 Flutter Web (端口 4000)...
 start "Admin-App" cmd /c "cd /d %BASE%frontend\admin-app && flutter run -d chrome --web-port=4000"

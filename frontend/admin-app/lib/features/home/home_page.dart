@@ -92,6 +92,7 @@ class _HomePageState extends State<HomePage> {
             child: ListView(
               children: [
                 DrawerHeader(
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -102,7 +103,6 @@ class _HomePageState extends State<HomePage> {
                       Text(widget.sessionStore.user?.role ?? '', style: const TextStyle(color: Colors.white70)),
                     ],
                   ),
-                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
                 ),
                 for (var i = 0; i < menuItems.length; i++)
                   ListTile(

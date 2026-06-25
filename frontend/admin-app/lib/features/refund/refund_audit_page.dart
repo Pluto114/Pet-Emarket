@@ -50,8 +50,8 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
               const Chip(label: Text('申请退单'), backgroundColor: Colors.red),
             ]),
             const SizedBox(height: 4),
-            Text('¥' + o.payAmount.toStringAsFixed(2)),
-            ...o.items.map((i) => Text('  ' + i.productName + ' x' + i.quantity.toString())),
+            Text('¥${o.payAmount.toStringAsFixed(2)}'),
+            ...o.items.map((i) => Text('  ${i.productName} x${i.quantity}')),
             const SizedBox(height: 8),
             Row(children: [
               FilledButton(onPressed: () => _audit(o, true), child: const Text('同意退单')),
