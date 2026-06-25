@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
+import '../cart/cart_page.dart';
+import '../order/order_page.dart';
 import '../product/product_detail_page.dart';
 import '../users/users_page.dart';
 
@@ -27,11 +29,15 @@ class _HomePageState extends State<HomePage> {
     final pages = [
       DashboardPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
       ProductsPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
+      CartPage(apiClient: widget.apiClient),
+      OrderPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
       UsersPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
     ];
     final destinations = const [
       NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: '总览'),
       NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: '商品'),
+      NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: '购物车'),
+      NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: '订单'),
       NavigationDestination(icon: Icon(Icons.group_outlined), selectedIcon: Icon(Icons.group), label: '用户'),
     ];
 
@@ -63,6 +69,8 @@ class _HomePageState extends State<HomePage> {
                   destinations: const [
                     NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('总览')),
                     NavigationRailDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: Text('商品')),
+                    NavigationRailDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: Text('购物车')),
+                    NavigationRailDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: Text('订单')),
                     NavigationRailDestination(icon: Icon(Icons.group_outlined), selectedIcon: Icon(Icons.group), label: Text('用户')),
                   ],
                 ),

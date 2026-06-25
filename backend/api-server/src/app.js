@@ -73,6 +73,16 @@ function createApp(dependencies = {}) {
         return;
       }
 
+      if (segments[0] === 'api' && segments[1] === 'v1' && segments[2] === 'cart' && segments[3] === 'items') {
+        await handleCart(req, res, store, currentUser, segments, body);
+        return;
+      }
+
+      if (segments[0] === 'api' && segments[1] === 'v1' && segments[2] === 'orders') {
+        await handleOrders(req, res, store, currentUser, segments, body);
+        return;
+      }
+
       fail(res, 404, '500404', 'API not found');
     } catch (error) {
       fail(res, 500, '500000', error.message || 'Internal server error');
@@ -225,8 +235,115 @@ async function handleProducts(req, res, store, currentUser, segments, body, url)
   fail(res, 405, '500405', 'Method not allowed');
 }
 
+async function handleCart(req, res, store, currentUser, segments, body) {
+  const itemId = segments[4];
+
+  if (!itemId && req.method === 'GET') {
+    ok(res, { items: store.listCartItems(currentUser.id) });
+    return;
+  }
+
+  if (!itemId && req.method === 'POST') {
+    const item = store.addCartItem(currentUser.id, body);
+    ok(res, { item }, 'cart item added');
+    return;
+  }
+
+  if (itemId && req.method === 'PUT') {
+    const item = store.updateCartItem(currentUser.id, itemId, body);
+    if (!item) {
+      fail(res, 404, '300404', 'Cart item not found');
+      return;
+    }
+    ok(res, { item }, 'cart item updated');
+    return;
+  }
+
+  if (itemId && req.method === 'DELETE') {
+    const deleted = store.deleteCartItem(currentUser.id, itemId);
+    if (!deleted) {
+      fail(res, 404, '300404', 'Cart item not found');
+      return;
+    }
+    ok(res, { deleted: true }, 'cart item deleted');
+    return;
+  }
+
+  fail(res, 405, '500405', 'Method not allowed');
+}
+
+async function handleOrders(req, res, store, currentUser, segments, body) {
+  const orderId = segments[3];
+  const action = segments[4];
+
+  if (!orderId && req.method === 'GET') {
+    ok(res, { items: store.listOrders(currentUser) });
+    return;
+  }
+
+  if (!orderId && req.method === 'POST') {
+    const order = store.createOrderFromCart(currentUser.id, body);
+    ok(res, { order }, 'order created');
+    return;
+  }
+
+  if (orderId && !action && req.method === 'GET') {
+    const order = store.findOrderById(orderId);
+    if (!order) {
+      fail(res, 404, '300404', 'Order not found');
+      return;
+    }
+    if (!canAccessOrder(currentUser, order)) {
+      fail(res, 403, '100403', 'No permission to access this order');
+      return;
+    }
+    ok(res, { order });
+    return;
+  }
+
+  const actionMap = {
+    pay: 'pay',
+    ship: 'ship',
+    receive: 'receive',
+    review: 'review',
+    cancel: 'cancel',
+    'apply-refund': 'applyRefund',
+    'audit-refund': 'auditRefund',
+    'admin-refund': 'adminRefund',
+  };
+  if (orderId && actionMap[action] && ['POST', 'PUT'].includes(req.method)) {
+    const order = store.findOrderById(orderId);
+    if (!order) {
+      fail(res, 404, '300404', 'Order not found');
+      return;
+    }
+    if (!canOperateOrder(currentUser, order, actionMap[action])) {
+      fail(res, 403, '100403', 'No permission to operate this order');
+      return;
+    }
+    const updated = store.transitionOrder(orderId, actionMap[action], currentUser, body);
+    ok(res, { order: updated }, 'order updated');
+    return;
+  }
+
+  fail(res, 405, '500405', 'Method not allowed');
+}
+
 function canAccessUser(currentUser, userId) {
   return currentUser && (currentUser.role === 'ADMIN' || currentUser.id === userId);
+}
+
+function canAccessOrder(currentUser, order) {
+  return currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MERCHANT' || order.userId === currentUser.id);
+}
+
+function canOperateOrder(currentUser, order, action) {
+  if (!currentUser) return false;
+  const adminActions = ['ship', 'auditRefund', 'adminRefund'];
+  if (adminActions.includes(action)) {
+    return currentUser.role === 'ADMIN' || currentUser.role === 'MERCHANT';
+  }
+  return currentUser.role === 'ADMIN' || order.userId === currentUser.id;
 }
 
 function requireRoles(res, currentUser, roles) {

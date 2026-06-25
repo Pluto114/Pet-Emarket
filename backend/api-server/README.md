@@ -39,6 +39,20 @@ POST   /api/v1/products
 GET    /api/v1/products/{id}
 PUT    /api/v1/products/{id}
 DELETE /api/v1/products/{id}
+GET    /api/v1/cart/items
+POST   /api/v1/cart/items
+PUT    /api/v1/cart/items/{id}
+DELETE /api/v1/cart/items/{id}
+GET    /api/v1/orders
+POST   /api/v1/orders
+GET    /api/v1/orders/{id}
+PUT    /api/v1/orders/{id}/pay
+PUT    /api/v1/orders/{id}/ship
+PUT    /api/v1/orders/{id}/receive
+PUT    /api/v1/orders/{id}/review
+PUT    /api/v1/orders/{id}/cancel
+PUT    /api/v1/orders/{id}/apply-refund
+PUT    /api/v1/orders/{id}/audit-refund
 ```
 
 Mutation APIs require `Authorization: Bearer <token>`.

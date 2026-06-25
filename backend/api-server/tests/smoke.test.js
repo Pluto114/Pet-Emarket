@@ -44,6 +44,59 @@ async function main() {
     const publicProducts = await request(baseUrl, 'GET', '/api/v1/products');
     assert.strictEqual(publicProducts.status, 200);
     assert.ok(publicProducts.body.data.items.length >= 3);
+    const productId = publicProducts.body.data.items[0].id;
+
+    const cart = await request(
+      baseUrl,
+      'POST',
+      '/api/v1/cart/items',
+      {
+        productId,
+        quantity: 1,
+      },
+      token,
+    );
+    assert.strictEqual(cart.status, 200);
+    assert.strictEqual(cart.body.data.item.productId, productId);
+
+    const orderCreated = await request(
+      baseUrl,
+      'POST',
+      '/api/v1/orders',
+      {
+        addressSnapshot: {
+          receiver: 'Smoke Tester',
+          phone: '18800000008',
+          detail: 'Smoke test address',
+        },
+      },
+      token,
+    );
+    assert.strictEqual(orderCreated.status, 200);
+    assert.strictEqual(orderCreated.body.data.order.status, 0);
+    const orderId = orderCreated.body.data.order.id;
+
+    const paid = await request(baseUrl, 'PUT', `/api/v1/orders/${orderId}/pay`, {}, token);
+    assert.strictEqual(paid.status, 200);
+    assert.strictEqual(paid.body.data.order.status, 1);
+
+    const shipped = await request(baseUrl, 'PUT', `/api/v1/orders/${orderId}/ship`, {}, token);
+    assert.strictEqual(shipped.status, 200);
+    assert.strictEqual(shipped.body.data.order.status, 2);
+
+    const received = await request(baseUrl, 'PUT', `/api/v1/orders/${orderId}/receive`, {}, token);
+    assert.strictEqual(received.status, 200);
+    assert.strictEqual(received.body.data.order.status, 3);
+
+    const reviewed = await request(
+      baseUrl,
+      'PUT',
+      `/api/v1/orders/${orderId}/review`,
+      { rating: 5, content: 'Good smoke test product.' },
+      token,
+    );
+    assert.strictEqual(reviewed.status, 200);
+    assert.strictEqual(reviewed.body.data.order.status, 4);
 
     const blocked = await request(baseUrl, 'POST', '/api/v1/products', {
       name: 'Blocked Product',

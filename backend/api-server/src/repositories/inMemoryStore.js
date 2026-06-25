@@ -4,6 +4,8 @@ function createInMemoryStore() {
   const store = {
     users: new Map(),
     products: new Map(),
+    cartItems: new Map(),
+    orders: new Map(),
   };
 
   const admin = createUserRecord({
@@ -154,6 +156,187 @@ function createInMemoryStore() {
       store.products.set(id, updated);
       return updated;
     },
+    listCartItems(userId) {
+      return [...store.cartItems.values()]
+        .filter((item) => item.userId === userId)
+        .map((item) => hydrateCartItem(store, item))
+        .filter(Boolean);
+    },
+    addCartItem(userId, input) {
+      const product = store.products.get(input.productId);
+      if (!product || product.status !== 'ON_SALE') {
+        throw new Error('Product is not available');
+      }
+      const quantity = Math.max(1, Number(input.quantity || 1));
+      if (product.stock < quantity) {
+        throw new Error('Insufficient stock');
+      }
+      const existing = [...store.cartItems.values()].find((item) => item.userId === userId && item.productId === product.id);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.updatedAt = new Date().toISOString();
+        return hydrateCartItem(store, existing);
+      }
+      const now = new Date().toISOString();
+      const item = {
+        id: newId('cart'),
+        userId,
+        productId: product.id,
+        quantity,
+        createdAt: now,
+        updatedAt: now,
+      };
+      store.cartItems.set(item.id, item);
+      return hydrateCartItem(store, item);
+    },
+    updateCartItem(userId, itemId, patch) {
+      const item = store.cartItems.get(itemId);
+      if (!item || item.userId !== userId) {
+        return null;
+      }
+      const product = store.products.get(item.productId);
+      const quantity = Math.max(1, Number(patch.quantity || item.quantity));
+      if (!product || product.stock < quantity) {
+        throw new Error('Insufficient stock');
+      }
+      item.quantity = quantity;
+      item.updatedAt = new Date().toISOString();
+      return hydrateCartItem(store, item);
+    },
+    deleteCartItem(userId, itemId) {
+      const item = store.cartItems.get(itemId);
+      if (!item || item.userId !== userId) {
+        return false;
+      }
+      return store.cartItems.delete(itemId);
+    },
+    createOrderFromCart(userId, input = {}) {
+      const requestedIds = Array.isArray(input.cartItemIds) ? input.cartItemIds : [];
+      const cartItems = [...store.cartItems.values()].filter((item) => {
+        if (item.userId !== userId) return false;
+        return requestedIds.length === 0 || requestedIds.includes(item.id);
+      });
+      if (cartItems.length === 0) {
+        throw new Error('Cart is empty');
+      }
+
+      const orderItems = cartItems.map((item) => {
+        const product = store.products.get(item.productId);
+        if (!product || product.status !== 'ON_SALE') {
+          throw new Error(`Product ${item.productId} is not available`);
+        }
+        if (product.stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${product.name}`);
+        }
+        return {
+          id: newId('oi'),
+          productId: product.id,
+          productName: product.name,
+          productType: product.type,
+          category: product.category,
+          unitPrice: product.price,
+          quantity: item.quantity,
+          subtotal: roundMoney(product.price * item.quantity),
+          livePetSnapshot: product.livePet || null,
+        };
+      });
+
+      orderItems.forEach((item) => {
+        const product = store.products.get(item.productId);
+        product.stock -= item.quantity;
+        product.updatedAt = new Date().toISOString();
+      });
+
+      cartItems.forEach((item) => store.cartItems.delete(item.id));
+
+      const totalAmount = roundMoney(orderItems.reduce((sum, item) => sum + item.subtotal, 0));
+      const user = store.users.get(userId);
+      const discountRate = memberDiscountRate(user?.memberLevel);
+      const discountAmount = roundMoney(totalAmount * discountRate);
+      const payAmount = roundMoney(totalAmount - discountAmount);
+      const now = new Date().toISOString();
+      const order = {
+        id: newId('ord'),
+        orderNo: `PE${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+        userId,
+        status: 0,
+        statusName: orderStatusName(0),
+        totalAmount,
+        discountAmount,
+        payAmount,
+        addressSnapshot: input.addressSnapshot || {
+          receiver: user?.displayName || user?.username || 'Demo User',
+          phone: user?.phone || '18800000000',
+          detail: 'Pet-Emarket demo address',
+        },
+        items: orderItems,
+        review: null,
+        refund: null,
+        statusLogs: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      appendOrderLog(order, null, 0, 'USER', '创建订单');
+      store.orders.set(order.id, order);
+      return order;
+    },
+    listOrders(currentUser) {
+      const orders = [...store.orders.values()];
+      if (currentUser.role === 'ADMIN' || currentUser.role === 'MERCHANT') {
+        return orders.sort(orderSort);
+      }
+      return orders.filter((order) => order.userId === currentUser.id).sort(orderSort);
+    },
+    findOrderById(id) {
+      return store.orders.get(id) || null;
+    },
+    transitionOrder(id, action, actor, input = {}) {
+      const order = store.orders.get(id);
+      if (!order) {
+        return null;
+      }
+      const transition = resolveOrderTransition(order.status, action, actor.role, input);
+      if (!transition.allowed) {
+        throw new Error(transition.reason);
+      }
+      const from = order.status;
+      order.status = transition.to;
+      order.statusName = orderStatusName(order.status);
+      order.updatedAt = new Date().toISOString();
+      if (action === 'review') {
+        order.review = {
+          rating: Number(input.rating || 5),
+          content: input.content || '',
+          createdAt: order.updatedAt,
+        };
+      }
+      if (action === 'applyRefund') {
+        order.refund = {
+          reason: input.reason || '用户申请退单',
+          auditStatus: 'PENDING',
+          auditRemark: '',
+          createdAt: order.updatedAt,
+        };
+      }
+      if (action === 'auditRefund') {
+        order.refund = {
+          ...(order.refund || {}),
+          auditStatus: input.approved ? 'APPROVED' : 'REJECTED',
+          auditRemark: input.auditRemark || '',
+          auditedAt: order.updatedAt,
+        };
+      }
+      if (action === 'adminRefund') {
+        order.refund = {
+          reason: input.reason || '管理员直接退单',
+          auditStatus: 'DIRECT_REFUND',
+          auditRemark: input.auditRemark || '',
+          auditedAt: order.updatedAt,
+        };
+      }
+      appendOrderLog(order, from, order.status, actor.role, transition.reason);
+      return order;
+    },
   };
 }
 
@@ -199,6 +382,99 @@ function createProductRecord(input) {
     createdAt: now,
     updatedAt: now,
   };
+}
+
+function hydrateCartItem(store, item) {
+  const product = store.products.get(item.productId);
+  if (!product) {
+    return null;
+  }
+  return {
+    ...item,
+    product: {
+      id: product.id,
+      name: product.name,
+      type: product.type,
+      category: product.category,
+      price: product.price,
+      stock: product.stock,
+      status: product.status,
+      description: product.description,
+      livePet: product.livePet,
+    },
+    subtotal: roundMoney(product.price * item.quantity),
+  };
+}
+
+function resolveOrderTransition(status, action, role, input) {
+  const adminRoles = ['ADMIN', 'MERCHANT'];
+  const transitions = {
+    pay: { from: [0], to: 1, roles: ['CUSTOMER', 'ADMIN'], reason: '支付成功' },
+    ship: { from: [1], to: 2, roles: adminRoles, reason: '管理员发货' },
+    receive: { from: [2], to: 3, roles: ['CUSTOMER', 'ADMIN'], reason: '用户确认收货' },
+    review: { from: [3], to: 4, roles: ['CUSTOMER', 'ADMIN'], reason: '用户评价完成' },
+    cancel: { from: [0, 1], to: -1, roles: ['CUSTOMER', 'ADMIN'], reason: input.reason || '取消订单' },
+    applyRefund: { from: [2, 3], to: -2, roles: ['CUSTOMER', 'ADMIN'], reason: input.reason || '用户申请退单' },
+    adminRefund: { from: [3, 4], to: -4, roles: adminRoles, reason: input.reason || '管理员直接退单' },
+  };
+
+  if (action === 'auditRefund') {
+    if (!adminRoles.includes(role)) return { allowed: false, reason: 'Only admin or merchant can audit refund' };
+    if (status !== -2) return { allowed: false, reason: 'Only refund requests can be audited' };
+    return {
+      allowed: true,
+      to: input.approved ? -3 : Number(input.rollbackStatus || 2),
+      reason: input.approved ? '退单审核通过' : input.auditRemark || '退单审核不通过，回到原状态',
+    };
+  }
+
+  const rule = transitions[action];
+  if (!rule) return { allowed: false, reason: 'Unknown order action' };
+  if (!rule.from.includes(status)) return { allowed: false, reason: `Cannot ${action} from status ${status}` };
+  if (!rule.roles.includes(role)) return { allowed: false, reason: 'No permission for this order action' };
+  return { allowed: true, to: rule.to, reason: rule.reason };
+}
+
+function appendOrderLog(order, fromStatus, toStatus, operatorRole, reason) {
+  order.statusLogs.push({
+    id: newId('log'),
+    fromStatus,
+    toStatus,
+    toStatusName: orderStatusName(toStatus),
+    operatorRole,
+    reason,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+function orderStatusName(status) {
+  return {
+    0: '已下单/待支付',
+    1: '已支付/待发货',
+    2: '已发货/待收货',
+    3: '已收货/待评价',
+    4: '已评价/完成',
+    '-1': '取消订单',
+    '-2': '申请退单',
+    '-3': '退单成功',
+    '-4': '管理员直接退单',
+  }[String(status)] || '未知状态';
+}
+
+function memberDiscountRate(memberLevel) {
+  return {
+    NORMAL: 0,
+    VIP: 0.05,
+    SVIP: 0.1,
+  }[memberLevel] || 0;
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function orderSort(a, b) {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 }
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {

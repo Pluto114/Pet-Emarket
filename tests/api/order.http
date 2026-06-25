@@ -1,0 +1,95 @@
+@baseUrl = http://localhost:8080
+@token =
+@productId =
+@cartItemId =
+@orderId =
+
+### Add product to cart
+POST {{baseUrl}}/api/v1/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "quantity": 1
+}
+
+### List cart
+GET {{baseUrl}}/api/v1/cart/items
+Authorization: Bearer {{token}}
+
+### Update cart quantity
+PUT {{baseUrl}}/api/v1/cart/items/{{cartItemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### Create order from cart
+POST {{baseUrl}}/api/v1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "addressSnapshot": {
+    "receiver": "Demo User",
+    "phone": "18800000000",
+    "detail": "Pet-Emarket demo address"
+  }
+}
+
+### List orders
+GET {{baseUrl}}/api/v1/orders
+Authorization: Bearer {{token}}
+
+### Pay
+PUT {{baseUrl}}/api/v1/orders/{{orderId}}/pay
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Ship
+PUT {{baseUrl}}/api/v1/orders/{{orderId}}/ship
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Receive
+PUT {{baseUrl}}/api/v1/orders/{{orderId}}/receive
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Review
+PUT {{baseUrl}}/api/v1/orders/{{orderId}}/review
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "content": "商品状态良好，演示评价。"
+}
+
+### Apply refund
+PUT {{baseUrl}}/api/v1/orders/{{orderId}}/apply-refund
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "演示退单申请"
+}
+
+### Audit refund approved
+PUT {{baseUrl}}/api/v1/orders/{{orderId}}/audit-refund
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "approved": true,
+  "auditRemark": "审核通过"
+}

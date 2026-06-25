@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../models/app_user.dart';
+import '../../models/cart_item.dart';
+import '../../models/order.dart';
 import '../../models/product.dart';
 import '../platform/api_transport.dart';
 import '../session/session_store.dart';
@@ -101,6 +103,65 @@ class ApiClient {
 
   Future<void> deleteProduct(String id) async {
     await _request('DELETE', '/api/v1/products/$id');
+  }
+
+  Future<List<CartItem>> listCartItems() async {
+    final data = await _request('GET', '/api/v1/cart/items');
+    return (data['items'] as List).map((item) => CartItem.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<CartItem> addCartItem({
+    required String productId,
+    int quantity = 1,
+  }) async {
+    final data = await _request(
+      'POST',
+      '/api/v1/cart/items',
+      body: {'productId': productId, 'quantity': quantity},
+    );
+    return CartItem.fromJson(Map<String, dynamic>.from(data['item'] as Map));
+  }
+
+  Future<CartItem> updateCartItem(String id, int quantity) async {
+    final data = await _request(
+      'PUT',
+      '/api/v1/cart/items/$id',
+      body: {'quantity': quantity},
+    );
+    return CartItem.fromJson(Map<String, dynamic>.from(data['item'] as Map));
+  }
+
+  Future<void> deleteCartItem(String id) async {
+    await _request('DELETE', '/api/v1/cart/items/$id');
+  }
+
+  Future<PetOrder> createOrderFromCart() async {
+    final data = await _request(
+      'POST',
+      '/api/v1/orders',
+      body: {
+        'addressSnapshot': {
+          'receiver': sessionStore.user?.displayName ?? 'Demo User',
+          'phone': sessionStore.user?.phone ?? '18800000000',
+          'detail': 'Pet-Emarket demo address',
+        },
+      },
+    );
+    return PetOrder.fromJson(Map<String, dynamic>.from(data['order'] as Map));
+  }
+
+  Future<List<PetOrder>> listOrders() async {
+    final data = await _request('GET', '/api/v1/orders');
+    return (data['items'] as List).map((item) => PetOrder.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<PetOrder> operateOrder(
+    String id,
+    String action, {
+    Map<String, dynamic> body = const {},
+  }) async {
+    final data = await _request('PUT', '/api/v1/orders/$id/$action', body: body);
+    return PetOrder.fromJson(Map<String, dynamic>.from(data['order'] as Map));
   }
 
   Future<dynamic> _request(

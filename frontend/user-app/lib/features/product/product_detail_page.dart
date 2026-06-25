@@ -127,6 +127,12 @@ class _ProductsPageState extends State<ProductsPage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButton.icon(
+                                  onPressed: product.stock > 0 ? () => addToCart(product) : null,
+                                  icon: const Icon(Icons.add_shopping_cart),
+                                  label: const Text('加入购物车'),
+                                ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
                                   onPressed: () => showProductDialog(product: product),
                                   icon: const Icon(Icons.edit_outlined),
                                   label: const Text('编辑'),
@@ -138,6 +144,17 @@ class _ProductsPageState extends State<ProductsPage> {
                                   label: const Text('删除'),
                                 ),
                               ],
+                            ),
+                          ],
+                          if (!canManage) ...[
+                            const Divider(height: 22),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: FilledButton.icon(
+                                onPressed: product.stock > 0 ? () => addToCart(product) : null,
+                                icon: const Icon(Icons.add_shopping_cart),
+                                label: const Text('加入购物车'),
+                              ),
                             ),
                           ],
                         ],
@@ -188,6 +205,17 @@ class _ProductsPageState extends State<ProductsPage> {
     try {
       await widget.apiClient.deleteProduct(product.id);
       await load();
+    } catch (error) {
+      if (mounted) showError(error);
+    }
+  }
+
+  Future<void> addToCart(Product product) async {
+    try {
+      await widget.apiClient.addCartItem(productId: product.id, quantity: 1);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${product.name} 已加入购物车')));
+      }
     } catch (error) {
       if (mounted) showError(error);
     }
