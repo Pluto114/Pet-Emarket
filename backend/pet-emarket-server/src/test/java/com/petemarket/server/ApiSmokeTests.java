@@ -37,6 +37,44 @@ class ApiSmokeTests {
     }
 
     @Test
+    void smartModulesExposeNearbyRecommendationAndAiApis() {
+        ResponseEntity<JsonNode> nearby = restTemplate.getForEntity(
+                "/api/v1/stores/nearby?longitude=120.1551&latitude=30.2741&radiusKm=30",
+                JsonNode.class
+        );
+
+        assertThat(nearby.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(nearby).at("/data/items").size()).isGreaterThan(0);
+        assertThat(body(nearby).at("/data/items/0/distanceKm").asDouble()).isGreaterThanOrEqualTo(0.0);
+
+        ResponseEntity<JsonNode> products = restTemplate.getForEntity("/api/v1/products", JsonNode.class);
+        long lastProductId = body(products).at("/data/items/0/id").asLong();
+        ResponseEntity<JsonNode> recommendations = restTemplate.getForEntity(
+                "/api/v1/recommendations?limit=5&lastProductId=" + lastProductId + "&longitude=120.1551&latitude=30.2741",
+                JsonNode.class
+        );
+
+        assertThat(recommendations.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(recommendations).at("/data/items").size()).isGreaterThan(0);
+        assertThat(body(recommendations).at("/data/items/0/score").asDouble()).isGreaterThan(0.0);
+        assertThat(body(recommendations).at("/data/items/0/reasons").isArray()).isTrue();
+
+        ResponseEntity<JsonNode> alias = restTemplate.getForEntity("/api/v1/recommend?limit=3", JsonNode.class);
+        assertThat(alias.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<JsonNode> chat = exchange(
+                HttpMethod.POST,
+                "/api/v1/ai/chat",
+                Map.of("question", "猫咪拉稀怎么办", "scene", "health"),
+                null
+        );
+
+        assertThat(chat.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(chat).at("/data/healthWarning").asBoolean()).isTrue();
+        assertThat(body(chat).at("/data/answer").asText()).contains("执业兽医");
+    }
+
+    @Test
     void adminCanManageUsersAndProductsWithJwt() {
         String adminToken = login("admin", "Admin@123456");
         String suffix = String.valueOf(System.nanoTime());
