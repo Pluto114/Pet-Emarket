@@ -1,6 +1,7 @@
 package com.petemarket.server.config;
 
 import com.petemarket.server.product.Product;
+import com.petemarket.server.product.ProductAuditStatus;
 import com.petemarket.server.product.ProductRepository;
 import com.petemarket.server.product.ProductStatus;
 import com.petemarket.server.product.ProductType;
@@ -147,6 +148,8 @@ public class DataInitializer {
         product.setStock(stock);
         product.setStatus(ProductStatus.ON_SALE);
         product.setStoreId(storeId);
+        product.setAuditStatus(type == ProductType.PET_LIVE ? ProductAuditStatus.APPROVED : ProductAuditStatus.NOT_REQUIRED);
+        product.setAuditRemark(type == ProductType.PET_LIVE ? "Seed data approved" : "");
         return product;
     }
 }

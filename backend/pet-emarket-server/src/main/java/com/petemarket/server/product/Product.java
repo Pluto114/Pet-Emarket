@@ -65,6 +65,16 @@ public class Product {
     @Column(length = 255)
     private String traceSource;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ProductAuditStatus auditStatus = ProductAuditStatus.NOT_REQUIRED;
+
+    @Column(length = 500)
+    private String auditRemark;
+
+    private Long auditedBy;
+    private Instant auditedAt;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -202,6 +212,38 @@ public class Product {
 
     public void setTraceSource(String traceSource) {
         this.traceSource = traceSource;
+    }
+
+    public ProductAuditStatus getAuditStatus() {
+        return auditStatus;
+    }
+
+    public void setAuditStatus(ProductAuditStatus auditStatus) {
+        this.auditStatus = auditStatus;
+    }
+
+    public String getAuditRemark() {
+        return auditRemark;
+    }
+
+    public void setAuditRemark(String auditRemark) {
+        this.auditRemark = auditRemark;
+    }
+
+    public Long getAuditedBy() {
+        return auditedBy;
+    }
+
+    public void setAuditedBy(Long auditedBy) {
+        this.auditedBy = auditedBy;
+    }
+
+    public Instant getAuditedAt() {
+        return auditedAt;
+    }
+
+    public void setAuditedAt(Instant auditedAt) {
+        this.auditedAt = auditedAt;
     }
 
     public Instant getCreatedAt() {

@@ -75,6 +75,96 @@ class ApiSmokeTests {
     }
 
     @Test
+    void adminCanUseDashboardStoreManagementAndLivePetAudit() {
+        String adminToken = login("admin", "Admin@123456");
+        String suffix = String.valueOf(System.nanoTime());
+
+        ResponseEntity<JsonNode> dashboard = exchange(HttpMethod.GET, "/api/v1/admin/dashboard", null, adminToken);
+
+        assertThat(dashboard.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(dashboard).at("/data/userCount").asLong()).isGreaterThanOrEqualTo(2);
+        assertThat(body(dashboard).at("/data/productCount").asLong()).isGreaterThanOrEqualTo(1);
+        assertThat(body(dashboard).at("/data/generatedAt").asText()).isNotBlank();
+
+        Map<String, Object> storePayload = new LinkedHashMap<>();
+        storePayload.put("name", "QA Store " + suffix);
+        storePayload.put("address", "QA Road 1");
+        storePayload.put("city", "Hangzhou");
+        storePayload.put("district", "Xihu");
+        storePayload.put("longitude", 120.1500);
+        storePayload.put("latitude", 30.2700);
+        storePayload.put("phone", "18812340000");
+        storePayload.put("businessHours", "09:00-21:00");
+        storePayload.put("rating", 4.6);
+        storePayload.put("status", "OPEN");
+        storePayload.put("featureTags", "QA, grooming");
+
+        ResponseEntity<JsonNode> createdStore = exchange(HttpMethod.POST, "/api/v1/stores", storePayload, adminToken);
+        long storeId = body(createdStore).at("/data/id").asLong();
+
+        assertThat(createdStore.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdStore).at("/data/name").asText()).contains("QA Store");
+
+        storePayload.put("name", "QA Store Updated " + suffix);
+        ResponseEntity<JsonNode> updatedStore = exchange(HttpMethod.PUT, "/api/v1/stores/" + storeId, storePayload, adminToken);
+
+        assertThat(updatedStore.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(updatedStore).at("/data/name").asText()).contains("Updated");
+
+        Map<String, Object> petPayload = new LinkedHashMap<>();
+        petPayload.put("storeId", storeId);
+        petPayload.put("name", "QA Audit Kitten " + suffix);
+        petPayload.put("type", "PET_LIVE");
+        petPayload.put("category", "Cat");
+        petPayload.put("price", new BigDecimal("1999.00"));
+        petPayload.put("stock", 3);
+        petPayload.put("status", "ON_SALE");
+        petPayload.put("petCode", "AUDIT-PET-" + suffix);
+        petPayload.put("breed", "Ragdoll");
+        petPayload.put("healthStatus", "Healthy");
+        petPayload.put("vaccineCertNo", "VAC-AUDIT-" + suffix);
+        petPayload.put("quarantineCertNo", "QUA-AUDIT-" + suffix);
+        petPayload.put("traceSource", "QA Store");
+
+        ResponseEntity<JsonNode> createdPet = exchange(HttpMethod.POST, "/api/v1/products", petPayload, adminToken);
+        long productId = body(createdPet).at("/data/id").asLong();
+
+        assertThat(createdPet.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdPet).at("/data/status").asText()).isEqualTo("DRAFT");
+        assertThat(body(createdPet).at("/data/auditStatus").asText()).isEqualTo("PENDING");
+        assertThat(body(createdPet).at("/data/stock").asInt()).isEqualTo(1);
+        assertThat(body(createdPet).at("/data/livePet/petCode").asText()).startsWith("AUDIT-PET-");
+
+        ResponseEntity<JsonNode> pendingAudits = exchange(
+                HttpMethod.GET,
+                "/api/v1/products/live-pet-audits?auditStatus=PENDING",
+                null,
+                adminToken
+        );
+
+        assertThat(pendingAudits.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(pendingAudits).at("/data/items").size()).isGreaterThan(0);
+
+        ResponseEntity<JsonNode> auditedPet = exchange(
+                HttpMethod.PUT,
+                "/api/v1/products/" + productId + "/audit",
+                Map.of("approved", true, "remark", "QA audit approved"),
+                adminToken
+        );
+
+        assertThat(auditedPet.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(auditedPet).at("/data/status").asText()).isEqualTo("ON_SALE");
+        assertThat(body(auditedPet).at("/data/auditStatus").asText()).isEqualTo("APPROVED");
+        assertThat(body(auditedPet).at("/data/auditedBy").asLong()).isGreaterThan(0);
+
+        ResponseEntity<JsonNode> deletedPet = exchange(HttpMethod.DELETE, "/api/v1/products/" + productId, null, adminToken);
+        ResponseEntity<JsonNode> deletedStore = exchange(HttpMethod.DELETE, "/api/v1/stores/" + storeId, null, adminToken);
+
+        assertThat(deletedPet.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(deletedStore.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     void adminCanManageUsersAndProductsWithJwt() {
         String adminToken = login("admin", "Admin@123456");
         String suffix = String.valueOf(System.nanoTime());

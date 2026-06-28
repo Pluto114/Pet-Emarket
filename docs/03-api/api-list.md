@@ -30,8 +30,10 @@
 |---|---|---|---|---|
 | GET | `/api/v1/products` | No | Public | List products |
 | GET | `/api/v1/products/{id}` | No | Public | Read product |
+| GET | `/api/v1/products/live-pet-audits` | Yes | ADMIN, MERCHANT | List live pet audit records |
 | POST | `/api/v1/products` | Yes | ADMIN, MERCHANT | Create product |
 | PUT | `/api/v1/products/{id}` | Yes | ADMIN, MERCHANT | Update product |
+| PUT | `/api/v1/products/{id}/audit` | Yes | ADMIN, MERCHANT | Approve or reject live pet audit |
 | DELETE | `/api/v1/products/{id}` | Yes | ADMIN, MERCHANT | Delete product |
 
 Product type values:
@@ -49,12 +51,27 @@ ON_SALE
 OFF_SALE
 ```
 
+Product audit status values:
+
+```text
+NOT_REQUIRED
+PENDING
+APPROVED
+REJECTED
+```
+
+Live pet products created by product managers enter `PENDING` audit and stay `DRAFT` until `/api/v1/products/{id}/audit` approves them.
+
 ## Stores
 
 | Method | Path | Auth | Role | Description |
 |---|---|---|---|---|
 | GET | `/api/v1/stores` | No | Public | List open pet stores |
+| GET | `/api/v1/stores/{id}` | No | Public | Read store detail |
 | GET | `/api/v1/stores/nearby` | No | Public | Search nearby stores by longitude, latitude and radius |
+| POST | `/api/v1/stores` | Yes | ADMIN, MERCHANT | Create store |
+| PUT | `/api/v1/stores/{id}` | Yes | ADMIN, MERCHANT | Update store |
+| DELETE | `/api/v1/stores/{id}` | Yes | ADMIN, MERCHANT | Delete store |
 
 `/api/v1/stores/nearby` query parameters:
 
@@ -117,6 +134,14 @@ score = itemCfScore + markovScore + hotScore + distanceScore + stockScore + scen
 ```
 
 Each item returns `strategy`, `score`, `reasons`, `itemCfScore`, `markovScore`, `hotScore`, `distanceScore`, and `stockScore`.
+
+## Admin
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/v1/admin/dashboard` | Yes | ADMIN, MERCHANT | Dashboard summary for admin web |
+
+Dashboard response includes user, product, store, live-pet audit, order, refund, revenue, order status distribution, top products, recent orders and `generatedAt`.
 
 ## Cart
 

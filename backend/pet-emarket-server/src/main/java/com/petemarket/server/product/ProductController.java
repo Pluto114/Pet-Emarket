@@ -28,8 +28,17 @@ public class ProductController {
     }
 
     @GetMapping
-    public ApiResponse<PageData<ProductResponse>> list(@RequestParam(required = false) String keyword) {
-        return ApiResponse.ok(PageData.of(productService.list(keyword)));
+    public ApiResponse<PageData<ProductResponse>> list(@RequestParam(required = false) String keyword,
+                                                       @RequestParam(required = false) ProductType type,
+                                                       @RequestParam(required = false) ProductStatus status) {
+        return ApiResponse.ok(PageData.of(productService.list(keyword, type, status)));
+    }
+
+    @GetMapping("/live-pet-audits")
+    public ApiResponse<PageData<ProductResponse>> listLivePetAudits(@AuthenticationPrincipal UserAccount currentUser,
+                                                                    @RequestParam(required = false) ProductAuditStatus auditStatus) {
+        requireProductManager(currentUser);
+        return ApiResponse.ok(PageData.of(productService.listLivePetAudits(auditStatus)));
     }
 
     @GetMapping("/{id}")
@@ -59,8 +68,16 @@ public class ProductController {
         return ApiResponse.ok(null, "product deleted");
     }
 
+    @PutMapping("/{id}/audit")
+    public ApiResponse<ProductResponse> audit(@AuthenticationPrincipal UserAccount currentUser,
+                                              @PathVariable Long id,
+                                              @Valid @RequestBody ProductAuditRequest request) {
+        requireProductManager(currentUser);
+        return ApiResponse.ok(productService.auditLivePet(id, request.approved(), request.remark(), currentUser.getId()), "product audited");
+    }
+
     private void requireProductManager(UserAccount user) {
-        if (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.MERCHANT) {
+        if (user == null || (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.MERCHANT)) {
             throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
         }
     }

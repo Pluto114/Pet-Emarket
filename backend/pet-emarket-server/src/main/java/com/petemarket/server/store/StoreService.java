@@ -1,8 +1,10 @@
 package com.petemarket.server.store;
 
+import com.petemarket.server.common.BusinessException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,11 @@ public class StoreService {
         return storeRepository.findByStatusOrderByRatingDesc(StoreStatus.OPEN).stream()
                 .map(store -> StoreResponse.from(store, null))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public StoreResponse get(Long id) {
+        return StoreResponse.from(find(id), null);
     }
 
     @Transactional(readOnly = true)
@@ -45,6 +52,26 @@ public class StoreService {
         return round(distanceKm(longitude, latitude, store.getLongitude(), store.getLatitude()));
     }
 
+    @Transactional
+    public StoreResponse create(UpsertStoreRequest request) {
+        PetStore store = new PetStore();
+        apply(store, request);
+        storeRepository.save(store);
+        return StoreResponse.from(store, null);
+    }
+
+    @Transactional
+    public StoreResponse update(Long id, UpsertStoreRequest request) {
+        PetStore store = find(id);
+        apply(store, request);
+        return StoreResponse.from(store, null);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        storeRepository.delete(find(id));
+    }
+
     private boolean matchesKeyword(PetStore store, String keyword) {
         if (keyword.isBlank()) {
             return true;
@@ -66,5 +93,28 @@ public class StoreService {
 
     private double round(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private PetStore find(Long id) {
+        return storeRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("200404", "Store not found", HttpStatus.NOT_FOUND));
+    }
+
+    private void apply(PetStore store, UpsertStoreRequest request) {
+        store.setName(request.name());
+        store.setAddress(request.address());
+        store.setCity(request.city());
+        store.setDistrict(request.district());
+        store.setLongitude(request.longitude());
+        store.setLatitude(request.latitude());
+        store.setPhone(defaultText(request.phone(), ""));
+        store.setBusinessHours(defaultText(request.businessHours(), "09:00-21:00"));
+        store.setRating(request.rating() == null ? 5.0 : Math.min(5.0, Math.max(0.0, request.rating())));
+        store.setStatus(request.status() == null ? StoreStatus.OPEN : request.status());
+        store.setFeatureTags(defaultText(request.featureTags(), ""));
+    }
+
+    private String defaultText(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 }

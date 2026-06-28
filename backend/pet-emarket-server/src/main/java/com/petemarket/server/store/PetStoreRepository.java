@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PetStoreRepository extends JpaRepository<PetStore, Long> {
     List<PetStore> findByStatusOrderByRatingDesc(StoreStatus status);
+
+    long countByStatus(StoreStatus status);
 }
