@@ -25,6 +25,11 @@ frontend/user-app/ios/
 frontend/user-app/linux/
 frontend/user-app/macos/
 frontend/user-app/windows/
+frontend/pet-emarket-app/android/local.properties
+frontend/pet-emarket-app/ios/
+frontend/pet-emarket-app/linux/
+frontend/pet-emarket-app/macos/
+frontend/pet-emarket-app/windows/
 
 # Java
 target/
