@@ -27,4 +27,20 @@ class SessionStore extends ChangeNotifier {
     _user = null;
     notifyListeners();
   }
+
+  /// Dev-only: skip login without backend.
+  void devBypass({required bool asAdmin}) {
+    _token = 'dev-token-${DateTime.now().millisecondsSinceEpoch}';
+    _user = AppUser(
+      id: asAdmin ? 'dev-admin-001' : 'dev-user-001',
+      username: asAdmin ? 'admin' : 'customer',
+      displayName: asAdmin ? 'Dev Admin' : 'Dev Customer',
+      role: asAdmin ? 'ADMIN' : 'CUSTOMER',
+      memberLevel: asAdmin ? 'VIP' : 'NORMAL',
+      status: 'ACTIVE',
+      phone: '18800000000',
+      email: asAdmin ? 'admin@petemarket.dev' : 'user@petemarket.dev',
+    );
+    notifyListeners();
+  }
 }

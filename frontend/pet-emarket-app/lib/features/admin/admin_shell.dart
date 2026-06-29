@@ -32,14 +32,14 @@ class _AdminShellState extends State<AdminShell> {
   int selectedIndex = 0;
 
   static const menuItems = [
-    _MenuItem(icon: Icons.dashboard, label: 'Dashboard'),
-    _MenuItem(icon: Icons.inventory_2, label: 'Products'),
-    _MenuItem(icon: Icons.pets, label: 'Pet Audit'),
-    _MenuItem(icon: Icons.receipt_long, label: 'Orders'),
-    _MenuItem(icon: Icons.money_off, label: 'Refunds'),
-    _MenuItem(icon: Icons.group, label: 'Members'),
-    _MenuItem(icon: Icons.store, label: 'Stores'),
-    _MenuItem(icon: Icons.videocam, label: 'Media'),
+    _MenuItem(icon: Icons.dashboard, label: '仪表盘'),
+    _MenuItem(icon: Icons.inventory_2, label: '商品管理'),
+    _MenuItem(icon: Icons.pets, label: '宠物审核'),
+    _MenuItem(icon: Icons.receipt_long, label: '订单管理'),
+    _MenuItem(icon: Icons.money_off, label: '退款审核'),
+    _MenuItem(icon: Icons.group, label: '会员管理'),
+    _MenuItem(icon: Icons.store, label: '店铺管理'),
+    _MenuItem(icon: Icons.videocam, label: '媒体管理'),
   ];
 
   @override
@@ -63,7 +63,7 @@ class _AdminShellState extends State<AdminShell> {
             title: Text(menuItems[selectedIndex].label),
             actions: [
               IconButton(
-                tooltip: 'Toggle theme',
+                tooltip: '切换主题',
                 icon: Icon(Theme.of(context).brightness == Brightness.light
                     ? Icons.dark_mode
                     : Icons.light_mode),
@@ -93,7 +93,7 @@ class _AdminShellState extends State<AdminShell> {
                 ),
               ),
               IconButton(
-                tooltip: 'Logout',
+                tooltip: '退出登录',
                 icon: const Icon(Icons.logout),
                 onPressed: widget.onLogout,
               ),
@@ -187,7 +187,7 @@ class _AdminShellState extends State<AdminShell> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.brightness_6),
-                        title: const Text('Toggle Theme'),
+                        title: const Text('切换主题'),
                         onTap: () {
                           Navigator.pop(context);
                           widget.onThemeToggle();
@@ -195,7 +195,7 @@ class _AdminShellState extends State<AdminShell> {
                       ),
                       ListTile(
                         leading: const Icon(Icons.logout),
-                        title: const Text('Logout'),
+                        title: const Text('退出登录'),
                         onTap: () {
                           Navigator.pop(context);
                           widget.onLogout();

@@ -26,16 +26,16 @@ class _MemberManagePageState extends State<MemberManagePage> {
   Future<void> _delete(AppUser u) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Delete User',
-      message: 'Are you sure you want to delete "${u.displayName}"? This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: '删除用户',
+      message: '确定要删除用户 "${u.displayName}" 吗？此操作不可撤销。',
+      confirmLabel: '删除',
       destructive: true,
     );
     if (!confirmed) return;
     try {
       await widget.apiClient.deleteUser(u.id);
       await load();
-      if (mounted) showSuccess(context, '${u.displayName} deleted');
+      if (mounted) showSuccess(context, '${u.displayName} 已删除');
     } catch (e) {
       if (mounted) showError(context, e.toString());
     }
@@ -48,8 +48,8 @@ class _MemberManagePageState extends State<MemberManagePage> {
       onRefresh: load,
       child: ListView(padding: const EdgeInsets.all(20), children: [
         Row(children: [
-          Expanded(child: Text('Member Management', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700))),
-          FilledButton.icon(onPressed: () => _showDialog(), icon: const Icon(Icons.add), label: const Text('Add User')),
+          Expanded(child: Text('会员管理', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700))),
+          FilledButton.icon(onPressed: () => _showDialog(), icon: const Icon(Icons.add), label: const Text('添加用户')),
         ]),
         const SizedBox(height: 12),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(28), child: CircularProgressIndicator())),
@@ -109,26 +109,26 @@ class _UserDialogState extends State<_UserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.user == null ? 'Add User' : 'Edit User'),
+      title: Text(widget.user == null ? '添加用户' : '编辑用户'),
       content: SizedBox(width: 400, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: userCtrl, enabled: widget.user == null, decoration: const InputDecoration(labelText: 'Username')),
+        TextField(controller: userCtrl, enabled: widget.user == null, decoration: const InputDecoration(labelText: '用户名')),
         const SizedBox(height: 8),
-        TextField(controller: pwdCtrl, obscureText: true, decoration: InputDecoration(labelText: widget.user == null ? 'Password' : 'New Password (leave blank)')),
+        TextField(controller: pwdCtrl, obscureText: true, decoration: InputDecoration(labelText: widget.user == null ? '密码' : '新密码（留空不修改）')),
         const SizedBox(height: 8),
-        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nickname')),
+        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '昵称')),
         const SizedBox(height: 8),
-        TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone')),
+        TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: '手机号')),
         const SizedBox(height: 8),
-        TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+        TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: '邮箱')),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(value: role, decoration: const InputDecoration(labelText: 'Role'), items: const [DropdownMenuItem(value: 'ADMIN', child: Text('Admin')), DropdownMenuItem(value: 'MERCHANT', child: Text('Merchant')), DropdownMenuItem(value: 'CUSTOMER', child: Text('User'))], onChanged: (v) => setState(() => role = v ?? role)),
+        DropdownButtonFormField<String>(value: role, decoration: const InputDecoration(labelText: '角色'), items: const [DropdownMenuItem(value: 'ADMIN', child: Text('管理员')), DropdownMenuItem(value: 'MERCHANT', child: Text('商家')), DropdownMenuItem(value: 'CUSTOMER', child: Text('用户'))], onChanged: (v) => setState(() => role = v ?? role)),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(value: level, decoration: const InputDecoration(labelText: 'Member Level'), items: const [DropdownMenuItem(value: 'NORMAL', child: Text('Normal')), DropdownMenuItem(value: 'VIP', child: Text('VIP')), DropdownMenuItem(value: 'SVIP', child: Text('SVIP'))], onChanged: (v) => setState(() => level = v ?? level)),
+        DropdownButtonFormField<String>(value: level, decoration: const InputDecoration(labelText: '会员等级'), items: const [DropdownMenuItem(value: 'NORMAL', child: Text('普通')), DropdownMenuItem(value: 'VIP', child: Text('VIP')), DropdownMenuItem(value: 'SVIP', child: Text('SVIP'))], onChanged: (v) => setState(() => level = v ?? level)),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: 'Status'), items: const [DropdownMenuItem(value: 'ACTIVE', child: Text('Active')), DropdownMenuItem(value: 'DISABLED', child: Text('Disabled'))], onChanged: (v) => setState(() => status = v ?? status)),
+        DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: '状态'), items: const [DropdownMenuItem(value: 'ACTIVE', child: Text('启用')), DropdownMenuItem(value: 'DISABLED', child: Text('禁用'))], onChanged: (v) => setState(() => status = v ?? status)),
       ]))),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
         FilledButton(onPressed: () {
           final payload = <String, dynamic>{
             'displayName': nameCtrl.text.trim(), 'role': role, 'memberLevel': level, 'status': status,
@@ -137,7 +137,7 @@ class _UserDialogState extends State<_UserDialog> {
           if (widget.user == null) { payload['username'] = userCtrl.text.trim(); payload['password'] = pwdCtrl.text; }
           if (widget.user != null && pwdCtrl.text.isNotEmpty) payload['password'] = pwdCtrl.text;
           Navigator.pop(context, payload);
-        }, child: const Text('Save')),
+        }, child: const Text('保存')),
       ],
     );
   }

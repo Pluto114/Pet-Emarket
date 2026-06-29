@@ -41,12 +41,12 @@ class _ProductManagePageState extends State<ProductManagePage> {
         onRefresh: load,
         child: ListView(padding: const EdgeInsets.all(20), children: [
           Row(children: [
-            Expanded(child: Text('Product Management', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700))),
-            FilledButton.icon(onPressed: () => _showDialog(), icon: const Icon(Icons.add), label: const Text('Add Product')),
+            Expanded(child: Text('商品管理', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700))),
+            FilledButton.icon(onPressed: () => _showDialog(), icon: const Icon(Icons.add), label: const Text('添加商品')),
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: TextField(controller: keywordCtrl, decoration: const InputDecoration(labelText: 'Search', prefixIcon: Icon(Icons.search), isDense: true), onSubmitted: (_) => load())),
+            Expanded(child: TextField(controller: keywordCtrl, decoration: const InputDecoration(labelText: '搜索', prefixIcon: Icon(Icons.search), isDense: true), onSubmitted: (_) => load())),
             const SizedBox(width: 8),
             IconButton(onPressed: load, icon: const Icon(Icons.search)),
           ]),
@@ -58,7 +58,7 @@ class _ProductManagePageState extends State<ProductManagePage> {
               child: ListTile(
                 leading: Icon(p.isLivePet ? Icons.pets : Icons.shopping_bag, color: theme.colorScheme.primary),
                 title: Text(p.name),
-                subtitle: Text('${p.type} | ${p.category} | ¥${p.price.toStringAsFixed(2)} | Stock${p.stock}'),
+                subtitle: Text('${p.type} | ${p.category} | ¥${p.price.toStringAsFixed(2)} | 库存${p.stock}'),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   IconButton(icon: const Icon(Icons.edit), onPressed: () => _showDialog(product: p)),
                   IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _delete(p)),
@@ -88,16 +88,16 @@ class _ProductManagePageState extends State<ProductManagePage> {
   Future<void> _delete(Product p) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Delete Product',
-      message: 'Are you sure you want to delete "${p.name}"? This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: '删除商品',
+      message: '确定要删除商品 "${p.name}" 吗？此操作不可撤销。',
+      confirmLabel: '删除',
       destructive: true,
     );
     if (!confirmed) return;
     try {
       await widget.apiClient.deleteProduct(p.id);
       await load();
-      if (mounted) showSuccess(context, '${p.name} deleted successfully');
+      if (mounted) showSuccess(context, '${p.name} 已删除');
     } catch (e) {
       if (mounted) showError(context, e.toString());
     }
@@ -133,39 +133,39 @@ class _ProductDialogState extends State<_ProductDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.product == null ? 'Add Product' : 'Edit Product'),
+      title: Text(widget.product == null ? '添加商品' : '编辑商品'),
       content: SizedBox(width: 500, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Product Name')),
+        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '商品名称')),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: DropdownButtonFormField<String>(value: type, decoration: const InputDecoration(labelText: 'Type'), items: const [DropdownMenuItem(value: 'GOODS', child: Text('Goods')), DropdownMenuItem(value: 'PET_LIVE', child: Text('Live Pet'))], onChanged: (v) => setState(() => type = v ?? type))),
+          Expanded(child: DropdownButtonFormField<String>(value: type, decoration: const InputDecoration(labelText: '类型'), items: const [DropdownMenuItem(value: 'GOODS', child: Text('周边商品')), DropdownMenuItem(value: 'PET_LIVE', child: Text('活体宠物'))], onChanged: (v) => setState(() => type = v ?? type))),
           const SizedBox(width: 10),
-          Expanded(child: DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: 'Status'), items: const [DropdownMenuItem(value: 'DRAFT', child: Text('Draft')), DropdownMenuItem(value: 'ON_SALE', child: Text('On Sale')), DropdownMenuItem(value: 'OFF_SALE', child: Text('Off Sale'))], onChanged: (v) => setState(() => status = v ?? status))),
+          Expanded(child: DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: '状态'), items: const [DropdownMenuItem(value: 'DRAFT', child: Text('草稿')), DropdownMenuItem(value: 'ON_SALE', child: Text('在售')), DropdownMenuItem(value: 'OFF_SALE', child: Text('下架'))], onChanged: (v) => setState(() => status = v ?? status))),
         ]),
         const SizedBox(height: 10),
-        TextField(controller: catCtrl, decoration: const InputDecoration(labelText: 'Category')),
+        TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类')),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number)),
+          Expanded(child: TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: '价格'), keyboardType: TextInputType.number)),
           const SizedBox(width: 10),
-          Expanded(child: TextField(controller: stockCtrl, decoration: const InputDecoration(labelText: 'Stock'), keyboardType: TextInputType.number)),
+          Expanded(child: TextField(controller: stockCtrl, decoration: const InputDecoration(labelText: '库存'), keyboardType: TextInputType.number)),
         ]),
         const SizedBox(height: 10),
-        TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description'), maxLines: 2),
+        TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述'), maxLines: 2),
         if (type == 'PET_LIVE') ...[
-          const Divider(height: 24), const Text('Live Pet Profile', style: TextStyle(fontWeight: FontWeight.w700)),
+          const Divider(height: 24), const Text('活体宠物档案', style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          TextField(controller: petCodeCtrl, decoration: const InputDecoration(labelText: 'Pet Code')),
+          TextField(controller: petCodeCtrl, decoration: const InputDecoration(labelText: '宠物编号')),
           const SizedBox(height: 8),
-          TextField(controller: healthCtrl, decoration: const InputDecoration(labelText: 'Health Status')),
+          TextField(controller: healthCtrl, decoration: const InputDecoration(labelText: '健康状态')),
           const SizedBox(height: 8),
-          TextField(controller: vaccineCtrl, decoration: const InputDecoration(labelText: 'Vaccine Cert No')),
+          TextField(controller: vaccineCtrl, decoration: const InputDecoration(labelText: '疫苗证明编号')),
           const SizedBox(height: 8),
-          TextField(controller: quarantineCtrl, decoration: const InputDecoration(labelText: 'Quarantine Cert No')),
+          TextField(controller: quarantineCtrl, decoration: const InputDecoration(labelText: '检疫证明编号')),
         ],
       ]))),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
         FilledButton(onPressed: () {
           final payload = {
             'name': nameCtrl.text.trim(),
@@ -179,7 +179,7 @@ class _ProductDialogState extends State<_ProductDialog> {
             if (type == 'PET_LIVE') 'quarantineCertNo': quarantineCtrl.text.trim(),
           };
           Navigator.pop(context, payload);
-        }, child: const Text('Save')),
+        }, child: const Text('保存')),
       ],
     );
   }

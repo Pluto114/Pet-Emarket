@@ -47,7 +47,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Dashboard', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text('仪表盘', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 20),
           if (errorText != null) ...[
             Text(errorText!, style: TextStyle(color: theme.colorScheme.error)),
@@ -61,12 +61,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
-                  _StatCard(icon: Icons.group, label: 'Total Users', value: (data?.userCount ?? 0).toString(), color: Colors.blue, wide: wide),
-                  _StatCard(icon: Icons.inventory_2, label: 'On Sale Products', value: (data?.onSaleProductCount ?? 0).toString(), color: Colors.green, wide: wide),
-                  _StatCard(icon: Icons.receipt_long, label: 'Total Orders', value: (data?.orderCount ?? 0).toString(), color: Colors.orange, wide: wide),
-                  _StatCard(icon: Icons.money_off, label: 'Pending Refunds', value: (data?.refundPendingCount ?? 0).toString(), color: Colors.red, wide: wide),
-                  _StatCard(icon: Icons.pets, label: 'Pending Pet Audit', value: (data?.pendingLivePetAuditCount ?? 0).toString(), color: Colors.purple, wide: wide),
-                  _StatCard(icon: Icons.store, label: 'Open Stores', value: (data?.openStoreCount ?? 0).toString(), color: Colors.teal, wide: wide),
+                  _StatCard(icon: Icons.group, label: '用户总数', value: (data?.userCount ?? 0).toString(), color: const Color(0xFF2196F3), wide: wide),
+                  _StatCard(icon: Icons.inventory_2, label: '在售商品', value: (data?.onSaleProductCount ?? 0).toString(), color: const Color(0xFF6FDA44), wide: wide),
+                  _StatCard(icon: Icons.receipt_long, label: '订单总数', value: (data?.orderCount ?? 0).toString(), color: const Color(0xFFEC7357), wide: wide),
+                  _StatCard(icon: Icons.money_off, label: '待处理退款', value: (data?.refundPendingCount ?? 0).toString(), color: const Color(0xFFE53935), wide: wide),
+                  _StatCard(icon: Icons.pets, label: '待审核宠物', value: (data?.pendingLivePetAuditCount ?? 0).toString(), color: const Color(0xFF7C4DFF), wide: wide),
+                  _StatCard(icon: Icons.store, label: '营业店铺', value: (data?.openStoreCount ?? 0).toString(), color: const Color(0xFF204E4A), wide: wide),
                 ],
               );
             },
@@ -80,7 +80,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     Icon(Icons.payments_outlined, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
-                    Text('Total Pay Amount', style: theme.textTheme.titleMedium),
+                    Text('总支付金额', style: theme.textTheme.titleMedium),
                     const Spacer(),
                     Text('¥${data.totalPayAmount.toStringAsFixed(2)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                   ],
@@ -91,7 +91,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
           // Chart section
           if (data != null && data.orderStatusDistribution.isNotEmpty) ...[
-            Text('Order Status Distribution', style: theme.textTheme.titleLarge),
+            Text('订单状态分布', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             Card(
               child: Padding(
@@ -117,23 +117,23 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 28),
           ],
           if (data != null && data.topProducts.isNotEmpty) ...[
-            Text('Top Products', style: theme.textTheme.titleLarge),
+            Text('热销商品', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             ...data.topProducts.map((p) => Card(
               child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.trending_up)),
                 title: Text(p.productName),
-                subtitle: Text('${p.category} · Sold ${p.quantity}'),
+                subtitle: Text('${p.category} · 销量 ${p.quantity}'),
                 trailing: Text('¥${p.amount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
             )),
             const SizedBox(height: 28),
           ],
           // Recent orders
-          Text('Recent Orders', style: theme.textTheme.titleLarge),
+          Text('最近订单', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           if (data == null || data.recentOrders.isEmpty)
-            const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('No orders yet')))
+            const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('暂无订单')))
           else
             ...data.recentOrders.map((o) => Card(
               child: ListTile(
@@ -142,7 +142,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Icon(Icons.receipt, color: _statusColor(o.status), size: 20),
                 ),
                 title: Text(o.orderNo, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('Amount: ' + (o.payAmount.toStringAsFixed(2))),
+                subtitle: Text('金额：¥' + (o.payAmount.toStringAsFixed(2))),
                 trailing: Chip(
                   label: Text(o.statusName, style: const TextStyle(fontSize: 12)),
                   backgroundColor: _statusColor(o.status).withAlpha(20),
@@ -158,8 +158,9 @@ class _DashboardPageState extends State<DashboardPage> {
   List<PieChartSectionData> _buildPieSections(ThemeData theme) {
     final counts = dashboard?.orderStatusDistribution ?? const <OrderStatusCount>[];
     final colors = [
-      Colors.blue, Colors.green, Colors.orange, Colors.purple,
-      Colors.teal, Colors.red, Colors.amber,
+      const Color(0xFF204E4A), const Color(0xFF6FDA44), const Color(0xFFEC7357),
+      const Color(0xFFE1E53F), const Color(0xFF2196F3), const Color(0xFF9C27B0),
+      const Color(0xFFFF9800),
     ];
     return counts.asMap().entries.map((e) {
       final i = e.key;
@@ -177,8 +178,9 @@ class _DashboardPageState extends State<DashboardPage> {
   List<Widget> _buildLegend(ThemeData theme) {
     final counts = dashboard?.orderStatusDistribution ?? const <OrderStatusCount>[];
     final colors = [
-      Colors.blue, Colors.green, Colors.orange, Colors.purple,
-      Colors.teal, Colors.red, Colors.amber,
+      const Color(0xFF204E4A), const Color(0xFF6FDA44), const Color(0xFFEC7357),
+      const Color(0xFFE1E53F), const Color(0xFF2196F3), const Color(0xFF9C27B0),
+      const Color(0xFFFF9800),
     ];
     return counts.asMap().entries.map((e) {
       final i = e.key;
@@ -186,7 +188,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 12, height: 12, decoration: BoxDecoration(color: colors[i % colors.length], borderRadius: BorderRadius.circular(3))),
+          Container(width: 12, height: 12, decoration: BoxDecoration(color: colors[i % colors.length], borderRadius: BorderRadius.circular(4))),
           const SizedBox(width: 6),
           Text('${entry.statusName}: ${entry.count}', style: theme.textTheme.bodySmall),
         ],
@@ -196,9 +198,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Color _statusColor(int s) {
     switch (s) {
-      case 0: return Colors.orange;
-      case 1: return Colors.blue;
-      case 2: case 3: case 4: return Colors.green;
+      case 0: return const Color(0xFFEC7357);
+      case 1: return const Color(0xFF2196F3);
+      case 2: case 3: case 4: return const Color(0xFF6FDA44);
       default: return Colors.red;
     }
   }
@@ -214,29 +216,42 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isLight = theme.brightness == Brightness.light;
     return SizedBox(
       width: wide ? 220 : null,
       child: Card(
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withAlpha(6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: isLight
+              ? BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(50))
+              : BorderSide.none,
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: color.withAlpha(25),
-                  borderRadius: BorderRadius.circular(12),
+                  color: isLight
+                      ? color.withAlpha(20)
+                      : color.withAlpha(30),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, size: 28, color: color),
+                child: Icon(icon, size: 24, color: color),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(value, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface)),
-                    const SizedBox(height: 2),
-                    Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+                    Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface, height: 1.1)),
+                    const SizedBox(height: 4),
+                    Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
