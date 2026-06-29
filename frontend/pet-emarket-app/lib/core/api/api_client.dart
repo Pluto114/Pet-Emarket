@@ -3,9 +3,13 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../models/app_user.dart';
+import '../../models/admin_dashboard.dart';
+import '../../models/ai_chat.dart';
 import '../../models/cart_item.dart';
 import '../../models/order.dart';
 import '../../models/product.dart';
+import '../../models/recommendation.dart';
+import '../../models/store.dart';
 import 'api_transport.dart';
 import '../session/session_store.dart';
 
@@ -105,6 +109,11 @@ class ApiClient {
     await _request('DELETE', '/api/v1/products/$id');
   }
 
+  Future<AdminDashboard> adminDashboard() async {
+    final data = await _request('GET', '/api/v1/admin/dashboard');
+    return AdminDashboard.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   Future<List<Product>> listLivePetAudits({String auditStatus = ''}) async {
     final query = <String, String>{};
     if (auditStatus.trim().isNotEmpty) query['auditStatus'] = auditStatus.trim();
@@ -119,6 +128,58 @@ class ApiClient {
       body: {'approved': approved, 'remark': remark},
     );
     return Product.fromJson(_object(data, 'product'));
+  }
+
+  Future<List<PetStore>> listStores({bool authenticated = false}) async {
+    final data = await _request('GET', '/api/v1/stores', authenticated: authenticated);
+    return (data['items'] as List).map((item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<List<PetStore>> nearbyStores({
+    double longitude = 120.1551,
+    double latitude = 30.2741,
+    double radiusKm = 30,
+    String keyword = '',
+  }) async {
+    final query = <String, String>{
+      'longitude': longitude.toString(),
+      'latitude': latitude.toString(),
+      'radiusKm': radiusKm.toString(),
+    };
+    if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
+    final data = await _request('GET', '/api/v1/stores/nearby', query: query, authenticated: false);
+    return (data['items'] as List).map((item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<PetStore> createStore(Map<String, dynamic> payload) async {
+    final data = await _request('POST', '/api/v1/stores', body: payload);
+    return PetStore.fromJson(_object(data, 'store'));
+  }
+
+  Future<PetStore> updateStore(String id, Map<String, dynamic> payload) async {
+    final data = await _request('PUT', '/api/v1/stores/$id', body: payload);
+    return PetStore.fromJson(_object(data, 'store'));
+  }
+
+  Future<void> deleteStore(String id) async {
+    await _request('DELETE', '/api/v1/stores/$id');
+  }
+
+  Future<List<RecommendationItem>> recommendations({String scene = 'HOME', String lastProductId = '', int limit = 8}) async {
+    final query = <String, String>{'scene': scene, 'limit': limit.toString()};
+    if (lastProductId.trim().isNotEmpty) query['lastProductId'] = lastProductId.trim();
+    final data = await _request('GET', '/api/v1/recommend', query: query, authenticated: sessionStore.token != null);
+    return (data['items'] as List).map((item) => RecommendationItem.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<AiChatAnswer> chat(String question, {String scene = 'general'}) async {
+    final data = await _request(
+      'POST',
+      '/api/v1/ai/chat',
+      body: {'question': question, 'scene': scene},
+      authenticated: false,
+    );
+    return AiChatAnswer.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   Future<List<CartItem>> listCartItems() async {

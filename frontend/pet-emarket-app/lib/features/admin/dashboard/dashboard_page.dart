@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
-import '../../../models/order.dart';
+import '../../../models/admin_dashboard.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -16,8 +16,8 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   bool loading = true;
-  int userCount = 0, productCount = 0, orderCount = 0, refundCount = 0;
-  List<dynamic> recentOrders = [];
+  String? errorText;
+  AdminDashboard? dashboard;
 
   @override
   void initState() {
@@ -26,25 +26,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> loadData() async {
-    setState(() => loading = true);
+    setState(() { loading = true; errorText = null; });
     try {
-      final results = await Future.wait([
-        widget.apiClient.listUsers(),
-        widget.apiClient.listProducts(),
-        widget.apiClient.listOrders(),
-      ]);
-      userCount = (results[0] as List).length;
-      productCount = (results[1] as List).length;
-      final orders = results[2] as List<PetOrder>;
-      orderCount = orders.length;
-      refundCount = orders.where((o) => o.status == -2).length;
-      _allOrders = orders;
-      recentOrders = orders.take(5).toList();
-    } catch (_) {}
+      dashboard = await widget.apiClient.adminDashboard();
+    } catch (e) {
+      errorText = e.toString();
+    }
     if (mounted) setState(() => loading = false);
   }
-
-  List<PetOrder> _allOrders = [];
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +41,7 @@ class _DashboardPageState extends State<DashboardPage> {
     if (loading) {
       return const SkeletonLoader(count: 6, height: 100);
     }
+    final data = dashboard;
     return RefreshIndicator(
       onRefresh: loadData,
       child: ListView(
@@ -59,6 +49,10 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Text('Dashboard', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 20),
+          if (errorText != null) ...[
+            Text(errorText!, style: TextStyle(color: theme.colorScheme.error)),
+            const SizedBox(height: 12),
+          ],
           // Stat cards
           LayoutBuilder(
             builder: (ctx, constraints) {
@@ -67,17 +61,36 @@ class _DashboardPageState extends State<DashboardPage> {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
-                  _StatCard(icon: Icons.group, label: 'Total Users', value: userCount.toString(), color: Colors.blue, wide: wide),
-                  _StatCard(icon: Icons.inventory_2, label: 'Total Products', value: productCount.toString(), color: Colors.green, wide: wide),
-                  _StatCard(icon: Icons.receipt_long, label: 'Total Orders', value: orderCount.toString(), color: Colors.orange, wide: wide),
-                  _StatCard(icon: Icons.money_off, label: 'Pending Refunds', value: refundCount.toString(), color: Colors.red, wide: wide),
+                  _StatCard(icon: Icons.group, label: 'Total Users', value: (data?.userCount ?? 0).toString(), color: Colors.blue, wide: wide),
+                  _StatCard(icon: Icons.inventory_2, label: 'On Sale Products', value: (data?.onSaleProductCount ?? 0).toString(), color: Colors.green, wide: wide),
+                  _StatCard(icon: Icons.receipt_long, label: 'Total Orders', value: (data?.orderCount ?? 0).toString(), color: Colors.orange, wide: wide),
+                  _StatCard(icon: Icons.money_off, label: 'Pending Refunds', value: (data?.refundPendingCount ?? 0).toString(), color: Colors.red, wide: wide),
+                  _StatCard(icon: Icons.pets, label: 'Pending Pet Audit', value: (data?.pendingLivePetAuditCount ?? 0).toString(), color: Colors.purple, wide: wide),
+                  _StatCard(icon: Icons.store, label: 'Open Stores', value: (data?.openStoreCount ?? 0).toString(), color: Colors.teal, wide: wide),
                 ],
               );
             },
           ),
           const SizedBox(height: 28),
+          if (data != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Icon(Icons.payments_outlined, color: theme.colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Text('Total Pay Amount', style: theme.textTheme.titleMedium),
+                    const Spacer(),
+                    Text('¥${data.totalPayAmount.toStringAsFixed(2)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+          ],
           // Chart section
-          if (_allOrders.isNotEmpty) ...[
+          if (data != null && data.orderStatusDistribution.isNotEmpty) ...[
             Text('Order Status Distribution', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             Card(
@@ -103,13 +116,26 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 28),
           ],
+          if (data != null && data.topProducts.isNotEmpty) ...[
+            Text('Top Products', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 12),
+            ...data.topProducts.map((p) => Card(
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.trending_up)),
+                title: Text(p.productName),
+                subtitle: Text('${p.category} · Sold ${p.quantity}'),
+                trailing: Text('¥${p.amount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            )),
+            const SizedBox(height: 28),
+          ],
           // Recent orders
           Text('Recent Orders', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
-          if (recentOrders.isEmpty)
+          if (data == null || data.recentOrders.isEmpty)
             const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('No orders yet')))
           else
-            ...recentOrders.map((o) => Card(
+            ...data.recentOrders.map((o) => Card(
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: _statusColor(o.status).withAlpha(30),
@@ -130,21 +156,18 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   List<PieChartSectionData> _buildPieSections(ThemeData theme) {
-    final statusCounts = <String, int>{};
-    for (final o in _allOrders) {
-      statusCounts[o.statusName] = (statusCounts[o.statusName] ?? 0) + 1;
-    }
+    final counts = dashboard?.orderStatusDistribution ?? const <OrderStatusCount>[];
     final colors = [
       Colors.blue, Colors.green, Colors.orange, Colors.purple,
       Colors.teal, Colors.red, Colors.amber,
     ];
-    return statusCounts.entries.toList().asMap().entries.map((e) {
+    return counts.asMap().entries.map((e) {
       final i = e.key;
       final entry = e.value;
       return PieChartSectionData(
         color: colors[i % colors.length],
-        value: entry.value.toDouble(),
-        title: entry.value.toString(),
+        value: entry.count.toDouble(),
+        title: entry.count.toString(),
         radius: 60,
         titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
       );
@@ -152,15 +175,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   List<Widget> _buildLegend(ThemeData theme) {
-    final statusCounts = <String, int>{};
-    for (final o in _allOrders) {
-      statusCounts[o.statusName] = (statusCounts[o.statusName] ?? 0) + 1;
-    }
+    final counts = dashboard?.orderStatusDistribution ?? const <OrderStatusCount>[];
     final colors = [
       Colors.blue, Colors.green, Colors.orange, Colors.purple,
       Colors.teal, Colors.red, Colors.amber,
     ];
-    return statusCounts.entries.toList().asMap().entries.map((e) {
+    return counts.asMap().entries.map((e) {
       final i = e.key;
       final entry = e.value;
       return Row(
@@ -168,7 +188,7 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Container(width: 12, height: 12, decoration: BoxDecoration(color: colors[i % colors.length], borderRadius: BorderRadius.circular(3))),
           const SizedBox(width: 6),
-          Text('${entry.key}: ${entry.value}', style: theme.textTheme.bodySmall),
+          Text('${entry.statusName}: ${entry.count}', style: theme.textTheme.bodySmall),
         ],
       );
     }).toList();

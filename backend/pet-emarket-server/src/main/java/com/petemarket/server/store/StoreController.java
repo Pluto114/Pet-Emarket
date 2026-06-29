@@ -28,8 +28,9 @@ public class StoreController {
     }
 
     @GetMapping
-    public ApiResponse<PageData<StoreResponse>> list() {
-        return ApiResponse.ok(PageData.of(storeService.listOpenStores()));
+    public ApiResponse<PageData<StoreResponse>> list(@AuthenticationPrincipal UserAccount currentUser) {
+        boolean includeClosed = isStoreManager(currentUser);
+        return ApiResponse.ok(PageData.of(includeClosed ? storeService.listAllStores() : storeService.listOpenStores()));
     }
 
     @GetMapping("/{id}")
@@ -68,8 +69,12 @@ public class StoreController {
     }
 
     private void requireStoreManager(UserAccount user) {
-        if (user == null || (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.MERCHANT)) {
+        if (!isStoreManager(user)) {
             throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
         }
+    }
+
+    private boolean isStoreManager(UserAccount user) {
+        return user != null && (user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.MERCHANT);
     }
 }

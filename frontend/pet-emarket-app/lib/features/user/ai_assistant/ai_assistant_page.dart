@@ -29,26 +29,29 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
     });
     _controller.clear();
 
-    // TODO: Call /api/v1/ai/chat when AI service is ready
-    await Future.delayed(const Duration(seconds: 1));
-    final reply = _getMockReply(text);
-
-    if (mounted) {
-      setState(() {
-        _messages.add(ChatMessage(isUser: false, text: reply));
-        _loading = false;
-      });
+    try {
+      final answer = await widget.apiClient.chat(text, scene: 'assistant');
+      final buffer = StringBuffer(answer.answer);
+      if (answer.knowledgeTags.isNotEmpty) {
+        buffer.write('\n\n知识标签：${answer.knowledgeTags.join('、')}');
+      }
+      if (answer.recommendedActions.isNotEmpty) {
+        buffer.write('\n\n建议操作：\n- ${answer.recommendedActions.join('\n- ')}');
+      }
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(isUser: false, text: buffer.toString()));
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(isUser: false, text: '请求失败：$e'));
+          _loading = false;
+        });
+      }
     }
-  }
-
-  String _getMockReply(String question) {
-    if (question.contains('猫') || question.contains('猫咪')) {
-      return '养猫建议：\n1. 准备猫砂盆、猫抓板、食盆水盆\n2. 幼猫需要幼猫粮，成猫需要成猫粮\n3. 定期驱虫和疫苗\n4. 每天至少陪玩15分钟\n\n⚠️ 仅供参考，严重健康问题请咨询执业兽医。';
-    }
-    if (question.contains('狗') || question.contains('狗狗')) {
-      return '养狗建议：\n1. 每天至少遛狗2次\n2. 准备狗粮、水盆、狗窝、牵引绳\n3. 定期接种疫苗和驱虫\n4. 社会化训练很重要\n\n⚠️ 仅供参考，严重健康问题请咨询执业兽医。';
-    }
-    return '这是一个很好的问题！\n\nPet-Emarket AI 助手正在接入中，目前我可以回答关于宠物养护的基础问题。\n\n你可以尝试问：\n- "新手适合养什么猫？"\n- "如何训练狗狗？"\n- "宠物疫苗需要打哪些？"\n\n⚠️ 所有健康建议仅供参考，请咨询执业兽医。';
   }
 
   @override

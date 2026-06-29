@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
-import '../../../models/product.dart';
+import '../../../models/store.dart';
 
 class NearbyStorePage extends StatefulWidget {
   const NearbyStorePage({required this.apiClient, super.key});
@@ -13,7 +13,7 @@ class NearbyStorePage extends StatefulWidget {
 class _NearbyStorePageState extends State<NearbyStorePage> {
   bool loading = true;
   String? errorText;
-  List<Product> products = [];
+  List<PetStore> stores = [];
 
   @override
   void initState() {
@@ -24,9 +24,7 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
   Future<void> loadData() async {
     setState(() { loading = true; errorText = null; });
     try {
-      // TODO: Replace with /api/v1/stores/nearby when LBS service is ready
-      final all = await widget.apiClient.listProducts(keyword: '');
-      products = all.where((p) => p.status == 'ON_SALE').toList();
+      stores = await widget.apiClient.nearbyStores();
     } catch (e) {
       errorText = e.toString();
     } finally {
@@ -56,53 +54,53 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
                       ],
                     ),
                   )
-                : products.isEmpty
+                : stores.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.store_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant),
                             const SizedBox(height: 12),
-                            const Text('附近暂无商店或商品'),
+                            const Text('附近暂无商店'),
                             const SizedBox(height: 8),
-                            Text('LBS 服务接入后将展示附近宠物商店', style: theme.textTheme.bodySmall),
+                            Text('可稍后扩大搜索半径或检查定位信息', style: theme.textTheme.bodySmall),
                           ],
                         ),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: products.length,
+                        itemCount: stores.length,
                         itemBuilder: (ctx, i) {
-                          final p = products[i];
+                          final store = stores[i];
                           return Card(
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: theme.colorScheme.primaryContainer,
-                                child: Icon(p.isLivePet ? Icons.pets : Icons.store, color: theme.colorScheme.primary),
+                                child: Icon(Icons.store, color: theme.colorScheme.primary),
                               ),
-                              title: Text(p.name),
-                              subtitle: Text(p.category + '  |  ¥' + p.price.toStringAsFixed(2) + '  |  库存 ' + p.stock.toString()),
+                              title: Text(store.name),
+                              subtitle: Text(store.district + '  |  评分 ' + store.rating.toStringAsFixed(1) + (store.distanceKm == null ? '' : '  |  ' + store.distanceKm!.toStringAsFixed(2) + 'km')),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () {
                                 Navigator.of(context).push(MaterialPageRoute(
                                   builder: (_) => Scaffold(
-                                    appBar: AppBar(title: Text(p.name)),
+                                    appBar: AppBar(title: Text(store.name)),
                                     body: Padding(
                                       padding: const EdgeInsets.all(20),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(p.description.isNotEmpty ? p.description : '暂无描述'),
+                                          Text(store.address),
                                           const SizedBox(height: 12),
-                                          Text('分类: ' + p.category + '  |  价格: ¥' + p.price.toStringAsFixed(2) + '  |  库存: ' + p.stock.toString()),
-                                          if (p.livePet != null) ...[
-                                            const Divider(height: 24),
-                                            const Text('活体档案', style: TextStyle(fontWeight: FontWeight.w700)),
-                                            Text('编号: ' + (p.livePet!['petCode']?.toString() ?? '-')),
-                                            Text('健康: ' + (p.livePet!['healthStatus']?.toString() ?? '-')),
-                                            Text('疫苗: ' + (p.livePet!['vaccineCertNo']?.toString() ?? '-')),
-                                            Text('检疫: ' + (p.livePet!['quarantineCertNo']?.toString() ?? '-')),
-                                          ],
+                                          Text('城市: ' + store.city + '  |  区域: ' + store.district),
+                                          const SizedBox(height: 8),
+                                          Text('营业: ' + (store.businessHours.isEmpty ? '-' : store.businessHours)),
+                                          const SizedBox(height: 8),
+                                          Text('电话: ' + (store.phone.isEmpty ? '-' : store.phone)),
+                                          const SizedBox(height: 8),
+                                          Text('特色: ' + (store.featureTags.isEmpty ? '-' : store.featureTags)),
+                                          const SizedBox(height: 8),
+                                          Text('坐标: ' + store.longitude.toStringAsFixed(4) + ', ' + store.latitude.toStringAsFixed(4)),
                                         ],
                                       ),
                                     ),

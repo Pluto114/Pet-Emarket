@@ -27,6 +27,13 @@ public class StoreService {
     }
 
     @Transactional(readOnly = true)
+    public List<StoreResponse> listAllStores() {
+        return storeRepository.findAll().stream()
+                .map(store -> StoreResponse.from(store, null))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public StoreResponse get(Long id) {
         return StoreResponse.from(find(id), null);
     }

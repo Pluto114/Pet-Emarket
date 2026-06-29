@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
-import '../../../models/product.dart';
+import '../../../models/recommendation.dart';
 
 class RecommendationPage extends StatefulWidget {
   const RecommendationPage({required this.apiClient, super.key});
@@ -13,7 +13,7 @@ class RecommendationPage extends StatefulWidget {
 class _RecommendationPageState extends State<RecommendationPage> {
   bool loading = true;
   String? errorText;
-  List<RecommendItem> items = [];
+  List<RecommendationItem> items = [];
 
   @override
   void initState() {
@@ -24,24 +24,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
   Future<void> loadRecommendations() async {
     setState(() { loading = true; errorText = null; });
     try {
-      // TODO: Replace with /api/v1/recommend when AI service is ready
-      final products = await widget.apiClient.listProducts(keyword: '');
-      final reasons = [
-        '根据你最近浏览的宠物用品推荐',
-        '热门商品，大家都在买',
-        '新用户专享推荐',
-        '根据你的会员等级精选',
-        '与你的购物车商品搭配',
-        '近期销量最高的商品',
-      ];
-      items = products.where((p) => p.status == 'ON_SALE').take(8).toList().asMap().entries.map((e) {
-        return RecommendItem(
-          product: e.value,
-          score: 0.85 + (e.key * 0.01),
-          reason: reasons[e.key % reasons.length],
-        );
-      }).toList();
-      items.sort((a, b) => b.score.compareTo(a.score));
+      items = await widget.apiClient.recommendations(scene: 'HOME', limit: 8);
     } catch (e) {
       errorText = e.toString();
     } finally {
@@ -79,6 +62,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
                         itemBuilder: (ctx, i) {
                           final item = items[i];
                           final p = item.product;
+                          final reason = item.reasons.isEmpty ? item.strategy : item.reasons.first;
                           return Card(
                             child: Padding(
                               padding: const EdgeInsets.all(14),
@@ -109,7 +93,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
                                             Text('¥' + p.price.toStringAsFixed(2), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w700, fontSize: 16)),
                                             const SizedBox(width: 12),
                                             Chip(
-                                              label: Text('匹配度 ' + (item.score * 100).toInt().toString() + '%', style: const TextStyle(fontSize: 11)),
+                                              label: Text('推荐分 ' + item.score.toStringAsFixed(1), style: const TextStyle(fontSize: 11)),
                                               backgroundColor: theme.colorScheme.primaryContainer,
                                               padding: EdgeInsets.zero,
                                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -122,10 +106,14 @@ class _RecommendationPageState extends State<RecommendationPage> {
                                             Icon(Icons.lightbulb_outline, size: 14, color: theme.colorScheme.onSurfaceVariant),
                                             const SizedBox(width: 4),
                                             Expanded(
-                                              child: Text(item.reason, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
+                                              child: Text(reason, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
                                             ),
                                           ],
                                         ),
+                                        if (item.reasons.length > 1) ...[
+                                          const SizedBox(height: 4),
+                                          Text(item.reasons.skip(1).join(' · '), maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+                                        ],
                                       ],
                                     ),
                                   ),
@@ -139,11 +127,3 @@ class _RecommendationPageState extends State<RecommendationPage> {
     );
   }
 }
-
-class RecommendItem {
-  final Product product;
-  final double score;
-  final String reason;
-  const RecommendItem({required this.product, required this.score, required this.reason});
-}
-
