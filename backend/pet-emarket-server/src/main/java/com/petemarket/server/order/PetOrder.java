@@ -57,8 +57,13 @@ public class PetOrder {
     @Column(length = 40)
     private String refundAuditStatus;
 
+    private Integer refundRollbackStatus;
+
     @Column(length = 500)
     private String auditRemark;
+
+    @Column(nullable = false)
+    private Boolean inventoryRestored = false;
 
     private Instant createdAt;
     private Instant updatedAt;
@@ -204,12 +209,28 @@ public class PetOrder {
         this.refundAuditStatus = refundAuditStatus;
     }
 
+    public Integer getRefundRollbackStatus() {
+        return refundRollbackStatus;
+    }
+
+    public void setRefundRollbackStatus(Integer refundRollbackStatus) {
+        this.refundRollbackStatus = refundRollbackStatus;
+    }
+
     public String getAuditRemark() {
         return auditRemark;
     }
 
     public void setAuditRemark(String auditRemark) {
         this.auditRemark = auditRemark;
+    }
+
+    public Boolean getInventoryRestored() {
+        return inventoryRestored;
+    }
+
+    public void setInventoryRestored(Boolean inventoryRestored) {
+        this.inventoryRestored = inventoryRestored;
     }
 
     public Instant getCreatedAt() {

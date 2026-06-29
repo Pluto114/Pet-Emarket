@@ -101,15 +101,21 @@ public class OrderService {
             }
             case "receive" -> transition(order, currentUser, List.of(2), 3, "用户确认收货");
             case "review" -> {
+                validateRating(request.rating());
                 transition(order, currentUser, List.of(3), 4, "用户评价完成");
                 order.setReviewRating(request.rating() == null ? 5 : request.rating());
                 order.setReviewContent(defaultText(request.content(), "默认好评"));
             }
-            case "cancel" -> transition(order, currentUser, List.of(0, 1), -1, defaultText(request.reason(), "取消订单"));
+            case "cancel" -> {
+                transition(order, currentUser, List.of(0, 1), -1, defaultText(request.reason(), "取消订单"));
+                restoreInventory(order);
+            }
             case "apply-refund" -> {
+                int rollbackStatus = order.getStatus();
                 transition(order, currentUser, List.of(2, 3), -2, defaultText(request.reason(), "用户申请退单"));
                 order.setRefundReason(defaultText(request.reason(), "用户申请退单"));
                 order.setRefundAuditStatus("PENDING");
+                order.setRefundRollbackStatus(rollbackStatus);
             }
             case "audit-refund" -> {
                 requireAdminOrMerchant(currentUser);
@@ -117,16 +123,20 @@ public class OrderService {
                     throw new BusinessException("300409", "Only refund requests can be audited");
                 }
                 boolean approved = Boolean.TRUE.equals(request.approved());
-                int target = approved ? -3 : (request.rollbackStatus() == null ? 2 : request.rollbackStatus());
+                int target = approved ? -3 : resolveRefundRollbackStatus(order, request.rollbackStatus());
                 transition(order, currentUser, List.of(-2), target, approved ? "退单审核通过" : "退单审核不通过");
                 order.setRefundAuditStatus(approved ? "APPROVED" : "REJECTED");
                 order.setAuditRemark(defaultText(request.auditRemark(), ""));
+                if (approved) {
+                    restoreInventory(order);
+                }
             }
             case "admin-refund" -> {
                 requireAdminOrMerchant(currentUser);
                 transition(order, currentUser, List.of(3, 4), -4, defaultText(request.reason(), "管理员直接退单"));
                 order.setRefundReason(defaultText(request.reason(), "管理员直接退单"));
                 order.setRefundAuditStatus("DIRECT_REFUND");
+                restoreInventory(order);
             }
             default -> throw new BusinessException("300400", "Unknown order action");
         }
@@ -167,6 +177,39 @@ public class OrderService {
         log.setOperatorRole(actor.getRole().name());
         log.setReason(reason);
         order.addStatusLog(log);
+    }
+
+    private void restoreInventory(PetOrder order) {
+        if (Boolean.TRUE.equals(order.getInventoryRestored())) {
+            return;
+        }
+        for (OrderItem item : order.getItems()) {
+            int quantity = Math.max(0, item.getQuantity() == null ? 0 : item.getQuantity());
+            if (quantity == 0) {
+                continue;
+            }
+            productRepository.findById(item.getProductId()).ifPresent(product -> {
+                int currentStock = Math.max(0, product.getStock() == null ? 0 : product.getStock());
+                product.setStock(currentStock + quantity);
+            });
+        }
+        order.setInventoryRestored(true);
+    }
+
+    private int resolveRefundRollbackStatus(PetOrder order, Integer requestedStatus) {
+        int target = requestedStatus == null
+                ? (order.getRefundRollbackStatus() == null ? OrderStatus.WAIT_RECEIVE.code() : order.getRefundRollbackStatus())
+                : requestedStatus;
+        if (target != OrderStatus.WAIT_RECEIVE.code() && target != OrderStatus.WAIT_REVIEW.code()) {
+            throw new BusinessException("300400", "Refund rejection can only rollback to receive or review status");
+        }
+        return target;
+    }
+
+    private void validateRating(Integer rating) {
+        if (rating != null && (rating < 1 || rating > 5)) {
+            throw new BusinessException("300400", "Review rating must be between 1 and 5");
+        }
     }
 
     private PetOrder findAndAuthorize(UserAccount user, Long id) {

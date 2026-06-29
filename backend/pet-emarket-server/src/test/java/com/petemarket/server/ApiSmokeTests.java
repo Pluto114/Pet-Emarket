@@ -259,6 +259,128 @@ class ApiSmokeTests {
     }
 
     @Test
+    void customerOrderLifecycleDeductsAndRestoresInventory() {
+        String adminToken = login("admin", "Admin@123456");
+        String suffix = String.valueOf(System.nanoTime());
+
+        Map<String, Object> userPayload = new LinkedHashMap<>();
+        userPayload.put("username", "qa_customer_" + suffix);
+        userPayload.put("password", "Qa@123456");
+        userPayload.put("displayName", "QA Customer");
+        userPayload.put("phone", "18812345678");
+        userPayload.put("email", "qa_customer_" + suffix + "@pet-emarket.local");
+        userPayload.put("role", "CUSTOMER");
+        userPayload.put("memberLevel", "NORMAL");
+        userPayload.put("status", "ACTIVE");
+
+        ResponseEntity<JsonNode> createdUser = exchange(HttpMethod.POST, "/api/v1/users", userPayload, adminToken);
+        long userId = body(createdUser).at("/data/id").asLong();
+        String customerToken = login("qa_customer_" + suffix, "Qa@123456");
+
+        Map<String, Object> productPayload = new LinkedHashMap<>();
+        productPayload.put("name", "QA Order Goods " + suffix);
+        productPayload.put("type", "GOODS");
+        productPayload.put("category", "Food");
+        productPayload.put("price", new BigDecimal("50.00"));
+        productPayload.put("stock", 4);
+        productPayload.put("status", "ON_SALE");
+        productPayload.put("description", "QA order lifecycle goods");
+
+        ResponseEntity<JsonNode> createdProduct = exchange(HttpMethod.POST, "/api/v1/products", productPayload, adminToken);
+        long productId = body(createdProduct).at("/data/id").asLong();
+
+        assertThat(createdUser.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(createdProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(stockOf(productId)).isEqualTo(4);
+
+        ResponseEntity<JsonNode> cartItem = exchange(
+                HttpMethod.POST,
+                "/api/v1/cart/items",
+                Map.of("productId", productId, "quantity", 2),
+                customerToken
+        );
+        assertThat(cartItem.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<JsonNode> createdOrder = exchange(
+                HttpMethod.POST,
+                "/api/v1/orders",
+                Map.of("addressSnapshot", Map.of(
+                        "receiver", "QA Customer",
+                        "phone", "18812345678",
+                        "detail", "QA lifecycle address"
+                )),
+                customerToken
+        );
+        long canceledOrderId = body(createdOrder).at("/data/id").asLong();
+
+        assertThat(createdOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdOrder).at("/data/status").asInt()).isEqualTo(0);
+        assertThat(body(createdOrder).at("/data/inventoryRestored").asBoolean()).isFalse();
+        assertThat(stockOf(productId)).isEqualTo(2);
+
+        ResponseEntity<JsonNode> canceledOrder = exchange(
+                HttpMethod.PUT,
+                "/api/v1/orders/" + canceledOrderId + "/cancel",
+                Map.of("reason", "QA cancel restores inventory"),
+                customerToken
+        );
+
+        assertThat(canceledOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(canceledOrder).at("/data/status").asInt()).isEqualTo(-1);
+        assertThat(body(canceledOrder).at("/data/inventoryRestored").asBoolean()).isTrue();
+        assertThat(stockOf(productId)).isEqualTo(4);
+
+        exchange(HttpMethod.POST, "/api/v1/cart/items", Map.of("productId", productId, "quantity", 1), customerToken);
+        ResponseEntity<JsonNode> refundOrder = exchange(
+                HttpMethod.POST,
+                "/api/v1/orders",
+                Map.of("addressSnapshot", Map.of(
+                        "receiver", "QA Customer",
+                        "phone", "18812345678",
+                        "detail", "QA refund address"
+                )),
+                customerToken
+        );
+        long refundOrderId = body(refundOrder).at("/data/id").asLong();
+
+        assertThat(refundOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(stockOf(productId)).isEqualTo(3);
+
+        assertThat(exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/pay", null, customerToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/ship", null, adminToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/receive", null, customerToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<JsonNode> refundApplied = exchange(
+                HttpMethod.PUT,
+                "/api/v1/orders/" + refundOrderId + "/apply-refund",
+                Map.of("reason", "QA refund after receipt"),
+                customerToken
+        );
+
+        assertThat(refundApplied.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(refundApplied).at("/data/status").asInt()).isEqualTo(-2);
+        assertThat(body(refundApplied).at("/data/refundRollbackStatus").asInt()).isEqualTo(3);
+
+        ResponseEntity<JsonNode> refundApproved = exchange(
+                HttpMethod.PUT,
+                "/api/v1/orders/" + refundOrderId + "/audit-refund",
+                Map.of("approved", true, "auditRemark", "QA refund approved"),
+                adminToken
+        );
+
+        assertThat(refundApproved.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(refundApproved).at("/data/status").asInt()).isEqualTo(-3);
+        assertThat(body(refundApproved).at("/data/inventoryRestored").asBoolean()).isTrue();
+        assertThat(stockOf(productId)).isEqualTo(4);
+
+        ResponseEntity<JsonNode> deletedProduct = exchange(HttpMethod.DELETE, "/api/v1/products/" + productId, null, adminToken);
+        ResponseEntity<JsonNode> deletedUser = exchange(HttpMethod.DELETE, "/api/v1/users/" + userId, null, adminToken);
+
+        assertThat(deletedProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(deletedUser.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     void protectedEndpointsRejectAnonymousAndCustomerProductWrites() {
         ResponseEntity<JsonNode> anonymousUsers = exchange(HttpMethod.GET, "/api/v1/users", null, null);
 
@@ -303,5 +425,11 @@ class ApiSmokeTests {
     private JsonNode body(ResponseEntity<JsonNode> response) {
         assertThat(response.getBody()).isNotNull();
         return response.getBody();
+    }
+
+    private int stockOf(long productId) {
+        ResponseEntity<JsonNode> product = restTemplate.getForEntity("/api/v1/products/" + productId, JsonNode.class);
+        assertThat(product.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return body(product).at("/data/stock").asInt();
     }
 }

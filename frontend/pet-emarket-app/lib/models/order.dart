@@ -9,6 +9,11 @@ class PetOrder {
     required this.totalAmount,
     required this.discountAmount,
     required this.payAmount,
+    required this.refundReason,
+    required this.refundAuditStatus,
+    required this.refundRollbackStatus,
+    required this.auditRemark,
+    required this.inventoryRestored,
     required this.items,
     required this.statusLogs,
   });
@@ -20,6 +25,11 @@ class PetOrder {
   final double totalAmount;
   final double discountAmount;
   final double payAmount;
+  final String refundReason;
+  final String refundAuditStatus;
+  final int? refundRollbackStatus;
+  final String auditRemark;
+  final bool inventoryRestored;
   final List<OrderItem> items;
   final List<OrderStatusLog> statusLogs;
 
@@ -32,12 +42,34 @@ class PetOrder {
       totalAmount: NumberParser.toDouble(json['totalAmount']),
       discountAmount: NumberParser.toDouble(json['discountAmount']),
       payAmount: NumberParser.toDouble(json['payAmount']),
-      items: (json['items'] is List)
-          ? (json['items'] as List).map((item) => OrderItem.fromJson(Map<String, dynamic>.from(item as Map))).toList()
-          : const [],
-      statusLogs: (json['statusLogs'] is List)
-          ? (json['statusLogs'] as List).map((item) => OrderStatusLog.fromJson(Map<String, dynamic>.from(item as Map))).toList()
-          : const [],
+      refundReason: json['refundReason']?.toString() ?? '',
+      refundAuditStatus: json['refundAuditStatus']?.toString() ?? '',
+      refundRollbackStatus:
+          json['refundRollbackStatus'] == null
+              ? null
+              : NumberParser.toInt(json['refundRollbackStatus']),
+      auditRemark: json['auditRemark']?.toString() ?? '',
+      inventoryRestored: json['inventoryRestored'] == true,
+      items:
+          (json['items'] is List)
+              ? (json['items'] as List)
+                  .map(
+                    (item) => OrderItem.fromJson(
+                      Map<String, dynamic>.from(item as Map),
+                    ),
+                  )
+                  .toList()
+              : const [],
+      statusLogs:
+          (json['statusLogs'] is List)
+              ? (json['statusLogs'] as List)
+                  .map(
+                    (item) => OrderStatusLog.fromJson(
+                      Map<String, dynamic>.from(item as Map),
+                    ),
+                  )
+                  .toList()
+              : const [],
     );
   }
 }
@@ -87,7 +119,10 @@ class OrderStatusLog {
 
   factory OrderStatusLog.fromJson(Map<String, dynamic> json) {
     return OrderStatusLog(
-      fromStatus: json['fromStatus'] == null ? null : NumberParser.toInt(json['fromStatus']),
+      fromStatus:
+          json['fromStatus'] == null
+              ? null
+              : NumberParser.toInt(json['fromStatus']),
       toStatus: NumberParser.toInt(json['toStatus']),
       toStatusName: json['toStatusName']?.toString() ?? '',
       reason: json['reason']?.toString() ?? '',

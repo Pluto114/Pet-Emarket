@@ -192,6 +192,7 @@ ARCHIVED
 | PUT | `/api/v1/orders/{id}/cancel` | Yes | Owner, ADMIN | Cancel order from status 0 or 1 |
 | PUT | `/api/v1/orders/{id}/apply-refund` | Yes | Owner, ADMIN | Apply refund from status 2 or 3 |
 | PUT | `/api/v1/orders/{id}/audit-refund` | Yes | ADMIN, MERCHANT | Approve or reject refund request |
+| PUT | `/api/v1/orders/{id}/admin-refund` | Yes | ADMIN, MERCHANT | Direct refund after receipt or completion |
 
 Order status values:
 
@@ -206,3 +207,7 @@ Order status values:
 -3 退单成功
 -4 管理员直接退单
 ```
+
+Order response fields also include `refundReason`, `refundAuditStatus`, `refundRollbackStatus`, `auditRemark` and `inventoryRestored`.
+Creating an order deducts product stock. Canceling an unpaid/paid order, approving a refund, or creating an admin direct refund restores stock once and marks `inventoryRestored=true`.
+When a refund request is rejected, the order rolls back to its pre-refund status through `refundRollbackStatus`.
