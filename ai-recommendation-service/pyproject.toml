@@ -1,0 +1,9 @@
+[project]
+name = "ai-recommendation-service"
+version = "0.1.0"
+description = "Pet-Emarket AI 推荐与问答服务"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
