@@ -59,7 +59,7 @@ class ApiClient {
 
   Future<AppUser> me() async {
     final data = await _request('GET', '/api/v1/auth/me');
-    final user = AppUser.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+    final user = AppUser.fromJson(_object(data, 'user'));
     sessionStore.updateUser(user);
     return user;
   }
@@ -71,12 +71,12 @@ class ApiClient {
 
   Future<AppUser> createUser(Map<String, dynamic> payload) async {
     final data = await _request('POST', '/api/v1/users', body: payload);
-    return AppUser.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+    return AppUser.fromJson(_object(data, 'user'));
   }
 
   Future<AppUser> updateUser(String id, Map<String, dynamic> payload) async {
     final data = await _request('PUT', '/api/v1/users/$id', body: payload);
-    return AppUser.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+    return AppUser.fromJson(_object(data, 'user'));
   }
 
   Future<void> deleteUser(String id) async {
@@ -93,16 +93,32 @@ class ApiClient {
 
   Future<Product> createProduct(Map<String, dynamic> payload) async {
     final data = await _request('POST', '/api/v1/products', body: payload);
-    return Product.fromJson(Map<String, dynamic>.from(data['product'] as Map));
+    return Product.fromJson(_object(data, 'product'));
   }
 
   Future<Product> updateProduct(String id, Map<String, dynamic> payload) async {
     final data = await _request('PUT', '/api/v1/products/$id', body: payload);
-    return Product.fromJson(Map<String, dynamic>.from(data['product'] as Map));
+    return Product.fromJson(_object(data, 'product'));
   }
 
   Future<void> deleteProduct(String id) async {
     await _request('DELETE', '/api/v1/products/$id');
+  }
+
+  Future<List<Product>> listLivePetAudits({String auditStatus = ''}) async {
+    final query = <String, String>{};
+    if (auditStatus.trim().isNotEmpty) query['auditStatus'] = auditStatus.trim();
+    final data = await _request('GET', '/api/v1/products/live-pet-audits', query: query);
+    return (data['items'] as List).map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<Product> auditProduct(String id, {required bool approved, String remark = ''}) async {
+    final data = await _request(
+      'PUT',
+      '/api/v1/products/$id/audit',
+      body: {'approved': approved, 'remark': remark},
+    );
+    return Product.fromJson(_object(data, 'product'));
   }
 
   Future<List<CartItem>> listCartItems() async {
@@ -119,7 +135,7 @@ class ApiClient {
       '/api/v1/cart/items',
       body: {'productId': productId, 'quantity': quantity},
     );
-    return CartItem.fromJson(Map<String, dynamic>.from(data['item'] as Map));
+    return CartItem.fromJson(_object(data, 'item'));
   }
 
   Future<CartItem> updateCartItem(String id, int quantity) async {
@@ -128,7 +144,7 @@ class ApiClient {
       '/api/v1/cart/items/$id',
       body: {'quantity': quantity},
     );
-    return CartItem.fromJson(Map<String, dynamic>.from(data['item'] as Map));
+    return CartItem.fromJson(_object(data, 'item'));
   }
 
   Future<void> deleteCartItem(String id) async {
@@ -147,7 +163,7 @@ class ApiClient {
         },
       },
     );
-    return PetOrder.fromJson(Map<String, dynamic>.from(data['order'] as Map));
+    return PetOrder.fromJson(_object(data, 'order'));
   }
 
   Future<List<PetOrder>> listOrders() async {
@@ -161,7 +177,7 @@ class ApiClient {
     Map<String, dynamic> body = const {},
   }) async {
     final data = await _request('PUT', '/api/v1/orders/$id/$action', body: body);
-    return PetOrder.fromJson(Map<String, dynamic>.from(data['order'] as Map));
+    return PetOrder.fromJson(_object(data, 'order'));
   }
 
   Future<dynamic> _request(
@@ -191,6 +207,13 @@ class ApiClient {
       );
     }
     return decoded['data'];
+  }
+
+  Map<String, dynamic> _object(dynamic data, String legacyKey) {
+    if (data is Map && data[legacyKey] is Map) {
+      return Map<String, dynamic>.from(data[legacyKey] as Map);
+    }
+    return Map<String, dynamic>.from(data as Map);
   }
 }
 

@@ -11,6 +11,8 @@ class Product {
     this.description = '',
     this.coverUrl = '',
     this.tags = const [],
+    this.auditStatus = '',
+    this.auditRemark = '',
     this.livePet,
   });
 
@@ -25,6 +27,8 @@ class Product {
   final String description;
   final String coverUrl;
   final List<String> tags;
+  final String auditStatus;
+  final String auditRemark;
   final Map<String, dynamic>? livePet;
 
   bool get isLivePet => type == 'PET_LIVE';
@@ -42,6 +46,8 @@ class Product {
       description: json['description']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
       tags: (json['tags'] is List) ? (json['tags'] as List).map((item) => item.toString()).toList() : const [],
+      auditStatus: json['auditStatus']?.toString() ?? json['livePet']?['auditStatus']?.toString() ?? '',
+      auditRemark: json['auditRemark']?.toString() ?? '',
       livePet: json['livePet'] is Map ? Map<String, dynamic>.from(json['livePet'] as Map) : null,
     );
   }
@@ -59,6 +65,8 @@ class Product {
       'description': description,
       'coverUrl': coverUrl,
       'tags': tags,
+      'auditStatus': auditStatus,
+      'auditRemark': auditRemark,
       'livePet': livePet,
     };
   }

@@ -18,8 +18,7 @@ class _PetAuditPageState extends State<PetAuditPage> {
   Future<void> load() async {
     setState(() => loading = true);
     try {
-      final all = await widget.apiClient.listProducts();
-      livePets = all.where((p) => p.type == 'PET_LIVE').toList();
+      livePets = await widget.apiClient.listLivePetAudits();
     } catch (_) {}
     if (mounted) setState(() => loading = false);
   }
@@ -40,12 +39,12 @@ class _PetAuditPageState extends State<PetAuditPage> {
               Icon(Icons.pets, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(child: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
-              Chip(label: Text(p.status)),
+              Chip(label: Text(p.auditStatus.isNotEmpty ? p.auditStatus : p.status)),
             ]),
             const SizedBox(height: 8),
             Text('Code: ${p.livePet?['petCode']?.toString() ?? '-'}  Health: ${p.livePet?['healthStatus']?.toString() ?? '-'}'),
             Text('Vaccine: ${p.livePet?['vaccineCertNo']?.toString() ?? '-'}  Quarantine: ${p.livePet?['quarantineCertNo']?.toString() ?? '-'}'),
-            if (p.status == 'DRAFT') ...[
+            if (p.auditStatus == 'PENDING' || p.status == 'DRAFT') ...[
               const SizedBox(height: 8),
               FilledButton(onPressed: () => _approve(p), child: const Text('Approve & List')),
             ],
@@ -57,7 +56,7 @@ class _PetAuditPageState extends State<PetAuditPage> {
 
   Future<void> _approve(Product p) async {
     try {
-      await widget.apiClient.updateProduct(p.id, {'status': 'ON_SALE'});
+      await widget.apiClient.auditProduct(p.id, approved: true, remark: 'Approved from admin panel');
       await load();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));

@@ -173,10 +173,10 @@ class _ProductDialogState extends State<_ProductDialog> {
             'price': double.tryParse(priceCtrl.text) ?? 0,
             'stock': int.tryParse(stockCtrl.text) ?? 0,
             'status': status, 'description': descCtrl.text.trim(),
-            if (type == 'PET_LIVE') 'livePet': {
-              'petCode': petCodeCtrl.text.trim(), 'healthStatus': healthCtrl.text.trim(),
-              'vaccineCertNo': vaccineCtrl.text.trim(), 'quarantineCertNo': quarantineCtrl.text.trim(),
-            },
+            if (type == 'PET_LIVE') 'petCode': petCodeCtrl.text.trim(),
+            if (type == 'PET_LIVE') 'healthStatus': healthCtrl.text.trim(),
+            if (type == 'PET_LIVE') 'vaccineCertNo': vaccineCtrl.text.trim(),
+            if (type == 'PET_LIVE') 'quarantineCertNo': quarantineCtrl.text.trim(),
           };
           Navigator.pop(context, payload);
         }, child: const Text('Save')),
