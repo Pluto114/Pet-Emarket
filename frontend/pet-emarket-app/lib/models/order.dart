@@ -9,6 +9,10 @@ class PetOrder {
     required this.totalAmount,
     required this.discountAmount,
     required this.payAmount,
+    required this.paymentNo,
+    required this.paidAt,
+    required this.rewardPoints,
+    required this.pointsReversed,
     required this.refundReason,
     required this.refundAuditStatus,
     required this.refundRollbackStatus,
@@ -25,6 +29,10 @@ class PetOrder {
   final double totalAmount;
   final double discountAmount;
   final double payAmount;
+  final String paymentNo;
+  final String paidAt;
+  final int rewardPoints;
+  final bool pointsReversed;
   final String refundReason;
   final String refundAuditStatus;
   final int? refundRollbackStatus;
@@ -42,6 +50,10 @@ class PetOrder {
       totalAmount: NumberParser.toDouble(json['totalAmount']),
       discountAmount: NumberParser.toDouble(json['discountAmount']),
       payAmount: NumberParser.toDouble(json['payAmount']),
+      paymentNo: json['paymentNo']?.toString() ?? '',
+      paidAt: json['paidAt']?.toString() ?? '',
+      rewardPoints: NumberParser.toInt(json['rewardPoints']),
+      pointsReversed: json['pointsReversed'] == true,
       refundReason: json['refundReason']?.toString() ?? '',
       refundAuditStatus: json['refundAuditStatus']?.toString() ?? '',
       refundRollbackStatus:

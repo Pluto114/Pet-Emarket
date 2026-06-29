@@ -43,6 +43,17 @@ public class PetOrder {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal payAmount = BigDecimal.ZERO;
 
+    @Column(length = 64)
+    private String paymentNo;
+
+    private Instant paidAt;
+
+    @Column(nullable = false)
+    private Integer rewardPoints = 0;
+
+    @Column(nullable = false)
+    private Boolean pointsReversed = false;
+
     private String receiver;
     private String phone;
     private String addressDetail;
@@ -151,6 +162,38 @@ public class PetOrder {
 
     public void setPayAmount(BigDecimal payAmount) {
         this.payAmount = payAmount;
+    }
+
+    public String getPaymentNo() {
+        return paymentNo;
+    }
+
+    public void setPaymentNo(String paymentNo) {
+        this.paymentNo = paymentNo;
+    }
+
+    public Instant getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(Instant paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public Integer getRewardPoints() {
+        return rewardPoints;
+    }
+
+    public void setRewardPoints(Integer rewardPoints) {
+        this.rewardPoints = rewardPoints;
+    }
+
+    public Boolean getPointsReversed() {
+        return pointsReversed;
+    }
+
+    public void setPointsReversed(Boolean pointsReversed) {
+        this.pointsReversed = pointsReversed;
     }
 
     public String getReceiver() {

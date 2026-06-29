@@ -563,6 +563,11 @@ class _ProfileTabState extends State<ProfileTab> {
           title: 'Member Level',
           value: user.memberLevel,
         ),
+        _InfoTile(
+          icon: Icons.stars_outlined,
+          title: 'Points',
+          value: user.pointsBalance.toString(),
+        ),
         const SizedBox(height: 12),
         ListTile(
           leading: const Icon(Icons.edit_outlined),

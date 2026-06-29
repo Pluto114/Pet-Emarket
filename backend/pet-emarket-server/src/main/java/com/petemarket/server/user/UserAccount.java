@@ -46,6 +46,9 @@ public class UserAccount {
     @Column(nullable = false, length = 20)
     private AccountStatus status = AccountStatus.ACTIVE;
 
+    @Column(nullable = false)
+    private Integer pointsBalance = 0;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -127,6 +130,14 @@ public class UserAccount {
 
     public void setStatus(AccountStatus status) {
         this.status = status;
+    }
+
+    public Integer getPointsBalance() {
+        return pointsBalance;
+    }
+
+    public void setPointsBalance(Integer pointsBalance) {
+        this.pointsBalance = pointsBalance;
     }
 
     public Instant getCreatedAt() {

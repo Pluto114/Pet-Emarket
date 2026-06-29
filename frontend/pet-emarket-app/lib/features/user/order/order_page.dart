@@ -269,6 +269,14 @@ class _OrderCard extends StatelessWidget {
             Text(
               '应付 ¥${order.payAmount.toStringAsFixed(2)}，优惠 ¥${order.discountAmount.toStringAsFixed(2)}',
             ),
+            if (order.paymentNo.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text('支付流水：${order.paymentNo}'),
+            ],
+            if (order.rewardPoints > 0)
+              Text(
+                '奖励积分：${order.rewardPoints}，冲正：${order.pointsReversed ? '是' : '否'}',
+              ),
             const SizedBox(height: 8),
             ...order.items.map(
               (item) => Text(

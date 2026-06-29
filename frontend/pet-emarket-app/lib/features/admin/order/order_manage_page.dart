@@ -111,6 +111,12 @@ class _OrderManagePageState extends State<OrderManagePage> {
                     Text(
                       'Pay ¥${order.payAmount.toStringAsFixed(2)} / Discount ¥${order.discountAmount.toStringAsFixed(2)}',
                     ),
+                    if (order.paymentNo.isNotEmpty)
+                      Text('Payment: ${order.paymentNo}'),
+                    if (order.rewardPoints > 0)
+                      Text(
+                        'Points: ${order.rewardPoints}, reversed: ${order.pointsReversed ? 'yes' : 'no'}',
+                      ),
                     ...order.items.map(
                       (item) => Text('  ${item.productName} x${item.quantity}'),
                     ),

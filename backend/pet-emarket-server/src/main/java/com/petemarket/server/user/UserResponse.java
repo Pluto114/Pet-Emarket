@@ -11,6 +11,7 @@ public record UserResponse(
         UserRole role,
         MemberLevel memberLevel,
         AccountStatus status,
+        Integer pointsBalance,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -24,6 +25,7 @@ public record UserResponse(
                 user.getRole(),
                 user.getMemberLevel(),
                 user.getStatus(),
+                user.getPointsBalance(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

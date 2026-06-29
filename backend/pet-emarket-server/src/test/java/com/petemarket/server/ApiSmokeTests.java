@@ -346,7 +346,23 @@ class ApiSmokeTests {
         assertThat(refundOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(stockOf(productId)).isEqualTo(3);
 
-        assertThat(exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/pay", null, customerToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+        ResponseEntity<JsonNode> paidOrder = exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/pay", null, customerToken);
+
+        assertThat(paidOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(paidOrder).at("/data/paymentNo").asText()).startsWith("PAY");
+        assertThat(body(paidOrder).at("/data/rewardPoints").asInt()).isEqualTo(50);
+        assertThat(body(paidOrder).at("/data/pointsReversed").asBoolean()).isFalse();
+        assertThat(me(customerToken).at("/data/pointsBalance").asInt()).isEqualTo(50);
+
+        ResponseEntity<JsonNode> customerPaymentsAfterPay = exchange(HttpMethod.GET, "/api/v1/payments", null, customerToken);
+        ResponseEntity<JsonNode> customerPointsAfterPay = exchange(HttpMethod.GET, "/api/v1/points/ledgers", null, customerToken);
+
+        assertThat(customerPaymentsAfterPay.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(customerPaymentsAfterPay).at("/data/items").size()).isEqualTo(1);
+        assertThat(body(customerPaymentsAfterPay).at("/data/items/0/type").asText()).isEqualTo("PAY");
+        assertThat(customerPointsAfterPay.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(customerPointsAfterPay).at("/data/items/0/type").asText()).isEqualTo("EARN_ORDER");
+
         assertThat(exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/ship", null, adminToken).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/receive", null, customerToken).getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -371,7 +387,17 @@ class ApiSmokeTests {
         assertThat(refundApproved.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(body(refundApproved).at("/data/status").asInt()).isEqualTo(-3);
         assertThat(body(refundApproved).at("/data/inventoryRestored").asBoolean()).isTrue();
+        assertThat(body(refundApproved).at("/data/pointsReversed").asBoolean()).isTrue();
         assertThat(stockOf(productId)).isEqualTo(4);
+        assertThat(me(customerToken).at("/data/pointsBalance").asInt()).isEqualTo(0);
+
+        ResponseEntity<JsonNode> customerPaymentsAfterRefund = exchange(HttpMethod.GET, "/api/v1/payments", null, customerToken);
+        ResponseEntity<JsonNode> customerPointsAfterRefund = exchange(HttpMethod.GET, "/api/v1/points/ledgers", null, customerToken);
+
+        assertThat(body(customerPaymentsAfterRefund).at("/data/items").size()).isEqualTo(2);
+        assertThat(body(customerPaymentsAfterRefund).at("/data/items/0/type").asText()).isEqualTo("REFUND");
+        assertThat(body(customerPointsAfterRefund).at("/data/items").size()).isEqualTo(2);
+        assertThat(body(customerPointsAfterRefund).at("/data/items/0/type").asText()).isEqualTo("REFUND_REVERSE");
 
         ResponseEntity<JsonNode> deletedProduct = exchange(HttpMethod.DELETE, "/api/v1/products/" + productId, null, adminToken);
         ResponseEntity<JsonNode> deletedUser = exchange(HttpMethod.DELETE, "/api/v1/users/" + userId, null, adminToken);
@@ -425,6 +451,12 @@ class ApiSmokeTests {
     private JsonNode body(ResponseEntity<JsonNode> response) {
         assertThat(response.getBody()).isNotNull();
         return response.getBody();
+    }
+
+    private JsonNode me(String token) {
+        ResponseEntity<JsonNode> response = exchange(HttpMethod.GET, "/api/v1/auth/me", null, token);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return body(response);
     }
 
     private int stockOf(long productId) {

@@ -1,3 +1,5 @@
+import 'product.dart';
+
 class AppUser {
   const AppUser({
     required this.id,
@@ -6,6 +8,7 @@ class AppUser {
     required this.role,
     required this.memberLevel,
     required this.status,
+    this.pointsBalance = 0,
     this.phone = '',
     this.email = '',
   });
@@ -16,6 +19,7 @@ class AppUser {
   final String role;
   final String memberLevel;
   final String status;
+  final int pointsBalance;
   final String phone;
   final String email;
 
@@ -29,6 +33,7 @@ class AppUser {
       role: json['role']?.toString() ?? 'CUSTOMER',
       memberLevel: json['memberLevel']?.toString() ?? 'NORMAL',
       status: json['status']?.toString() ?? 'ACTIVE',
+      pointsBalance: NumberParser.toInt(json['pointsBalance']),
       phone: json['phone']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
     );
@@ -42,6 +47,7 @@ class AppUser {
       'role': role,
       'memberLevel': memberLevel,
       'status': status,
+      'pointsBalance': pointsBalance,
       'phone': phone,
       'email': email,
     };

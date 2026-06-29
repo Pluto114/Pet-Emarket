@@ -3,6 +3,9 @@ package com.petemarket.server.order;
 import com.petemarket.server.cart.CartItem;
 import com.petemarket.server.cart.CartItemRepository;
 import com.petemarket.server.common.BusinessException;
+import com.petemarket.server.loyalty.LoyaltyService;
+import com.petemarket.server.payment.PaymentRecord;
+import com.petemarket.server.payment.PaymentService;
 import com.petemarket.server.product.Product;
 import com.petemarket.server.product.ProductRepository;
 import com.petemarket.server.product.ProductStatus;
@@ -22,13 +25,19 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final PaymentService paymentService;
+    private final LoyaltyService loyaltyService;
 
     public OrderService(OrderRepository orderRepository,
                         CartItemRepository cartItemRepository,
-                        ProductRepository productRepository) {
+                        ProductRepository productRepository,
+                        PaymentService paymentService,
+                        LoyaltyService loyaltyService) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
+        this.paymentService = paymentService;
+        this.loyaltyService = loyaltyService;
     }
 
     @Transactional(readOnly = true)
@@ -94,7 +103,13 @@ public class OrderService {
     public OrderResponse operate(UserAccount currentUser, Long id, String action, OrderActionRequest request) {
         PetOrder order = findAndAuthorize(currentUser, id);
         switch (action) {
-            case "pay" -> transition(order, currentUser, List.of(0), 1, "支付成功");
+            case "pay" -> {
+                transition(order, currentUser, List.of(0), 1, "支付成功");
+                PaymentRecord payment = paymentService.recordPayment(order);
+                order.setPaymentNo(payment.getPaymentNo());
+                order.setPaidAt(payment.getPaidAt());
+                loyaltyService.awardOrderPoints(order);
+            }
             case "ship" -> {
                 requireAdminOrMerchant(currentUser);
                 transition(order, currentUser, List.of(1), 2, "管理员发货");
@@ -107,8 +122,12 @@ public class OrderService {
                 order.setReviewContent(defaultText(request.content(), "默认好评"));
             }
             case "cancel" -> {
+                boolean paidCancel = order.getStatus() == OrderStatus.WAIT_SHIP.code();
                 transition(order, currentUser, List.of(0, 1), -1, defaultText(request.reason(), "取消订单"));
                 restoreInventory(order);
+                if (paidCancel) {
+                    refundPaymentAndReversePoints(order, defaultText(request.reason(), "取消订单退款"));
+                }
             }
             case "apply-refund" -> {
                 int rollbackStatus = order.getStatus();
@@ -129,6 +148,7 @@ public class OrderService {
                 order.setAuditRemark(defaultText(request.auditRemark(), ""));
                 if (approved) {
                     restoreInventory(order);
+                    refundPaymentAndReversePoints(order, defaultText(request.auditRemark(), "退单审核通过"));
                 }
             }
             case "admin-refund" -> {
@@ -137,6 +157,7 @@ public class OrderService {
                 order.setRefundReason(defaultText(request.reason(), "管理员直接退单"));
                 order.setRefundAuditStatus("DIRECT_REFUND");
                 restoreInventory(order);
+                refundPaymentAndReversePoints(order, defaultText(request.reason(), "管理员直接退单"));
             }
             default -> throw new BusinessException("300400", "Unknown order action");
         }
@@ -194,6 +215,11 @@ public class OrderService {
             });
         }
         order.setInventoryRestored(true);
+    }
+
+    private void refundPaymentAndReversePoints(PetOrder order, String reason) {
+        paymentService.recordRefund(order, reason);
+        loyaltyService.reverseOrderPoints(order, reason);
     }
 
     private int resolveRefundRollbackStatus(PetOrder order, Integer requestedStatus) {

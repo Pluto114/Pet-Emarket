@@ -211,3 +211,34 @@ Order status values:
 Order response fields also include `refundReason`, `refundAuditStatus`, `refundRollbackStatus`, `auditRemark` and `inventoryRestored`.
 Creating an order deducts product stock. Canceling an unpaid/paid order, approving a refund, or creating an admin direct refund restores stock once and marks `inventoryRestored=true`.
 When a refund request is rejected, the order rolls back to its pre-refund status through `refundRollbackStatus`.
+Paying an order creates a payment record, fills `paymentNo` and `paidAt`, and awards member points. Refund success creates a refund payment record and reverses points once.
+
+## Payments
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/v1/payments` | Yes | Customer sees self, ADMIN/MERCHANT sees all | List payment and refund records |
+
+Payment type values:
+
+```text
+PAY
+REFUND
+```
+
+Payment records include `paymentNo`, `orderId`, `orderNo`, `userId`, `type`, `status`, `amount`, `channel`, `remark`, `paidAt` and `createdAt`.
+
+## Loyalty Points
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/v1/points/ledgers` | Yes | Customer sees self, ADMIN/MERCHANT sees all | List point ledger entries |
+
+Point ledger type values:
+
+```text
+EARN_ORDER
+REFUND_REVERSE
+```
+
+User responses include `pointsBalance`. A paid order earns one point per paid yuan, rounded down. Refund approval and admin direct refund create a negative point ledger entry and update `pointsReversed=true` on the order.
