@@ -15,10 +15,8 @@ import 'api_transport.dart';
 import '../session/session_store.dart';
 
 class ApiClient {
-  ApiClient({
-    required this.sessionStore,
-    String? baseUrl,
-  }) : baseUrl = baseUrl ?? defaultApiBaseUrl();
+  ApiClient({required this.sessionStore, String? baseUrl})
+    : baseUrl = baseUrl ?? defaultApiBaseUrl();
 
   final SessionStore sessionStore;
   final String baseUrl;
@@ -33,7 +31,9 @@ class ApiClient {
       body: {'username': username, 'password': password},
       authenticated: false,
     );
-    final user = AppUser.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+    final user = AppUser.fromJson(
+      Map<String, dynamic>.from(data['user'] as Map),
+    );
     sessionStore.setSession(token: data['token'].toString(), user: user);
     return user;
   }
@@ -57,7 +57,9 @@ class ApiClient {
       },
       authenticated: false,
     );
-    final user = AppUser.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+    final user = AppUser.fromJson(
+      Map<String, dynamic>.from(data['user'] as Map),
+    );
     sessionStore.setSession(token: data['token'].toString(), user: user);
     return user;
   }
@@ -71,7 +73,9 @@ class ApiClient {
 
   Future<List<AppUser>> listUsers() async {
     final data = await _request('GET', '/api/v1/users');
-    return (data['items'] as List).map((item) => AppUser.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    return (data['items'] as List)
+        .map((item) => AppUser.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
   Future<AppUser> createUser(Map<String, dynamic> payload) async {
@@ -88,12 +92,22 @@ class ApiClient {
     await _request('DELETE', '/api/v1/users/$id');
   }
 
-  Future<List<Product>> listProducts({String keyword = '', String type = ''}) async {
+  Future<List<Product>> listProducts({
+    String keyword = '',
+    String type = '',
+  }) async {
     final query = <String, String>{};
     if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
     if (type.trim().isNotEmpty) query['type'] = type.trim();
-    final data = await _request('GET', '/api/v1/products', query: query, authenticated: false);
-    return (data['items'] as List).map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    final data = await _request(
+      'GET',
+      '/api/v1/products',
+      query: query,
+      authenticated: false,
+    );
+    return (data['items'] as List)
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
   Future<Product> createProduct(Map<String, dynamic> payload) async {
@@ -117,12 +131,24 @@ class ApiClient {
 
   Future<List<Product>> listLivePetAudits({String auditStatus = ''}) async {
     final query = <String, String>{};
-    if (auditStatus.trim().isNotEmpty) query['auditStatus'] = auditStatus.trim();
-    final data = await _request('GET', '/api/v1/products/live-pet-audits', query: query);
-    return (data['items'] as List).map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    if (auditStatus.trim().isNotEmpty) {
+      query['auditStatus'] = auditStatus.trim();
+    }
+    final data = await _request(
+      'GET',
+      '/api/v1/products/live-pet-audits',
+      query: query,
+    );
+    return (data['items'] as List)
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
-  Future<Product> auditProduct(String id, {required bool approved, String remark = ''}) async {
+  Future<Product> auditProduct(
+    String id, {
+    required bool approved,
+    String remark = '',
+  }) async {
     final data = await _request(
       'PUT',
       '/api/v1/products/$id/audit',
@@ -132,8 +158,16 @@ class ApiClient {
   }
 
   Future<List<PetStore>> listStores({bool authenticated = false}) async {
-    final data = await _request('GET', '/api/v1/stores', authenticated: authenticated);
-    return (data['items'] as List).map((item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    final data = await _request(
+      'GET',
+      '/api/v1/stores',
+      authenticated: authenticated,
+    );
+    return (data['items'] as List)
+        .map(
+          (item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   Future<List<PetStore>> nearbyStores({
@@ -148,8 +182,17 @@ class ApiClient {
       'radiusKm': radiusKm.toString(),
     };
     if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
-    final data = await _request('GET', '/api/v1/stores/nearby', query: query, authenticated: false);
-    return (data['items'] as List).map((item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    final data = await _request(
+      'GET',
+      '/api/v1/stores/nearby',
+      query: query,
+      authenticated: false,
+    );
+    return (data['items'] as List)
+        .map(
+          (item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   Future<PetStore> createStore(Map<String, dynamic> payload) async {
@@ -166,12 +209,25 @@ class ApiClient {
     await _request('DELETE', '/api/v1/stores/$id');
   }
 
-  Future<List<MediaAsset>> listMedia({bool authenticated = false, String status = '', String keyword = ''}) async {
+  Future<List<MediaAsset>> listMedia({
+    bool authenticated = false,
+    String status = '',
+    String keyword = '',
+  }) async {
     final query = <String, String>{};
     if (status.trim().isNotEmpty) query['status'] = status.trim();
     if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
-    final data = await _request('GET', '/api/v1/media', query: query, authenticated: authenticated);
-    return (data['items'] as List).map((item) => MediaAsset.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    final data = await _request(
+      'GET',
+      '/api/v1/media',
+      query: query,
+      authenticated: authenticated,
+    );
+    return (data['items'] as List)
+        .map(
+          (item) => MediaAsset.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   Future<MediaAsset> createMedia(Map<String, dynamic> payload) async {
@@ -179,12 +235,19 @@ class ApiClient {
     return MediaAsset.fromJson(_object(data, 'media'));
   }
 
-  Future<MediaAsset> updateMedia(String id, Map<String, dynamic> payload) async {
+  Future<MediaAsset> updateMedia(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
     final data = await _request('PUT', '/api/v1/media/$id', body: payload);
     return MediaAsset.fromJson(_object(data, 'media'));
   }
 
-  Future<MediaAsset> auditMedia(String id, {required bool approved, String remark = ''}) async {
+  Future<MediaAsset> auditMedia(
+    String id, {
+    required bool approved,
+    String remark = '',
+  }) async {
     final data = await _request(
       'PUT',
       '/api/v1/media/$id/audit',
@@ -197,11 +260,28 @@ class ApiClient {
     await _request('DELETE', '/api/v1/media/$id');
   }
 
-  Future<List<RecommendationItem>> recommendations({String scene = 'HOME', String lastProductId = '', int limit = 8}) async {
+  Future<List<RecommendationItem>> recommendations({
+    String scene = 'HOME',
+    String lastProductId = '',
+    int limit = 8,
+  }) async {
     final query = <String, String>{'scene': scene, 'limit': limit.toString()};
-    if (lastProductId.trim().isNotEmpty) query['lastProductId'] = lastProductId.trim();
-    final data = await _request('GET', '/api/v1/recommend', query: query, authenticated: sessionStore.token != null);
-    return (data['items'] as List).map((item) => RecommendationItem.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    if (lastProductId.trim().isNotEmpty) {
+      query['lastProductId'] = lastProductId.trim();
+    }
+    final data = await _request(
+      'GET',
+      '/api/v1/recommend',
+      query: query,
+      authenticated: sessionStore.token != null,
+    );
+    return (data['items'] as List)
+        .map(
+          (item) => RecommendationItem.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 
   Future<AiChatAnswer> chat(String question, {String scene = 'general'}) async {
@@ -214,9 +294,32 @@ class ApiClient {
     return AiChatAnswer.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  Future<void> trackBehavior({
+    required String productId,
+    required String behaviorType,
+    String scene = 'APP',
+    int quantity = 1,
+  }) async {
+    if (sessionStore.token == null) return;
+    await _request(
+      'POST',
+      '/api/v1/behaviors',
+      body: {
+        'productId': productId,
+        'behaviorType': behaviorType,
+        'scene': scene,
+        'quantity': quantity,
+      },
+    );
+  }
+
   Future<List<CartItem>> listCartItems() async {
     final data = await _request('GET', '/api/v1/cart/items');
-    return (data['items'] as List).map((item) => CartItem.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    return (data['items'] as List)
+        .map(
+          (item) => CartItem.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   Future<CartItem> addCartItem({
@@ -261,7 +364,11 @@ class ApiClient {
 
   Future<List<PetOrder>> listOrders() async {
     final data = await _request('GET', '/api/v1/orders');
-    return (data['items'] as List).map((item) => PetOrder.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    return (data['items'] as List)
+        .map(
+          (item) => PetOrder.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   Future<PetOrder> operateOrder(
@@ -269,7 +376,11 @@ class ApiClient {
     String action, {
     Map<String, dynamic> body = const {},
   }) async {
-    final data = await _request('PUT', '/api/v1/orders/$id/$action', body: body);
+    final data = await _request(
+      'PUT',
+      '/api/v1/orders/$id/$action',
+      body: body,
+    );
     return PetOrder.fromJson(_object(data, 'order'));
   }
 
@@ -280,10 +391,13 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = true,
   }) async {
-    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query.isEmpty ? null : query);
+    final uri = Uri.parse(
+      '$baseUrl$path',
+    ).replace(queryParameters: query.isEmpty ? null : query);
     final headers = <String, String>{
       'Content-Type': 'application/json',
-      if (authenticated && sessionStore.token != null) 'Authorization': 'Bearer ${sessionStore.token}',
+      if (authenticated && sessionStore.token != null)
+        'Authorization': 'Bearer ${sessionStore.token}',
     };
     final response = await sendHttpRequest(
       method: method,
@@ -291,8 +405,13 @@ class ApiClient {
       headers: headers,
       body: body == null ? null : jsonEncode(body),
     );
-    final decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded['success'] == false) {
+    final decoded =
+        response.body.isEmpty
+            ? <String, dynamic>{}
+            : jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['success'] == false) {
       throw ApiException(
         statusCode: response.statusCode,
         code: decoded['code']?.toString() ?? 'UNKNOWN',
@@ -314,7 +433,9 @@ String defaultApiBaseUrl() {
   const configured = String.fromEnvironment('API_BASE_URL');
   if (configured.isNotEmpty) return configured;
   if (kIsWeb) return 'http://localhost:8080';
-  if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:8080';
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8080';
+  }
   return 'http://localhost:8080';
 }
 

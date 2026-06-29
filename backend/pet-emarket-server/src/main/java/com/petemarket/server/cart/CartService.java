@@ -1,5 +1,7 @@
 package com.petemarket.server.cart;
 
+import com.petemarket.server.behavior.UserBehaviorService;
+import com.petemarket.server.behavior.UserBehaviorType;
 import com.petemarket.server.common.BusinessException;
 import com.petemarket.server.product.Product;
 import com.petemarket.server.product.ProductRepository;
@@ -13,10 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final UserBehaviorService userBehaviorService;
 
-    public CartService(CartItemRepository cartItemRepository, ProductRepository productRepository) {
+    public CartService(CartItemRepository cartItemRepository,
+                       ProductRepository productRepository,
+                       UserBehaviorService userBehaviorService) {
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
+        this.userBehaviorService = userBehaviorService;
     }
 
     @Transactional(readOnly = true)
@@ -41,6 +47,7 @@ public class CartService {
         item.setProductId(product.getId());
         item.setQuantity(mergedQuantity);
         cartItemRepository.save(item);
+        userBehaviorService.record(userId, product.getId(), UserBehaviorType.CART, "CART", quantity);
         return CartItemResponse.from(item, product);
     }
 

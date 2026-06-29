@@ -1,5 +1,7 @@
 package com.petemarket.server.recommendation;
 
+import com.petemarket.server.behavior.UserBehavior;
+import com.petemarket.server.behavior.UserBehaviorRepository;
 import com.petemarket.server.order.OrderItem;
 import com.petemarket.server.order.OrderRepository;
 import com.petemarket.server.order.PetOrder;
@@ -30,15 +32,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final UserBehaviorRepository userBehaviorRepository;
     private final PetStoreRepository storeRepository;
     private final StoreService storeService;
 
     public RecommendationService(ProductRepository productRepository,
                                  OrderRepository orderRepository,
+                                 UserBehaviorRepository userBehaviorRepository,
                                  PetStoreRepository storeRepository,
                                  StoreService storeService) {
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
+        this.userBehaviorRepository = userBehaviorRepository;
         this.storeRepository = storeRepository;
         this.storeService = storeService;
     }
@@ -62,17 +67,18 @@ public class RecommendationService {
         }
 
         List<PetOrder> orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        List<UserBehavior> behaviors = userBehaviorRepository.findAllByOrderByCreatedAtDesc();
         Map<Long, Product> productById = productRepository.findAll().stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
         Map<Long, PetStore> storeById = storeRepository.findAll().stream()
                 .collect(Collectors.toMap(PetStore::getId, Function.identity()));
-        Map<String, Map<String, Double>> transitionMatrix = buildTransitionMatrix(orders);
+        Map<String, Map<String, Double>> transitionMatrix = buildTransitionMatrix(orders, behaviors);
         Map<String, Integer> categoryPreference = currentUser == null
                 ? Map.of()
-                : categoryPreference(currentUser.getId(), orders);
-        Map<Long, Integer> hotCounts = hotCounts(orders);
+                : categoryPreference(currentUser.getId(), orders, behaviors);
+        Map<Long, Integer> hotCounts = hotCounts(orders, behaviors);
         int maxHot = hotCounts.values().stream().max(Integer::compareTo).orElse(1);
-        String currentState = resolveCurrentState(currentUser, lastProductId, orders, productById).orElse(null);
+        String currentState = resolveCurrentState(currentUser, lastProductId, orders, behaviors, productById).orElse(null);
 
         return candidates.stream()
                 .map(product -> scoreProduct(
@@ -161,7 +167,7 @@ public class RecommendationService {
         );
     }
 
-    private Map<String, Map<String, Double>> buildTransitionMatrix(List<PetOrder> orders) {
+    private Map<String, Map<String, Double>> buildTransitionMatrix(List<PetOrder> orders, List<UserBehavior> behaviors) {
         Map<String, Map<String, Integer>> counts = new HashMap<>();
         Map<Long, List<String>> userSequences = new HashMap<>();
 
@@ -175,6 +181,10 @@ public class RecommendationService {
                             .filter(category -> !category.isBlank())
                             .forEach(sequence::add);
                 });
+        behaviors.stream()
+                .sorted(Comparator.comparing(UserBehavior::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .forEach(behavior -> userSequences.computeIfAbsent(behavior.getUserId(), ignored -> new ArrayList<>())
+                        .add(behavior.getCategory()));
 
         for (List<String> sequence : userSequences.values()) {
             for (int i = 0; i < sequence.size() - 1; i++) {
@@ -205,7 +215,7 @@ public class RecommendationService {
         return priors;
     }
 
-    private Map<String, Integer> categoryPreference(Long userId, List<PetOrder> orders) {
+    private Map<String, Integer> categoryPreference(Long userId, List<PetOrder> orders, List<UserBehavior> behaviors) {
         Map<String, Integer> preference = new HashMap<>();
         orders.stream()
                 .filter(order -> Objects.equals(order.getUserId(), userId))
@@ -214,27 +224,43 @@ public class RecommendationService {
                 .filter(Objects::nonNull)
                 .filter(category -> !category.isBlank())
                 .forEach(category -> preference.merge(category, 1, Integer::sum));
+        behaviors.stream()
+                .filter(behavior -> Objects.equals(behavior.getUserId(), userId))
+                .filter(behavior -> behavior.getCategory() != null && !behavior.getCategory().isBlank())
+                .forEach(behavior -> preference.merge(behavior.getCategory(), Math.max(1, behavior.getWeight().intValue()), Integer::sum));
         return preference;
     }
 
-    private Map<Long, Integer> hotCounts(List<PetOrder> orders) {
+    private Map<Long, Integer> hotCounts(List<PetOrder> orders, List<UserBehavior> behaviors) {
         Map<Long, Integer> counts = new HashMap<>();
         orders.stream()
                 .flatMap(order -> order.getItems().stream())
                 .filter(item -> item.getProductId() != null)
                 .forEach(item -> counts.merge(item.getProductId(), Math.max(1, item.getQuantity() == null ? 1 : item.getQuantity()), Integer::sum));
+        behaviors.stream()
+                .filter(behavior -> behavior.getProductId() != null)
+                .forEach(behavior -> counts.merge(behavior.getProductId(), Math.max(1, behavior.getWeight().intValue()), Integer::sum));
         return counts;
     }
 
     private Optional<String> resolveCurrentState(UserAccount currentUser,
                                                  Long lastProductId,
                                                  List<PetOrder> orders,
+                                                 List<UserBehavior> behaviors,
                                                  Map<Long, Product> productById) {
         if (lastProductId != null && productById.containsKey(lastProductId)) {
             return Optional.ofNullable(productById.get(lastProductId).getCategory());
         }
         if (currentUser == null) {
             return Optional.empty();
+        }
+        Optional<String> behaviorState = behaviors.stream()
+                .filter(behavior -> Objects.equals(behavior.getUserId(), currentUser.getId()))
+                .max(Comparator.comparing(UserBehavior::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(UserBehavior::getCategory)
+                .filter(category -> category != null && !category.isBlank());
+        if (behaviorState.isPresent()) {
+            return behaviorState;
         }
         return orders.stream()
                 .filter(order -> Objects.equals(order.getUserId(), currentUser.getId()))

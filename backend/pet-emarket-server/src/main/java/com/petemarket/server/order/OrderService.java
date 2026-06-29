@@ -2,6 +2,8 @@ package com.petemarket.server.order;
 
 import com.petemarket.server.cart.CartItem;
 import com.petemarket.server.cart.CartItemRepository;
+import com.petemarket.server.behavior.UserBehaviorService;
+import com.petemarket.server.behavior.UserBehaviorType;
 import com.petemarket.server.common.BusinessException;
 import com.petemarket.server.loyalty.LoyaltyService;
 import com.petemarket.server.payment.PaymentRecord;
@@ -27,17 +29,20 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final PaymentService paymentService;
     private final LoyaltyService loyaltyService;
+    private final UserBehaviorService userBehaviorService;
 
     public OrderService(OrderRepository orderRepository,
                         CartItemRepository cartItemRepository,
                         ProductRepository productRepository,
                         PaymentService paymentService,
-                        LoyaltyService loyaltyService) {
+                        LoyaltyService loyaltyService,
+                        UserBehaviorService userBehaviorService) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.paymentService = paymentService;
         this.loyaltyService = loyaltyService;
+        this.userBehaviorService = userBehaviorService;
     }
 
     @Transactional(readOnly = true)
@@ -95,6 +100,7 @@ public class OrderService {
         order.setPayAmount(total.subtract(discount).setScale(2, RoundingMode.HALF_UP));
         appendLog(order, null, OrderStatus.WAIT_PAY.code(), currentUser, "创建订单");
         orderRepository.save(order);
+        userBehaviorService.recordOrderItems(order, UserBehaviorType.PURCHASE, "ORDER_CREATE");
         cartItemRepository.deleteAll(cartItems);
         return OrderResponse.from(order);
     }
@@ -120,6 +126,7 @@ public class OrderService {
                 transition(order, currentUser, List.of(3), 4, "用户评价完成");
                 order.setReviewRating(request.rating() == null ? 5 : request.rating());
                 order.setReviewContent(defaultText(request.content(), "默认好评"));
+                userBehaviorService.recordOrderItems(order, UserBehaviorType.REVIEW, "ORDER_REVIEW");
             }
             case "cancel" -> {
                 boolean paidCancel = order.getStatus() == OrderStatus.WAIT_SHIP.code();

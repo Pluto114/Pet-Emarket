@@ -147,6 +147,37 @@ score = itemCfScore + markovScore + hotScore + distanceScore + stockScore + scen
 ```
 
 Each item returns `strategy`, `score`, `reasons`, `itemCfScore`, `markovScore`, `hotScore`, `distanceScore`, and `stockScore`.
+Java recommendation uses explicit behavior logs first and falls back to order history. Behavior logs include view, cart, purchase and review events, so Item-CF and Markov reasoning can explain pre-order intent.
+
+## User Behaviors
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/v1/behaviors` | Yes | Customer sees self, ADMIN/MERCHANT sees all | List behavior logs |
+| POST | `/api/v1/behaviors` | Yes | Any logged-in user | Track an explicit behavior event |
+
+Request:
+
+```json
+{
+  "productId": 1,
+  "behaviorType": "VIEW",
+  "scene": "PRODUCT_DETAIL",
+  "quantity": 1
+}
+```
+
+Behavior type values:
+
+```text
+VIEW
+FAVORITE
+CART
+PURCHASE
+REVIEW
+```
+
+Cart add, order create and review completion also write `CART`, `PURCHASE` and `REVIEW` events automatically.
 
 ## Admin
 

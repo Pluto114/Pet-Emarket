@@ -293,6 +293,16 @@ class ApiSmokeTests {
         assertThat(createdProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(stockOf(productId)).isEqualTo(4);
 
+        ResponseEntity<JsonNode> viewedBehavior = exchange(
+                HttpMethod.POST,
+                "/api/v1/behaviors",
+                Map.of("productId", productId, "behaviorType", "VIEW", "scene", "QA_PRODUCT_DETAIL", "quantity", 1),
+                customerToken
+        );
+
+        assertThat(viewedBehavior.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(viewedBehavior).at("/data/behaviorType").asText()).isEqualTo("VIEW");
+
         ResponseEntity<JsonNode> cartItem = exchange(
                 HttpMethod.POST,
                 "/api/v1/cart/items",
@@ -300,6 +310,10 @@ class ApiSmokeTests {
                 customerToken
         );
         assertThat(cartItem.getStatusCode()).isEqualTo(HttpStatus.OK);
+        ResponseEntity<JsonNode> behaviorsAfterCart = exchange(HttpMethod.GET, "/api/v1/behaviors", null, customerToken);
+        assertThat(behaviorsAfterCart.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(behaviorsAfterCart).at("/data/items/0/behaviorType").asText()).isEqualTo("CART");
+        assertThat(body(behaviorsAfterCart).at("/data/items/1/behaviorType").asText()).isEqualTo("VIEW");
 
         ResponseEntity<JsonNode> createdOrder = exchange(
                 HttpMethod.POST,
@@ -317,6 +331,8 @@ class ApiSmokeTests {
         assertThat(body(createdOrder).at("/data/status").asInt()).isEqualTo(0);
         assertThat(body(createdOrder).at("/data/inventoryRestored").asBoolean()).isFalse();
         assertThat(stockOf(productId)).isEqualTo(2);
+        ResponseEntity<JsonNode> behaviorsAfterOrder = exchange(HttpMethod.GET, "/api/v1/behaviors", null, customerToken);
+        assertThat(body(behaviorsAfterOrder).at("/data/items/0/behaviorType").asText()).isEqualTo("PURCHASE");
 
         ResponseEntity<JsonNode> canceledOrder = exchange(
                 HttpMethod.PUT,
