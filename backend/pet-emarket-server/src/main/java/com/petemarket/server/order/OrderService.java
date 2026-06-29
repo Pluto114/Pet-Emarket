@@ -1,5 +1,6 @@
 package com.petemarket.server.order;
 
+import com.petemarket.server.address.ShippingAddressService;
 import com.petemarket.server.cart.CartItem;
 import com.petemarket.server.cart.CartItemRepository;
 import com.petemarket.server.behavior.UserBehaviorService;
@@ -30,19 +31,22 @@ public class OrderService {
     private final PaymentService paymentService;
     private final LoyaltyService loyaltyService;
     private final UserBehaviorService userBehaviorService;
+    private final ShippingAddressService shippingAddressService;
 
     public OrderService(OrderRepository orderRepository,
                         CartItemRepository cartItemRepository,
                         ProductRepository productRepository,
                         PaymentService paymentService,
                         LoyaltyService loyaltyService,
-                        UserBehaviorService userBehaviorService) {
+                        UserBehaviorService userBehaviorService,
+                        ShippingAddressService shippingAddressService) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.paymentService = paymentService;
         this.loyaltyService = loyaltyService;
         this.userBehaviorService = userBehaviorService;
+        this.shippingAddressService = shippingAddressService;
     }
 
     @Transactional(readOnly = true)
@@ -72,9 +76,7 @@ public class OrderService {
         PetOrder order = new PetOrder();
         order.setOrderNo("PE" + Instant.now().toEpochMilli());
         order.setUserId(currentUser.getId());
-        AddressSnapshot address = request.addressSnapshot() == null
-                ? new AddressSnapshot(currentUser.getDisplayName(), currentUser.getPhone(), "Pet-Emarket demo address")
-                : request.addressSnapshot();
+        AddressSnapshot address = resolveAddress(currentUser, request);
         order.setReceiver(address.receiver());
         order.setPhone(address.phone());
         order.setAddressDetail(address.detail());
@@ -103,6 +105,19 @@ public class OrderService {
         userBehaviorService.recordOrderItems(order, UserBehaviorType.PURCHASE, "ORDER_CREATE");
         cartItemRepository.deleteAll(cartItems);
         return OrderResponse.from(order);
+    }
+
+    private AddressSnapshot resolveAddress(UserAccount currentUser, CreateOrderRequest request) {
+        if (request.addressId() != null) {
+            return shippingAddressService.snapshot(currentUser.getId(), request.addressId());
+        }
+        if (request.addressSnapshot() != null) {
+            return request.addressSnapshot();
+        }
+        AddressSnapshot defaultAddress = shippingAddressService.defaultSnapshot(currentUser.getId());
+        return defaultAddress == null
+                ? new AddressSnapshot(currentUser.getDisplayName(), currentUser.getPhone(), "Pet-Emarket demo address")
+                : defaultAddress;
     }
 
     @Transactional

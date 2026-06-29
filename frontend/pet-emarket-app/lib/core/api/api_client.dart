@@ -10,6 +10,7 @@ import '../../models/media_asset.dart';
 import '../../models/order.dart';
 import '../../models/product.dart';
 import '../../models/recommendation.dart';
+import '../../models/shipping_address.dart';
 import '../../models/store.dart';
 import 'api_transport.dart';
 import '../session/session_store.dart';
@@ -209,6 +210,38 @@ class ApiClient {
     await _request('DELETE', '/api/v1/stores/$id');
   }
 
+  Future<List<ShippingAddress>> listAddresses() async {
+    final data = await _request('GET', '/api/v1/addresses');
+    return (data['items'] as List)
+        .map(
+          (item) =>
+              ShippingAddress.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+  }
+
+  Future<ShippingAddress> createAddress(Map<String, dynamic> payload) async {
+    final data = await _request('POST', '/api/v1/addresses', body: payload);
+    return ShippingAddress.fromJson(_object(data, 'address'));
+  }
+
+  Future<ShippingAddress> updateAddress(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
+    final data = await _request('PUT', '/api/v1/addresses/$id', body: payload);
+    return ShippingAddress.fromJson(_object(data, 'address'));
+  }
+
+  Future<ShippingAddress> setDefaultAddress(String id) async {
+    final data = await _request('PUT', '/api/v1/addresses/$id/default');
+    return ShippingAddress.fromJson(_object(data, 'address'));
+  }
+
+  Future<void> deleteAddress(String id) async {
+    await _request('DELETE', '/api/v1/addresses/$id');
+  }
+
   Future<List<MediaAsset>> listMedia({
     bool authenticated = false,
     String status = '',
@@ -347,18 +380,18 @@ class ApiClient {
     await _request('DELETE', '/api/v1/cart/items/$id');
   }
 
-  Future<PetOrder> createOrderFromCart() async {
-    final data = await _request(
-      'POST',
-      '/api/v1/orders',
-      body: {
-        'addressSnapshot': {
-          'receiver': sessionStore.user?.displayName ?? 'Demo User',
-          'phone': sessionStore.user?.phone ?? '18800000000',
-          'detail': 'Pet-Emarket demo address',
-        },
-      },
-    );
+  Future<PetOrder> createOrderFromCart({String addressId = ''}) async {
+    final body = <String, dynamic>{};
+    if (addressId.trim().isNotEmpty) {
+      body['addressId'] = int.tryParse(addressId.trim()) ?? addressId.trim();
+    } else {
+      body['addressSnapshot'] = {
+        'receiver': sessionStore.user?.displayName ?? 'Demo User',
+        'phone': sessionStore.user?.phone ?? '18800000000',
+        'detail': 'Pet-Emarket demo address',
+      };
+    }
+    final data = await _request('POST', '/api/v1/orders', body: body);
     return PetOrder.fromJson(_object(data, 'order'));
   }
 

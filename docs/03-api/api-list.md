@@ -222,6 +222,18 @@ ARCHIVED
 | PUT | `/api/v1/cart/items/{id}` | Yes | Cart owner | Update quantity |
 | DELETE | `/api/v1/cart/items/{id}` | Yes | Cart owner | Remove cart item |
 
+## Shipping Addresses
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/v1/addresses` | Yes | Any logged-in user | List current user's shipping addresses |
+| POST | `/api/v1/addresses` | Yes | Any logged-in user | Create a shipping address |
+| PUT | `/api/v1/addresses/{id}` | Yes | Address owner | Update a shipping address |
+| PUT | `/api/v1/addresses/{id}/default` | Yes | Address owner | Set default shipping address |
+| DELETE | `/api/v1/addresses/{id}` | Yes | Address owner | Delete a shipping address |
+
+Only one address can be the default for a user. Address fields include `receiver`, `phone`, `province`, `city`, `district`, `detail` and `defaultAddress`.
+
 ## Orders
 
 | Method | Path | Auth | Role | Description |
@@ -252,7 +264,7 @@ Order status values:
 -4 管理员直接退单
 ```
 
-Order response fields also include `refundReason`, `refundAuditStatus`, `refundRollbackStatus`, `auditRemark` and `inventoryRestored`.
+`POST /api/v1/orders` accepts either `addressId` or the backward-compatible `addressSnapshot` object. Order response fields also include `receiver`, `phone`, `addressDetail`, `refundReason`, `refundAuditStatus`, `refundRollbackStatus`, `auditRemark` and `inventoryRestored`.
 Creating an order deducts product stock. Canceling an unpaid/paid order, approving a refund, or creating an admin direct refund restores stock once and marks `inventoryRestored=true`.
 When a refund request is rejected, the order rolls back to its pre-refund status through `refundRollbackStatus`.
 Paying an order creates a payment record, fills `paymentNo` and `paidAt`, and awards member points. Refund success creates a refund payment record and reverses points once.

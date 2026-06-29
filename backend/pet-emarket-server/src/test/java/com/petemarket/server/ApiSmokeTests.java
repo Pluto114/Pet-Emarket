@@ -293,6 +293,24 @@ class ApiSmokeTests {
         assertThat(createdProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(stockOf(productId)).isEqualTo(4);
 
+        Map<String, Object> addressPayload = new LinkedHashMap<>();
+        addressPayload.put("receiver", "QA Receiver");
+        addressPayload.put("phone", "18812345678");
+        addressPayload.put("province", "Zhejiang");
+        addressPayload.put("city", "Hangzhou");
+        addressPayload.put("district", "Xihu");
+        addressPayload.put("detail", "QA Address Road 1");
+        addressPayload.put("defaultAddress", true);
+
+        ResponseEntity<JsonNode> createdAddress = exchange(HttpMethod.POST, "/api/v1/addresses", addressPayload, customerToken);
+        long addressId = body(createdAddress).at("/data/id").asLong();
+        ResponseEntity<JsonNode> addresses = exchange(HttpMethod.GET, "/api/v1/addresses", null, customerToken);
+
+        assertThat(createdAddress.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdAddress).at("/data/defaultAddress").asBoolean()).isTrue();
+        assertThat(addresses.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(addresses).at("/data/items").size()).isGreaterThan(0);
+
         ResponseEntity<JsonNode> viewedBehavior = exchange(
                 HttpMethod.POST,
                 "/api/v1/behaviors",
@@ -350,16 +368,14 @@ class ApiSmokeTests {
         ResponseEntity<JsonNode> refundOrder = exchange(
                 HttpMethod.POST,
                 "/api/v1/orders",
-                Map.of("addressSnapshot", Map.of(
-                        "receiver", "QA Customer",
-                        "phone", "18812345678",
-                        "detail", "QA refund address"
-                )),
+                Map.of("addressId", addressId),
                 customerToken
         );
         long refundOrderId = body(refundOrder).at("/data/id").asLong();
 
         assertThat(refundOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(refundOrder).at("/data/receiver").asText()).isEqualTo("QA Receiver");
+        assertThat(body(refundOrder).at("/data/addressDetail").asText()).contains("QA Address Road 1");
         assertThat(stockOf(productId)).isEqualTo(3);
 
         ResponseEntity<JsonNode> paidOrder = exchange(HttpMethod.PUT, "/api/v1/orders/" + refundOrderId + "/pay", null, customerToken);

@@ -111,6 +111,10 @@ class _OrderManagePageState extends State<OrderManagePage> {
                     Text(
                       'Pay ¥${order.payAmount.toStringAsFixed(2)} / Discount ¥${order.discountAmount.toStringAsFixed(2)}',
                     ),
+                    if (order.addressDetail.isNotEmpty)
+                      Text(
+                        'Ship to: ${order.receiver} ${order.phone} / ${order.addressDetail}',
+                      ),
                     if (order.paymentNo.isNotEmpty)
                       Text('Payment: ${order.paymentNo}'),
                     if (order.rewardPoints > 0)

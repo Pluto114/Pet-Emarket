@@ -269,6 +269,12 @@ class _OrderCard extends StatelessWidget {
             Text(
               '应付 ¥${order.payAmount.toStringAsFixed(2)}，优惠 ¥${order.discountAmount.toStringAsFixed(2)}',
             ),
+            if (order.addressDetail.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                '收货信息：${order.receiver} ${order.phone} / ${order.addressDetail}',
+              ),
+            ],
             if (order.paymentNo.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text('支付流水：${order.paymentNo}'),

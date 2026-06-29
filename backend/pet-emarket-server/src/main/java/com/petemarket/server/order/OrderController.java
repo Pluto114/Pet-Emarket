@@ -29,7 +29,7 @@ public class OrderController {
     @PostMapping
     public ApiResponse<OrderResponse> create(@AuthenticationPrincipal UserAccount currentUser,
                                              @RequestBody(required = false) CreateOrderRequest request) {
-        CreateOrderRequest safeRequest = request == null ? new CreateOrderRequest(null, null) : request;
+        CreateOrderRequest safeRequest = request == null ? new CreateOrderRequest(null, null, null) : request;
         return ApiResponse.ok(orderService.create(currentUser, safeRequest), "order created");
     }
 
