@@ -6,6 +6,7 @@ import '../../models/app_user.dart';
 import '../../models/admin_dashboard.dart';
 import '../../models/ai_chat.dart';
 import '../../models/cart_item.dart';
+import '../../models/media_asset.dart';
 import '../../models/order.dart';
 import '../../models/product.dart';
 import '../../models/recommendation.dart';
@@ -163,6 +164,37 @@ class ApiClient {
 
   Future<void> deleteStore(String id) async {
     await _request('DELETE', '/api/v1/stores/$id');
+  }
+
+  Future<List<MediaAsset>> listMedia({bool authenticated = false, String status = '', String keyword = ''}) async {
+    final query = <String, String>{};
+    if (status.trim().isNotEmpty) query['status'] = status.trim();
+    if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
+    final data = await _request('GET', '/api/v1/media', query: query, authenticated: authenticated);
+    return (data['items'] as List).map((item) => MediaAsset.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<MediaAsset> createMedia(Map<String, dynamic> payload) async {
+    final data = await _request('POST', '/api/v1/media', body: payload);
+    return MediaAsset.fromJson(_object(data, 'media'));
+  }
+
+  Future<MediaAsset> updateMedia(String id, Map<String, dynamic> payload) async {
+    final data = await _request('PUT', '/api/v1/media/$id', body: payload);
+    return MediaAsset.fromJson(_object(data, 'media'));
+  }
+
+  Future<MediaAsset> auditMedia(String id, {required bool approved, String remark = ''}) async {
+    final data = await _request(
+      'PUT',
+      '/api/v1/media/$id/audit',
+      body: {'approved': approved, 'remark': remark},
+    );
+    return MediaAsset.fromJson(_object(data, 'media'));
+  }
+
+  Future<void> deleteMedia(String id) async {
+    await _request('DELETE', '/api/v1/media/$id');
   }
 
   Future<List<RecommendationItem>> recommendations({String scene = 'HOME', String lastProductId = '', int limit = 8}) async {

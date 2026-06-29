@@ -143,6 +143,32 @@ Each item returns `strategy`, `score`, `reasons`, `itemCfScore`, `markovScore`, 
 
 Dashboard response includes user, product, store, live-pet audit, order, refund, revenue, order status distribution, top products, recent orders and `generatedAt`.
 
+## Media
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/v1/media` | No, optional JWT supported | Public sees approved only, ADMIN/MERCHANT sees all | List media assets |
+| POST | `/api/v1/media` | Yes | ADMIN, MERCHANT | Create image or video metadata |
+| PUT | `/api/v1/media/{id}` | Yes | ADMIN, MERCHANT | Update media metadata |
+| PUT | `/api/v1/media/{id}/audit` | Yes | ADMIN, MERCHANT | Approve or reject media |
+| DELETE | `/api/v1/media/{id}` | Yes | ADMIN, MERCHANT | Delete media |
+
+Media type values:
+
+```text
+IMAGE
+VIDEO
+```
+
+Media status values:
+
+```text
+PENDING
+APPROVED
+REJECTED
+ARCHIVED
+```
+
 ## Cart
 
 | Method | Path | Auth | Role | Description |

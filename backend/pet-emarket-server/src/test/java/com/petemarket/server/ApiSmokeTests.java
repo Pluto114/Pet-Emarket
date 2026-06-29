@@ -162,6 +162,40 @@ class ApiSmokeTests {
 
         assertThat(deletedPet.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(deletedStore.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        Map<String, Object> mediaPayload = new LinkedHashMap<>();
+        mediaPayload.put("title", "QA Media " + suffix);
+        mediaPayload.put("mediaType", "VIDEO");
+        mediaPayload.put("url", "https://example.com/qa-media-" + suffix + ".mp4");
+        mediaPayload.put("coverUrl", "https://example.com/qa-media-" + suffix + ".png");
+        mediaPayload.put("description", "QA media asset");
+        mediaPayload.put("status", "PENDING");
+
+        ResponseEntity<JsonNode> createdMedia = exchange(HttpMethod.POST, "/api/v1/media", mediaPayload, adminToken);
+        long mediaId = body(createdMedia).at("/data/id").asLong();
+
+        assertThat(createdMedia.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdMedia).at("/data/status").asText()).isEqualTo("PENDING");
+
+        ResponseEntity<JsonNode> auditedMedia = exchange(
+                HttpMethod.PUT,
+                "/api/v1/media/" + mediaId + "/audit",
+                Map.of("approved", true, "remark", "QA media approved"),
+                adminToken
+        );
+
+        assertThat(auditedMedia.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(auditedMedia).at("/data/status").asText()).isEqualTo("APPROVED");
+        assertThat(body(auditedMedia).at("/data/auditedBy").asLong()).isGreaterThan(0);
+
+        ResponseEntity<JsonNode> publicMedia = restTemplate.getForEntity("/api/v1/media", JsonNode.class);
+
+        assertThat(publicMedia.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(publicMedia).at("/data/items").size()).isGreaterThan(0);
+
+        ResponseEntity<JsonNode> deletedMedia = exchange(HttpMethod.DELETE, "/api/v1/media/" + mediaId, null, adminToken);
+
+        assertThat(deletedMedia.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
