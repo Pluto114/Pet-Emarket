@@ -106,8 +106,8 @@ Pet-Emarket/
 |---|---|---|---|---|
 | 赵杰瑞 | 用户端与演示体验负责人 | `frontend/user-app`、`docs/07-presentation` | 用户登录、首页、附近商店、商品详情、购物车、订单页面、AI 问答入口、推荐展示、最终演示路线 | 可运行用户端、完整演示流程、页面截图、答辩演示脚本 |
 | 翁晨昊 | 后端核心交易负责人 | `backend/user-service`、`backend/product-service`、`backend/cart-service`、`backend/order-service`、`backend/payment-service` | 用户、商品、购物车、订单状态机、支付模拟、退款审核、评价、统一返回体、核心接口 | 后端核心接口、订单状态机、数据库表映射、接口联调说明 |
-| 陈鹏翔 | AI、LBS 与推荐负责人 | `ai-recommendation-service`、`database/mongodb`、`database/vector-store` | 附近商店搜索、MongoDB 地理索引、RAG 问答、Item-CF、马尔可夫链、混合推荐、推荐理由 | 推荐接口、问答接口、LBS 查询接口、算法说明、测试样例 |
-| 王涵哲 | 后台、DevOps 与测试负责人 | `frontend/admin-app`、`backend/admin-service`、`backend/media-service`、`devops`、`tests`、`reports` | 管理后台、商品审核、视频管理、发货、退单审核、数据看板、部署脚本、测试与安全扫描报告 | 后台页面、部署脚本、测试用例、安全扫描记录、验收材料 |
+| 王涵哲 | AI、LBS 与推荐负责人 | `ai-recommendation-service`、`database/mongodb`、`database/vector-store` | 附近商店搜索、MongoDB 地理索引、RAG 问答、Item-CF、马尔可夫链、混合推荐、推荐理由 | 推荐接口、问答接口、LBS 查询接口、算法说明、测试样例 |
+| 陈鹏翔 | 后台、DevOps 与测试负责人 | `frontend/admin-app`、`backend/admin-service`、`backend/media-service`、`devops`、`tests`、`reports` | 管理后台、商品审核、视频管理、发货、退单审核、数据看板、部署脚本、测试与安全扫描报告 | 后台页面、部署脚本、测试用例、安全扫描记录、验收材料 |
 
 ## 5. 核心职责标准
 
