@@ -14,19 +14,17 @@ Future<TransportResponse> sendHttpRequest({
   request.open(method, uri.toString());
   headers.forEach(request.setRequestHeader);
   request.onLoad.listen((_) {
-    completer.complete(TransportResponse(
-      statusCode: request.status ?? 500,
-      body: request.responseText ?? '',
-    ));
+    completer.complete(
+      TransportResponse(
+        statusCode: request.status ?? 500,
+        body: request.responseText ?? '',
+      ),
+    );
   });
   request.onError.listen((_) {
-    completer.complete(TransportResponse(
-      statusCode: 500,
-      body: '',
-    ));
+    completer.complete(TransportResponse(statusCode: 500, body: ''));
   });
   if (body != null) {
-    request.setRequestHeader('Content-Type', 'application/json');
     request.send(body);
   } else {
     request.send();
