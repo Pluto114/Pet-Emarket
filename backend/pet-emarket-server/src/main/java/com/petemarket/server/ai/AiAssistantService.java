@@ -7,8 +7,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class AiAssistantService {
     private static final String HEALTH_NOTICE = "仅供参考，严重健康问题请咨询执业兽医。";
+    private final AiGatewayClient aiGatewayClient;
+
+    public AiAssistantService(AiGatewayClient aiGatewayClient) {
+        this.aiGatewayClient = aiGatewayClient;
+    }
 
     public AiChatResponse chat(AiChatRequest request) {
+        return aiGatewayClient.chat(request).orElseGet(() -> localChat(request));
+    }
+
+    private AiChatResponse localChat(AiChatRequest request) {
         String question = request.question().trim();
         String normalized = question.toLowerCase(Locale.ROOT);
 

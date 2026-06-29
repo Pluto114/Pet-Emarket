@@ -34,3 +34,7 @@ pet-emarket:
       - "http://localhost:5173"
       - "http://localhost:8080"
       - "http://localhost:5000"
+  ai-service:
+    enabled: false
+    base-url: "http://localhost:8001"
+    timeout-seconds: 2

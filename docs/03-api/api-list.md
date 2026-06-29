@@ -88,7 +88,8 @@ Store response fields include `distanceKm` for nearby search.
 
 | Method | Path | Auth | Role | Description |
 |---|---|---|---|---|
-| POST | `/api/v1/ai/chat` | No | Public | RAG-lite pet assistant and customer-service answer |
+| POST | `/api/v1/ai/chat` | No | Public | Unified Java AI gateway. It can call the independent FastAPI AI service and falls back to local RAG-lite rules |
+| POST | `AI service /api/v1/chat` | No | Internal | Independent FastAPI RAG chat endpoint |
 
 Request:
 
@@ -109,6 +110,18 @@ healthWarning
 ```
 
 Pet health answers must include the veterinarian safety warning.
+
+Java backend AI gateway config:
+
+```yaml
+pet-emarket:
+  ai-service:
+    enabled: false
+    base-url: "http://localhost:8001"
+    timeout-seconds: 2
+```
+
+Set `enabled=true` after starting `ai-recommendation-service`; Flutter still calls Java `/api/v1/ai/chat`.
 
 ## Recommendations
 
