@@ -22,7 +22,7 @@ class Settings:
     MONGODB_HOST: str = os.getenv("MONGODB_HOST", "localhost")
     MONGODB_PORT: int = int(os.getenv("MONGODB_PORT", "27017"))
     MONGODB_USER: str = os.getenv("MONGODB_USER", "admin")
-    MONGODB_PASSWORD: str = os.getenv("MONGODB_PASSWORD", "123456")
+    MONGODB_PASSWORD: str = os.getenv("MONGODB_PASSWORD", "")
     MONGODB_DB: str = os.getenv("MONGODB_DB", "pet_emarket")
     MONGODB_AUTH_SOURCE: str = os.getenv("MONGODB_AUTH_SOURCE", "admin")
 
@@ -35,10 +35,7 @@ class Settings:
         )
 
     # ========== LLM 配置（阿里云百炼） ==========
-    LLM_API_KEY: str = os.getenv(
-        "LLM_API_KEY",
-        "sk-b26cd82e5abb48609d254990a5c8b62f",
-    )
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
     LLM_BASE_URL: str = os.getenv(
         "LLM_BASE_URL",
         "https://dashscope.aliyuncs.com/compatible-mode/v1",
