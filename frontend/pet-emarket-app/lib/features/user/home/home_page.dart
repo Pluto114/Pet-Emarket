@@ -258,32 +258,73 @@ class _HS extends State<HomePage> with TickerProviderStateMixin {
 
   // ── 商品卡片（含 3D 微倾） ──
   Widget _card(_P p, ColorScheme s) {
-    return GestureDetector(onTap:(){}, child:Container(
-      decoration:BoxDecoration(color:s.surfaceContainerLow, borderRadius:BorderRadius.circular(radiusCard),
-        boxShadow:[BoxShadow(color:s.shadow.withAlpha(12), blurRadius:10, offset:const Offset(0,3))]),
-      child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
-        Expanded(flex:3, child:ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(radiusCard)), child:Stack(children:[
-          Container(decoration:BoxDecoration(gradient:LinearGradient(colors:[s.primaryContainer, s.secondaryContainer]))),
-          Center(child:Text(p.e, style:const TextStyle(fontSize:36))),
-          // 左上玻璃拟态推荐理由
-          Positioned(left:8, top:8, child:ClipRRect(borderRadius:BorderRadius.circular(10), child:BackdropFilter(filter:ImageFilter.blur(sigmaX:6, sigmaY:6), child:Container(
-            padding:const EdgeInsets.symmetric(horizontal:8, vertical:4),
-            decoration:BoxDecoration(color:s.primary.withAlpha(100), borderRadius:BorderRadius.circular(10)),
-            child:Row(mainAxisSize:MainAxisSize.min, children:[const Text('🐾', style:TextStyle(fontSize:10)), const SizedBox(width:3),
-              Text(p.r, style:const TextStyle(fontSize:9, color:Colors.white, fontWeight:FontWeight.w500))])))))),
-          Positioned(right:6, bottom:6, child:_SC(rating:p.s, s:s, compact:true)),
-        ]))),
-        Expanded(flex:3, child:Padding(padding:const EdgeInsets.all(10), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
-          Text(p.n, maxLines:2, overflow:TextOverflow.ellipsis, style:TextStyle(fontWeight:FontWeight.w600, fontSize:12, color:s.onSurface, height:1.2)),
-          const Spacer(),
-          Row(children:[
-            Text('¥${p.p.toStringAsFixed(p.p==p.p.roundToDouble()?0:0)}', style:TextStyle(color:s.primary, fontWeight:FontWeight.w800, fontSize:14)),
-            const Spacer(),
-            Container(width:24, height:24, decoration:BoxDecoration(shape:BoxShape.circle, color:s.primaryContainer),
-              child:Icon(Icons.add_shopping_cart_rounded, color:s.primary, size:14)),
-          ]),
-        ]))),
-      ])));
+    final topR = const BorderRadius.vertical(top: Radius.circular(radiusCard));
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        decoration: BoxDecoration(
+          color: s.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(radiusCard),
+          boxShadow: [BoxShadow(color: s.shadow.withAlpha(12), blurRadius: 10, offset: const Offset(0, 3))],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ── 图片区 ──
+          Expanded(
+            flex: 3,
+            child: ClipRRect(
+              borderRadius: topR,
+              child: Stack(children: [
+                Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [s.primaryContainer, s.secondaryContainer]))),
+                Center(child: Text(p.e, style: const TextStyle(fontSize: 36))),
+                // 左上玻璃拟态推荐理由
+                Positioned(
+                  left: 8, top: 8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: s.primary.withAlpha(100), borderRadius: BorderRadius.circular(10)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Text('🐾', style: TextStyle(fontSize: 10)),
+                          const SizedBox(width: 3),
+                          Text(p.r, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w500)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+                // 右下评分
+                Positioned(right: 6, bottom: 6, child: _SC(rating: p.s, s: s, compact: true)),
+              ]),
+            ),
+          ),
+          // ── 信息区 ──
+          Expanded(
+            flex: 3,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(p.n, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: s.onSurface, height: 1.2)),
+                const Spacer(),
+                Row(children: [
+                  Text('¥${p.p.toStringAsFixed(p.p == p.p.roundToDouble() ? 0 : 0)}',
+                      style: TextStyle(color: s.primary, fontWeight: FontWeight.w800, fontSize: 14)),
+                  const Spacer(),
+                  Container(
+                    width: 24, height: 24,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: s.primaryContainer),
+                    child: Icon(Icons.add_shopping_cart_rounded, color: s.primary, size: 14),
+                  ),
+                ]),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
   }
 }
 
