@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  test-ai-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-recommendation-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ai-recommendation-service/requirements.txt
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run tests
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
+        run: python -m pytest tests/ -v
+
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/pet-emarket-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: temurin
+          cache: maven
+      - name: Build & test
+        run: mvn test --batch-mode
