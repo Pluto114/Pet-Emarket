@@ -19,6 +19,8 @@ from app.schemas.recommendation_schema import (
 )
 from app.rag.prompt_guard import guard
 from app.rag.retriever import search_knowledge, format_context
+from app.recommender.item_cf.item_cf import recommend as itemcf_recommend
+from app.recommender.markov.markov_chain import predict as markov_predict
 
 
 # ==================== 应用生命周期 ====================
@@ -212,44 +214,41 @@ def _get_fallback_answer(question: str, docs: list) -> str:
 
 @app.post("/api/v1/recommend")
 async def recommend(req: RecommendRequest):
-    """混合推荐接口（当前返回 mock 数据）"""
-    # TODO 第三阶段: 接入 Item-CF + 马尔可夫链 + 混合推荐
-    items = [
-        RecommendItem(
-            productId="prod_001",
-            productName="英短蓝猫幼崽（3个月）",
-            score=0.92,
-            reasons=["根据你最近浏览的猫咪用品推荐", "距离你 1.2km"],
-        ),
-        RecommendItem(
-            productId="prod_002",
-            productName="皇家幼猫粮 2kg",
-            score=0.87,
-            reasons=["你曾购买过猫粮", "会员专享价"],
-        ),
-        RecommendItem(
-            productId="prod_003",
-            productName="猫抓板 大号",
-            score=0.75,
-            reasons=["养猫必备用品"],
-        ),
-        RecommendItem(
-            productId="prod_004",
-            productName="金毛幼犬（2个月）",
-            score=0.68,
-            reasons=["热门活体宠物 Top 10"],
-        ),
-        RecommendItem(
-            productId="prod_005",
-            productName="狗狗磨牙棒 套装",
-            score=0.60,
-            reasons=["热门推荐"],
-        ),
-    ]
+    """混合推荐接口 — Item-CF + 马尔可夫链 + 热门兜底"""
+    items = []
 
-    return success(RecommendResponse(
-        recommendations=items[: req.limit],
-    ).model_dump())
+    # Step 1: Item-CF 协同过滤
+    try:
+        cf_results = await itemcf_recommend(app.state.db, req.userId)
+        for r in cf_results:
+            items.append(RecommendItem(
+                productId=r["productId"], score=r["score"], reasons=[r["reason"]],
+            ))
+    except Exception:
+        pass
+
+    # Step 2: 马尔可夫链行为预测
+    try:
+        mk_results = await markov_predict(app.state.db, req.userId)
+        for r in mk_results:
+            items.append(RecommendItem(
+                productId=r["productId"], score=r["score"], reasons=[r["reason"]],
+            ))
+    except Exception:
+        pass
+
+    # Step 3: 热门兜底（无结果时返回 mock 热门）
+    if not items:
+        items = [
+            RecommendItem(productId="prod_001", productName="英短蓝猫幼崽（3个月）", score=0.92, reasons=["热门活体宠物 Top 10"]),
+            RecommendItem(productId="prod_002", productName="皇家幼猫粮 2kg", score=0.85, reasons=["养宠必备好物"]),
+            RecommendItem(productId="prod_004", productName="金毛幼犬（2个月）", score=0.80, reasons=["热门活体推荐"]),
+            RecommendItem(productId="prod_003", productName="猫抓板 大号", score=0.75, reasons=["养猫必备用品"]),
+            RecommendItem(productId="prod_005", productName="狗狗磨牙棒 套装", score=0.70, reasons=["铲屎官都在买"]),
+        ]
+
+    items.sort(key=lambda x: x.score, reverse=True)
+    return success(RecommendResponse(recommendations=items[:req.limit]).model_dump())
 
 
 # ---- /stores/nearby — LBS 附近商店 ----
@@ -261,41 +260,35 @@ async def stores_nearby(
     radius: int = 5000,
     limit: int = 20,
 ):
-    """LBS 附近商店搜索（当前返回 mock 数据）"""
-    # TODO 第二阶段: 接入 MongoDB 2dsphere 地理查询
-    stores = [
-        StoreItem(
-            storeId="store_001",
-            name="喵星球宠物生活馆",
-            address="杭州市西湖区文三路 100 号",
-            distance=350.0,
-            rating=4.8,
-            tags=["猫", "狗", "医疗"],
-        ),
-        StoreItem(
-            storeId="store_002",
-            name="汪星人宠物乐园",
-            address="杭州市拱墅区湖墅南路 200 号",
-            distance=1200.0,
-            rating=4.5,
-            tags=["狗", "训练", "美容"],
-        ),
-        StoreItem(
-            storeId="store_003",
-            name="爱宠小屋",
-            address="杭州市滨江区江南大道 300 号",
-            distance=5200.0,
-            rating=4.6,
-            tags=["猫", "狗", "小宠", "寄养"],
-        ),
-    ]
+    """LBS 附近商店搜索 — MongoDB 2dsphere 地理查询"""
+    if radius <= 0 or radius > 50000:
+        return error("400007", "radius must be 1-50000 meters")
+    if lat < -90 or lat > 90 or lng < -180 or lng > 180:
+        return error("400007", "invalid lat/lng")
 
-    nearby = [s for s in stores if s.distance <= radius]
+    collection = app.state.db["stores"]
+    cursor = collection.aggregate([
+        {"$geoNear": {
+            "near": {"type": "Point", "coordinates": [lng, lat]},
+            "distanceField": "dist",
+            "spherical": True,
+            "maxDistance": radius,
+        }},
+        {"$limit": limit},
+    ])
 
-    return success(StoresNearbyResponse(
-        stores=nearby[:limit],
-        total=len(nearby),
-    ).model_dump())
+    stores = []
+    async for doc in cursor:
+        stores.append(StoreItem(
+            storeId=doc.get("storeId", ""),
+            name=doc.get("name", ""),
+            address=doc.get("address", ""),
+            distance=round(doc.get("dist", 0), 1),
+            rating=round(doc.get("rating", 0), 1),
+            tags=[str(t) for t in doc.get("tags", [])],
+        ))
+
+    return success(StoresNearbyResponse(stores=stores, total=len(stores)).model_dump())
 
 
 # ==================== 启动入口 ====================

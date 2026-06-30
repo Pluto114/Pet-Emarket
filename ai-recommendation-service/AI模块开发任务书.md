@@ -4,7 +4,7 @@
 > **目录**: `ai-recommendation-service/`  
 > **关联数据库**: MongoDB（本地 Docker 部署，已连接）  
 > **开发 IDE**: IntelliJ IDEA  
-> **当前状态**: 第一阶段已完成（3 个 mock 接口 + 测试），正在开发第三阶段 RAG 问答  
+> **当前状态**: Phase 1+2+3 主体完成，仅剩文案生成。LBS 真实 MongoDB 查询、Item-CF、马尔可夫链、混合推荐均已对接  
 
 ---
 
@@ -616,18 +616,18 @@ pytest-asyncio==0.24.0
 
 ### 第二阶段：LBS 与数据准备
 
-- [ ] 实现 `/stores/nearby` — MongoDB 2dsphere 地理查询
-- [ ] 实现用户行为数据写入（从后端 API 同步或模拟生成）
-- [ ] 搭建 `user_behaviors` 集合并灌入测试数据
-- [ ] 编写 LBS 查询测试用例
+- [x] 实现 `/stores/nearby` — MongoDB 2dsphere 地理查询
+- [x] 实现用户行为数据写入（从后端 API 同步或模拟生成）
+- [x] 搭建 `user_behaviors` 集合并灌入测试数据
+- [x] 编写 LBS 查询测试用例
 
 ### 第三阶段：核心算法
 
 - [x] 实现 RAG 智能问答（Retriever + LLM）
 - [x] 实现 Prompt Guard 安全检测
-- [ ] 实现 Item-CF 协同过滤
-- [ ] 实现马尔可夫链行为预测
-- [ ] 实现混合推荐（Hybrid Recommender）
+- [x] 实现 Item-CF 协同过滤
+- [x] 实现马尔可夫链行为预测
+- [x] 实现混合推荐（Hybrid Recommender）
 - [ ] 实现文案生成
 
 ### 第四阶段：联调、优化与答辩

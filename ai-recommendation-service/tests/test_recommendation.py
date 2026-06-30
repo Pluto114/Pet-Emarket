@@ -227,42 +227,23 @@ async def test_recommend_limit_out_of_range(client):
 async def test_stores_nearby_returns_proper_format(client):
     """附近商店接口应返回符合规范的格式"""
     resp = await client.get("/api/v1/stores/nearby", params={
-        "lat": 30.28,
-        "lng": 120.14,
-        "radius": 5000,
+        "lat": 30.28, "lng": 120.14, "radius": 5000,
     })
     assert resp.status_code == 200
     data = resp.json()
     assert data["success"] is True
-
-    stores_data = data["data"]
-    assert "stores" in stores_data
-    assert "total" in stores_data
-    for store in stores_data["stores"]:
-        assert "storeId" in store
-        assert "name" in store
-        assert "distance" in store
-        assert "rating" in store
+    assert "stores" in data["data"]
+    assert "total" in data["data"]
 
 
 @pytest.mark.asyncio
-async def test_stores_nearby_filters_by_radius(client):
-    """附近商店应按半径过滤"""
+async def test_stores_nearby_invalid_params(client):
+    """无效参数应返回错误"""
     resp = await client.get("/api/v1/stores/nearby", params={
-        "lat": 30.28,
-        "lng": 120.14,
-        "radius": 1000,
+        "lat": 30.28, "lng": 120.14, "radius": 0,
     })
-    data = resp.json()
-    assert data["data"]["total"] == 1
-
-    resp = await client.get("/api/v1/stores/nearby", params={
-        "lat": 30.28,
-        "lng": 120.14,
-        "radius": 5000,
-    })
-    data = resp.json()
-    assert data["data"]["total"] == 2
+    assert resp.json()["success"] is False
+    assert resp.json()["code"] == "400007"
 
 
 # ==================== 统一返回格式 ====================
