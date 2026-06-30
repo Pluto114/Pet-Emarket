@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../models/cart_item.dart';
 import '../../../models/shipping_address.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({required this.apiClient, super.key});
-
   final ApiClient apiClient;
 
   @override
@@ -24,16 +24,6 @@ class _CartPageState extends State<CartPage> {
 
   bool get canCreateOrder => items.isNotEmpty && selectedAddress != null;
 
-  ShippingAddress? firstAddressWhere(
-    List<ShippingAddress> source,
-    bool Function(ShippingAddress address) test,
-  ) {
-    for (final address in source) {
-      if (test(address)) return address;
-    }
-    return null;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -42,29 +32,32 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final w = MediaQuery.of(context).size.width;
+    final wide = w > 800;
+
     return Scaffold(
+      backgroundColor: PawmartColors.surfaceBg,
+      appBar: AppBar(
+        title: const Text('购物车'),
+        actions: [
+          if (items.isNotEmpty)
+            TextButton(
+              onPressed: canCreateOrder ? createOrder : null,
+              child: Text(
+                '生成订单',
+                style: GoogleFonts.nunito(
+                  fontWeight: FontWeight.w600,
+                  color: canCreateOrder ? PawmartColors.primary500 : PawmartColors.textSecondary,
+                ),
+              ),
+            ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: load,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 16, wide ? 40 : 16, 100),
           children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    '购物车',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: canCreateOrder ? createOrder : null,
-                  icon: const Icon(Icons.receipt_long),
-                  label: const Text('生成订单'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             if (loading)
               const Center(
                 child: Padding(
@@ -73,107 +66,159 @@ class _CartPageState extends State<CartPage> {
                 ),
               ),
             if (errorText != null)
-              Text(
-                errorText!,
-                style: TextStyle(color: theme.colorScheme.error),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(errorText!, style: GoogleFonts.nunito(color: PawmartColors.error, fontSize: 13)),
               ),
             if (!loading) ...[
+              // Address Section
               _AddressSection(
                 addresses: addresses,
                 selectedAddress: selectedAddress,
-                onSelected:
-                    (address) => setState(() => selectedAddress = address),
+                onSelected: (address) => setState(() => selectedAddress = address),
                 onAdd: () => showAddressDialog(),
                 onEdit: (address) => showAddressDialog(address: address),
                 onDefault: setDefaultAddress,
                 onDelete: deleteAddress,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // Cart Items
               if (items.isEmpty)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(18),
-                    child: Text('购物车为空。先到商品页加入商品，再回来生成订单。'),
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: PawmartColors.surfaceCard,
+                    borderRadius: BorderRadius.circular(pawmartRadiusMd),
+                    boxShadow: pawmartShadow1,
                   ),
-                ),
-              ...items.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Card(
-                    child: ListTile(
-                      leading: Icon(
-                        item.product.isLivePet
-                            ? Icons.pets
-                            : Icons.shopping_bag_outlined,
-                      ),
-                      title: Text(item.product.name),
-                      subtitle: Text(
-                        '¥${item.product.price.toStringAsFixed(2)} x ${item.quantity} = ¥${item.subtotal.toStringAsFixed(2)}',
-                      ),
-                      trailing: Wrap(
-                        spacing: 4,
-                        children: [
-                          IconButton(
-                            tooltip: '减少',
-                            onPressed:
-                                item.quantity <= 1
-                                    ? null
-                                    : () =>
-                                        updateQuantity(item, item.quantity - 1),
-                            icon: const Icon(Icons.remove_circle_outline),
-                          ),
-                          IconButton(
-                            tooltip: '增加',
-                            onPressed:
-                                () => updateQuantity(item, item.quantity + 1),
-                            icon: const Icon(Icons.add_circle_outline),
-                          ),
-                          IconButton(
-                            tooltip: '删除',
-                            onPressed: () => deleteItem(item),
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (items.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+                  child: Center(
+                    child: Column(
                       children: [
-                        const Expanded(
-                          child: Text(
-                            '合计',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
+                        Icon(Icons.shopping_cart_outlined, size: 48, color: PawmartColors.neutral300),
+                        const SizedBox(height: 12),
                         Text(
-                          '¥${total.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          '购物车为空',
+                          style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w600, color: PawmartColors.textSecondary),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '先去逛逛，添加喜欢的商品吧',
+                          style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
                         ),
                       ],
                     ),
                   ),
                 ),
+              ...items.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _CartItemCard(
+                  item: item,
+                  onIncrease: () => updateQuantity(item, item.quantity + 1),
+                  onDecrease: () => item.quantity > 1 ? updateQuantity(item, item.quantity - 1) : null,
+                  onDelete: () => deleteItem(item),
+                ),
+              )),
+              if (items.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                // Total Section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: PawmartColors.surfaceCard,
+                    borderRadius: BorderRadius.circular(pawmartRadiusMd),
+                    boxShadow: pawmartShadow1,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        '合计',
+                        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '¥${total.toStringAsFixed(2)}',
+                        style: GoogleFonts.nunito(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: PawmartColors.primary500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (items.isNotEmpty && selectedAddress == null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     '请先新增并选择收货地址。',
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.error),
                   ),
                 ),
             ],
           ],
         ),
       ),
+      // Sticky bottom bar when has items
+      bottomNavigationBar: items.isNotEmpty
+          ? Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              decoration: BoxDecoration(
+                color: PawmartColors.surfaceCard,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF36322E).withAlpha(15),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '合计',
+                            style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+                          ),
+                          Text(
+                            '¥${total.toStringAsFixed(2)}',
+                            style: GoogleFonts.nunito(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: PawmartColors.primary500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: canCreateOrder ? createOrder : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: canCreateOrder ? PawmartColors.accent400 : PawmartColors.neutral200,
+                          foregroundColor: canCreateOrder ? PawmartColors.textOnAccent : PawmartColors.neutral400,
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                        ),
+                        child: Text(
+                          '生成订单',
+                          style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -185,21 +230,12 @@ class _CartPageState extends State<CartPage> {
     try {
       final nextItems = await widget.apiClient.listCartItems();
       final nextAddresses = await widget.apiClient.listAddresses();
-      final defaultAddress = firstAddressWhere(
-        nextAddresses,
-        (address) => address.defaultAddress,
-      );
+      final defaultAddress = nextAddresses.isNotEmpty && nextAddresses[0].defaultAddress ? nextAddresses[0] : null;
       final previousSelectedId = selectedAddress?.id;
-      final previousSelected = firstAddressWhere(
-        nextAddresses,
-        (address) => address.id == previousSelectedId,
-      );
+      final previousSelected = nextAddresses.where((a) => a.id == previousSelectedId).firstOrNull;
       items = nextItems;
       addresses = nextAddresses;
-      selectedAddress =
-          previousSelected ??
-          defaultAddress ??
-          (nextAddresses.isEmpty ? null : nextAddresses.first);
+      selectedAddress = previousSelected ?? defaultAddress ?? (nextAddresses.isEmpty ? null : nextAddresses.first);
     } catch (error) {
       errorText = error.toString();
     } finally {
@@ -236,10 +272,7 @@ class _CartPageState extends State<CartPage> {
         final created = await widget.apiClient.createAddress(payload);
         selectedAddress = created;
       } else {
-        selectedAddress = await widget.apiClient.updateAddress(
-          address.id,
-          payload,
-        );
+        selectedAddress = await widget.apiClient.updateAddress(address.id, payload);
       }
       await load();
     } catch (error) {
@@ -259,9 +292,7 @@ class _CartPageState extends State<CartPage> {
   Future<void> deleteAddress(ShippingAddress address) async {
     try {
       await widget.apiClient.deleteAddress(address.id);
-      if (selectedAddress?.id == address.id) {
-        selectedAddress = null;
-      }
+      if (selectedAddress?.id == address.id) selectedAddress = null;
       await load();
     } catch (error) {
       if (mounted) showError(error);
@@ -275,14 +306,12 @@ class _CartPageState extends State<CartPage> {
       return;
     }
     try {
-      final order = await widget.apiClient.createOrderFromCart(
-        addressId: address.id,
-      );
+      final order = await widget.apiClient.createOrderFromCart(addressId: address.id);
       await load();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('订单 ${order.orderNo} 已创建')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('订单 ${order.orderNo} 已创建')),
+        );
       }
     } catch (error) {
       if (mounted) showError(error);
@@ -290,12 +319,122 @@ class _CartPageState extends State<CartPage> {
   }
 
   void showError(Object error) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error.toString())));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.toString())),
+    );
   }
 }
 
+// ═══════════════════════════════════════════
+// Cart Item Card
+// ═══════════════════════════════════════════
+class _CartItemCard extends StatelessWidget {
+  const _CartItemCard({
+    required this.item,
+    required this.onIncrease,
+    required this.onDecrease,
+    required this.onDelete,
+  });
+  final CartItem item;
+  final VoidCallback onIncrease;
+  final VoidCallback? onDecrease;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final product = item.product;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PawmartColors.surfaceCard,
+        borderRadius: BorderRadius.circular(pawmartRadiusMd),
+        boxShadow: pawmartShadow1,
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: PawmartColors.primary50,
+              borderRadius: BorderRadius.circular(pawmartRadiusMd),
+            ),
+            child: Icon(
+              product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined,
+              color: PawmartColors.primary500,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: GoogleFonts.nunito(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '¥${product.price.toStringAsFixed(2)} x ${item.quantity}',
+                  style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '小计：¥${item.subtotal.toStringAsFixed(2)}',
+                  style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.primary500),
+                ),
+              ],
+            ),
+          ),
+          // Quantity Controls
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(pawmartRadiusMd),
+              border: Border.all(color: PawmartColors.neutral200),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove, size: 16),
+                  onPressed: onDecrease,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+                Text(
+                  '${item.quantity}',
+                  style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add, size: 16),
+                  onPressed: onIncrease,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Delete
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 18),
+            onPressed: onDelete,
+            color: PawmartColors.error.withAlpha(180),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════
+// Address Section
+// ═══════════════════════════════════════════
 class _AddressSection extends StatelessWidget {
   const _AddressSection({
     required this.addresses,
@@ -317,76 +456,89 @@ class _AddressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    '收货地址',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: onAdd,
-                  icon: const Icon(Icons.add_location_alt_outlined),
-                  label: const Text('新增'),
-                ),
-              ],
-            ),
-            if (addresses.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text('暂无收货地址，请新增后再下单。'),
-              )
-            else
-              ...addresses.map(
-                (address) => ListTile(
-                  selected: selectedAddress?.id == address.id,
-                  onTap: () => onSelected(address),
-                  leading: Icon(
-                    selectedAddress?.id == address.id
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                  ),
-                  title: Text('${address.receiver}  ${address.phone}'),
-                  subtitle: Text(address.fullAddress),
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') onEdit(address);
-                      if (value == 'default') onDefault(address);
-                      if (value == 'delete') onDelete(address);
-                    },
-                    itemBuilder:
-                        (context) => [
-                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                          if (!address.defaultAddress)
-                            const PopupMenuItem(
-                              value: 'default',
-                              child: Text('设为默认'),
-                            ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('删除'),
-                          ),
-                        ],
-                  ),
-                ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PawmartColors.surfaceCard,
+        borderRadius: BorderRadius.circular(pawmartRadiusMd),
+        boxShadow: pawmartShadow1,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, size: 18, color: PawmartColors.primary500),
+              const SizedBox(width: 6),
+              Text(
+                '收货地址',
+                style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
               ),
-          ],
-        ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_location_alt_outlined, size: 16),
+                label: Text('新增', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          if (addresses.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '暂无收货地址，请新增后再下单。',
+                style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
+              ),
+            )
+          else
+            ...addresses.map((address) => ListTile(
+              selected: selectedAddress?.id == address.id,
+              selectedTileColor: PawmartColors.primary50,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(pawmartRadiusSm)),
+              dense: true,
+              onTap: () => onSelected(address),
+              leading: Icon(
+                selectedAddress?.id == address.id
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 20,
+                color: selectedAddress?.id == address.id
+                    ? PawmartColors.primary500
+                    : PawmartColors.neutral400,
+              ),
+              title: Text(
+                '${address.receiver}  ${address.phone}',
+                style: GoogleFonts.nunito(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
+              ),
+              subtitle: Text(
+                address.fullAddress,
+                style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+              ),
+              trailing: PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') onEdit(address);
+                  if (value == 'default') onDefault(address);
+                  if (value == 'delete') onDelete(address);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                  if (!address.defaultAddress)
+                    const PopupMenuItem(value: 'default', child: Text('设为默认')),
+                  const PopupMenuItem(value: 'delete', child: Text('删除')),
+                ],
+              ),
+            )),
+        ],
       ),
     );
   }
 }
 
+// ═══════════════════════════════════════════
+// Address Dialog
+// ═══════════════════════════════════════════
 class _AddressDialog extends StatefulWidget {
   const _AddressDialog({this.address});
-
   final ShippingAddress? address;
 
   @override
@@ -394,22 +546,12 @@ class _AddressDialog extends StatefulWidget {
 }
 
 class _AddressDialogState extends State<_AddressDialog> {
-  late final receiverCtrl = TextEditingController(
-    text: widget.address?.receiver ?? '',
-  );
-  late final phoneCtrl = TextEditingController(
-    text: widget.address?.phone ?? '',
-  );
-  late final provinceCtrl = TextEditingController(
-    text: widget.address?.province ?? '',
-  );
+  late final receiverCtrl = TextEditingController(text: widget.address?.receiver ?? '');
+  late final phoneCtrl = TextEditingController(text: widget.address?.phone ?? '');
+  late final provinceCtrl = TextEditingController(text: widget.address?.province ?? '');
   late final cityCtrl = TextEditingController(text: widget.address?.city ?? '');
-  late final districtCtrl = TextEditingController(
-    text: widget.address?.district ?? '',
-  );
-  late final detailCtrl = TextEditingController(
-    text: widget.address?.detail ?? '',
-  );
+  late final districtCtrl = TextEditingController(text: widget.address?.district ?? '');
+  late final detailCtrl = TextEditingController(text: widget.address?.detail ?? '');
   late bool defaultAddress = widget.address?.defaultAddress ?? true;
 
   @override
@@ -426,7 +568,10 @@ class _AddressDialogState extends State<_AddressDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.address == null ? '新增收货地址' : '编辑收货地址'),
+      title: Text(
+        widget.address == null ? '新增收货地址' : '编辑收货地址',
+        style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
+      ),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -476,7 +621,8 @@ class _AddressDialogState extends State<_AddressDialog> {
               SwitchListTile(
                 value: defaultAddress,
                 onChanged: (value) => setState(() => defaultAddress = value),
-                title: const Text('设为默认地址'),
+                title: Text('设为默认地址', style: GoogleFonts.nunito(fontSize: 14)),
+                activeColor: PawmartColors.primary500,
                 contentPadding: EdgeInsets.zero,
               ),
             ],
@@ -486,7 +632,7 @@ class _AddressDialogState extends State<_AddressDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text('取消', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
         ),
         FilledButton(
           onPressed: () {
@@ -501,7 +647,7 @@ class _AddressDialogState extends State<_AddressDialog> {
             };
             Navigator.pop(context, payload);
           },
-          child: const Text('保存'),
+          child: Text('保存', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
         ),
       ],
     );

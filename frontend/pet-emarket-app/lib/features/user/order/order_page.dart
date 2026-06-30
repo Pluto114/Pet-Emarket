@@ -423,7 +423,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<int>(
-              initialValue: rating,
+              value: rating,
               decoration: const InputDecoration(labelText: '评分'),
               items: const [
                 DropdownMenuItem(value: 5, child: Text('5 分')),

@@ -274,7 +274,7 @@ class _MediaDialogState extends State<_MediaDialog> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: mediaType,
+                      value: mediaType,
                       decoration: const InputDecoration(labelText: 'Type'),
                       items: const [
                         DropdownMenuItem(value: 'IMAGE', child: Text('Image')),
@@ -288,7 +288,7 @@ class _MediaDialogState extends State<_MediaDialog> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: status,
+                      value: status,
                       decoration: const InputDecoration(labelText: 'Status'),
                       items: const [
                         DropdownMenuItem(
