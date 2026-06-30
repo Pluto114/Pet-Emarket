@@ -3,6 +3,7 @@ library;
 
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -119,15 +120,37 @@ class _HS extends State<HomePage> with TickerProviderStateMixin {
             const SizedBox(height:6),Text(c['l']as String,style:TextStyle(fontSize:11,fontWeight:FontWeight.w500,color:s.onSurface)),
           ])))).toList()))),
           //── 附近商店 ──
-          SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(20,8,20,4),child:GestureDetector(onTap:()=>widget.onNavigate(1),child:Container(height:100,decoration:BoxDecoration(borderRadius:BorderRadius.circular(radiusCard),boxShadow:[BoxShadow(color:s.primary.withAlpha(12),blurRadius:16,offset:const Offset(0,4))]),child:ClipRRect(borderRadius:BorderRadius.circular(radiusCard),child:Container(color:s.surfaceContainerLow,padding:const EdgeInsets.all(18),child:Row(children:[
-            Container(width:50,height:50,decoration:BoxDecoration(borderRadius:BorderRadius.circular(16),color:s.primaryContainer),child:Icon(Icons.store,color:s.primary,size:28)),const SizedBox(width:14),
-            Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[
-              Row(children:[Text(_store['n']as String,style:TextStyle(fontWeight:FontWeight.w700,fontSize:16,color:s.onSurface)),const Spacer(),_SC(rating:_store['r']as double,s:s)]),
-              const SizedBox(height:4),Text(_store['a']as String,style:TextStyle(fontSize:12,color:s.onSurfaceVariant)),
-            ])),
-            const SizedBox(width:10),Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:4),decoration:BoxDecoration(color:s.primaryContainer,borderRadius:BorderRadius.circular(12)),child:Text('${_store['d']}m',style:TextStyle(color:s.primary,fontWeight:FontWeight.w700,fontSize:12))),
-          ])))))),
-          //── AI 推荐标题 ──
+          SliverToBoxAdapter(child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+            child: GestureDetector(
+              onTap: () => widget.onNavigate(1),
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(radiusCard),
+                  boxShadow: [BoxShadow(color: s.primary.withAlpha(12), blurRadius: 16, offset: const Offset(0, 4))],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(radiusCard),
+                  child: Container(
+                    color: s.surfaceContainerLow,
+                    padding: const EdgeInsets.all(18),
+                    child: Row(children: [
+                      Container(width: 50, height: 50, decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: s.primaryContainer), child: Icon(Icons.store, color: s.primary, size: 28)),
+                      const SizedBox(width: 14),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Row(children: [Text(_store['n'] as String, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: s.onSurface)), const Spacer(), _SC(rating: _store['r'] as double, s: s)]),
+                        const SizedBox(height: 4),
+                        Text(_store['a'] as String, style: TextStyle(fontSize: 12, color: s.onSurfaceVariant)),
+                      ])),
+                      const SizedBox(width: 10),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: s.primaryContainer, borderRadius: BorderRadius.circular(12)), child: Text('${_store['d']}m', style: TextStyle(color: s.primary, fontWeight: FontWeight.w700, fontSize: 12))),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+          )),          //── AI 推荐标题 ──
           SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(20,22,20,6),child:Row(children:[
             Container(width:4,height:20,decoration:BoxDecoration(color:s.primary,borderRadius:BorderRadius.circular(2))),const SizedBox(width:10),
             Icon(Icons.auto_awesome,size:20,color:s.primary),const SizedBox(width:6),
