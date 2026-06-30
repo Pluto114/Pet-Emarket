@@ -270,7 +270,7 @@ class _HS extends State<HomePage> with TickerProviderStateMixin {
             padding:const EdgeInsets.symmetric(horizontal:8, vertical:4),
             decoration:BoxDecoration(color:s.primary.withAlpha(100), borderRadius:BorderRadius.circular(10)),
             child:Row(mainAxisSize:MainAxisSize.min, children:[const Text('🐾', style:TextStyle(fontSize:10)), const SizedBox(width:3),
-              Text(p.r, style:const TextStyle(fontSize:9, color:Colors.white, fontWeight:FontWeight.w500))])))),
+              Text(p.r, style:const TextStyle(fontSize:9, color:Colors.white, fontWeight:FontWeight.w500))])))))),
           Positioned(right:6, bottom:6, child:_SC(rating:p.s, s:s, compact:true)),
         ]))),
         Expanded(flex:3, child:Padding(padding:const EdgeInsets.all(10), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
