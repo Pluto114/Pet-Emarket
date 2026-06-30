@@ -16,11 +16,13 @@ from app.schemas.recommendation_schema import (
     ChatRequest, ChatResponse, ChatSource,
     RecommendRequest, RecommendItem, RecommendResponse,
     StoreItem, StoresNearbyResponse,
+    CopywritingRequest, CopywritingResponse,
 )
 from app.rag.prompt_guard import guard
 from app.rag.retriever import search_knowledge, format_context
 from app.recommender.item_cf.item_cf import recommend as itemcf_recommend
 from app.recommender.markov.markov_chain import predict as markov_predict
+from app.content_generation.copywriting import generate as generate_copy
 
 
 # ==================== 应用生命周期 ====================
@@ -289,6 +291,21 @@ async def stores_nearby(
         ))
 
     return success(StoresNearbyResponse(stores=stores, total=len(stores)).model_dump())
+
+
+# ---- /copywriting/generate — AI 文案生成 ----
+
+@app.post("/api/v1/copywriting/generate")
+async def copywriting(req: CopywritingRequest):
+    """AI 文案生成"""
+    info = f"名称:{req.productId}"
+    for k, v in req.attributes.items():
+        info += f" {k}:{v}"
+    try:
+        text = await generate_copy(app.state.llm_client, req.productType, info)
+        return success(CopywritingResponse(description=text).model_dump())
+    except Exception:
+        return error("400006", "文案生成失败")
 
 
 # ==================== 启动入口 ====================
