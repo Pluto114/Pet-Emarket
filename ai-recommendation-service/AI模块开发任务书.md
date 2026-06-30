@@ -8,6 +8,50 @@
 
 ---
 
+## 文件清单
+
+```
+ai-recommendation-service/
+├── app/
+│   ├── main.py                          # FastAPI 入口，4 个接口 + 健康检查
+│   ├── __init__.py                      # 包标记
+│   ├── core/
+│   │   └── config.py                    # 配置中心（MongoDB/LLM/算法参数）
+│   ├── schemas/
+│   │   └── recommendation_schema.py     # Pydantic 数据模型 + 统一返回体
+│   ├── rag/
+│   │   ├── __init__.py
+│   │   ├── prompt_guard.py              # 安全检测（敏感词/注入/分类）
+│   │   └── retriever.py                 # 知识库检索（中文 regex 匹配）
+│   ├── recommender/
+│   │   ├── __init__.py
+│   │   ├── item_cf/
+│   │   │   ├── __init__.py
+│   │   │   └── item_cf.py               # Item-CF 协同过滤（共现矩阵）
+│   │   └── markov/
+│   │       ├── __init__.py
+│   │       └── markov_chain.py           # 马尔可夫链行为预测（转移矩阵）
+│   ├── content_generation/
+│   │   ├── __init__.py
+│   │   └── copywriting.py               # AI 文案生成（详情/视频/营销）
+│   └── api/
+│       └── __init__.py                  # 预留 API 路由目录
+├── tests/
+│   ├── __init__.py
+│   └── test_recommendation.py           # 16 个单元测试用例
+├── scripts/
+│   ├── seed_knowledge.js                # 知识库种子脚本 v1（20 篇）
+│   ├── seed_knowledge_v2.js             # 知识库种子脚本 v2（46 篇）
+│   └── test_chat_manual.py              # RAG 问答手动测试脚本
+├── .env                                 # 本地环境变量（不提交 Git）
+├── .env.example                         # 环境变量模板
+├── requirements.txt                     # Python 依赖清单
+├── pyproject.toml                       # pytest asyncio 配置
+└── AI模块开发任务书.md                   # 本文档
+```
+
+---
+
 ## 一、模块定位
 
 AI 推荐服务是 Pet-Emarket 的独立微服务，位于网关之后，负责：
