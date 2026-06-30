@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
 import 'cart/cart_page.dart';
@@ -8,72 +7,99 @@ import 'order/order_page.dart';
 import 'profile/profile_tab.dart';
 import 'store/nearby_store_page.dart';
 
-/// 用户端底部导航壳 — 纯粹的路由容器，不包含任何业务 UI。
+const _navItems = [
+  {'l':'Home','i':Icons.home},
+  {'l':'Nearby','i':Icons.store},
+  {'l':'Cart','i':Icons.shopping_cart},
+  {'l':'Orders','i':Icons.receipt_long},
+  {'l':'Me','i':Icons.person},
+];
+
 class UserShell extends StatefulWidget {
-  const UserShell({
-    required this.apiClient,
-    required this.sessionStore,
-    required this.onThemeToggle,
-    required this.onLogout,
-    super.key,
-  });
-
-  final ApiClient apiClient;
-  final SessionStore sessionStore;
-  final VoidCallback onThemeToggle;
-  final VoidCallback onLogout;
-
-  @override
-  State<UserShell> createState() => _UserShellState();
+  const UserShell({required this.apiClient,required this.sessionStore,required this.onThemeToggle,required this.onLogout,super.key});
+  final ApiClient apiClient;final SessionStore sessionStore;final VoidCallback onThemeToggle;final VoidCallback onLogout;
+  @override State<UserShell> createState()=>_UserShellState();
 }
 
 class _UserShellState extends State<UserShell> {
-  int selectedIndex = 0;
+  int _idx=0;
+  final _searchCtrl=TextEditingController();
 
-  static const _tabs = [
-    NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-    NavigationDestination(icon: Icon(Icons.store_outlined), selectedIcon: Icon(Icons.store), label: 'Nearby'),
-    NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: 'Cart'),
-    NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
-    NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+  static const _tabs=[
+    NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),
+    NavigationDestination(icon:Icon(Icons.store_outlined),selectedIcon:Icon(Icons.store),label:'Nearby'),
+    NavigationDestination(icon:Icon(Icons.shopping_cart_outlined),selectedIcon:Icon(Icons.shopping_cart),label:'Cart'),
+    NavigationDestination(icon:Icon(Icons.receipt_long_outlined),selectedIcon:Icon(Icons.receipt_long),label:'Orders'),
+    NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile'),
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    final pages = <Widget>[
-      HomePage(
-        apiClient: widget.apiClient,
-        sessionStore: widget.sessionStore,
-        onNavigate: (i) => setState(() => selectedIndex = i),
-      ),
-      NearbyStorePage(apiClient: widget.apiClient),
-      CartPage(apiClient: widget.apiClient),
-      OrderPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
-      ProfileTab(
-        apiClient: widget.apiClient,
-        sessionStore: widget.sessionStore,
-        onThemeToggle: widget.onThemeToggle,
-        onLogout: widget.onLogout,
-      ),
-    ];
+  @override void dispose(){_searchCtrl.dispose();super.dispose();}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pet-Emarket'),
-        actions: [
-          IconButton(
-            tooltip: 'Toggle theme',
-            icon: Icon(Theme.of(context).brightness == Brightness.light ? Icons.dark_mode : Icons.light_mode),
-            onPressed: widget.onThemeToggle,
-          ),
-        ],
-      ),
-      body: IndexedStack(index: selectedIndex, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        destinations: _tabs,
-        onDestinationSelected: (i) => setState(() => selectedIndex = i),
+  PreferredSizeWidget _buildAppBar(ThemeData t,ColorScheme s,bool wide,double screenW){
+    final isLight=t.brightness==Brightness.light;
+    final xWide=screenW>1100;
+    final navGap=xWide?24.0:12.0;
+    final searchMaxW=xWide?400.0:(wide?220.0:screenW*0.4);
+    return PreferredSize(
+      preferredSize:Size.fromHeight(wide?64:56),
+      child:Container(color:s.surface,child:SafeArea(bottom:false,child:Padding(
+        padding:EdgeInsets.symmetric(horizontal:wide&&xWide?40:12,vertical:4),
+        child:Row(children:[
+          const Row(mainAxisSize:MainAxisSize.min,children:[
+            Icon(Icons.pets,size:20,color:Color(0xFFFF6F22)),SizedBox(width:4),
+            Text('Pet-Emarket',style:TextStyle(fontWeight:FontWeight.bold,fontSize:17,color:Color(0xFFFF6F22),letterSpacing:-0.3)),
+          ]),
+          const SizedBox(width:12),
+          Flexible(child:ConstrainedBox(constraints:BoxConstraints(maxWidth:searchMaxW),child:SizedBox(
+            height:38,child:TextField(controller:_searchCtrl,
+              decoration:InputDecoration(
+                filled:true,fillColor:s.surfaceContainerLow,
+                hintText:wide?'搜索宠物、口粮…':'搜索…',hintStyle:TextStyle(color:s.onSurface.withAlpha(80),fontSize:13),
+                prefixIcon:Icon(Icons.search_rounded,size:20,color:s.onSurface.withAlpha(100)),
+                enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(19),borderSide:BorderSide(color:s.outline.withAlpha(180))),
+                focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(19),borderSide:BorderSide(color:s.primary,width:2)),
+                contentPadding:const EdgeInsets.symmetric(vertical:9),
+              ),
+            ),
+          ))),
+          const SizedBox(width:12),
+          if(wide)...[
+            ...List.generate(_navItems.length,(i){
+              final item=_navItems[i];final active=i==_idx;
+              return Padding(padding:EdgeInsets.only(left:i==0?0:navGap),child:InkWell(
+                onTap:()=>setState(()=>_idx=i),borderRadius:BorderRadius.circular(10),
+                child:Padding(padding:const EdgeInsets.symmetric(horizontal:2,vertical:2),child:Column(mainAxisSize:MainAxisSize.min,children:[
+                  Icon(item['i']as IconData,size:18,color:active?s.primary:s.onSurfaceVariant),
+                  Text(item['l']as String,style:TextStyle(fontSize:9,fontWeight:active?FontWeight.w700:FontWeight.w400,color:active?s.primary:s.onSurfaceVariant)),
+                ]))));
+            }),
+            const SizedBox(width:8),
+          ],
+          IconButton(tooltip:'Toggle theme',visualDensity:VisualDensity.compact,
+            icon:Icon(isLight?Icons.dark_mode:Icons.light_mode,color:s.onSurfaceVariant),
+            onPressed:widget.onThemeToggle),
+        ]))),
       ),
     );
+  }
+
+  @override Widget build(BuildContext ctx){
+    final t=Theme.of(ctx);final s=t.colorScheme;
+    final w=MediaQuery.of(ctx).size.width;final wide=w>800;
+
+    final pages=<Widget>[
+      HomePage(apiClient:widget.apiClient,sessionStore:widget.sessionStore),
+      NearbyStorePage(apiClient:widget.apiClient),
+      CartPage(apiClient:widget.apiClient),
+      OrderPage(apiClient:widget.apiClient,sessionStore:widget.sessionStore),
+      ProfileTab(apiClient:widget.apiClient,sessionStore:widget.sessionStore,onThemeToggle:widget.onThemeToggle,onLogout:widget.onLogout),
+    ];
+
+    return Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:2000),child:Scaffold(
+      backgroundColor:s.surface,
+      appBar:_buildAppBar(t,s,wide,w),
+      body:IndexedStack(index:_idx,children:pages),
+      bottomNavigationBar:wide?null:NavigationBar(selectedIndex:_idx,destinations:_tabs,onDestinationSelected:(i)=>setState(()=>_idx=i)),
+    )));
   }
 }
