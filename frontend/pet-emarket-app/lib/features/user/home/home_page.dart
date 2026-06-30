@@ -53,9 +53,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late final AnimationController _breathCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
-    ..repeat(reverse: true);
-  final _breathAnim = Tween<double>(begin: 1.0, end: 1.14).animate(CurvedAnimation(parent: _breathCtrl, curve: Curves.easeInOut));
+  late final AnimationController _breathCtrl;
+  late final Animation<double> _breathAnim;
 
   // Banner
   final _pageCtrl = PageController(viewportFraction: 0.9);
@@ -70,7 +69,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final _searchCtrl = TextEditingController();
 
   @override
-  void initState() { super.initState(); _breathCtrl.repeat(reverse: true); }
+  void initState() {
+    super.initState();
+    _breathCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+    _breathAnim = Tween<double>(begin: 1.0, end: 1.14).animate(CurvedAnimation(parent: _breathCtrl, curve: Curves.easeInOut));
+    _breathCtrl.repeat(reverse: true);
+  }
   @override
   void dispose() { _breathCtrl.dispose(); _bannerTimer.cancel(); _pageCtrl.dispose(); _searchCtrl.dispose(); super.dispose(); }
 
@@ -161,13 +165,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           SliverToBoxAdapter(child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: _cats.map((c) {
-              return InkWell(onTap: () {}, borderRadius: BorderRadius.circular(20), child: SizedBox(width: 60, child: Column(children: [
-                Container(width: 48, height: 48, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primaryContainer,
-                  boxShadow: [BoxShadow(color: scheme.primary.withAlpha(30), blurRadius: 8, offset: const Offset(0, 2))]),
-                  child: Icon(c['icon'] as IconData, color: scheme.primary, size: 24)),
-                const SizedBox(height: 6),
-                Text(c['label'] as String, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: scheme.onSurface)),
-              ]));
+              return InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  width: 60,
+                  child: Column(children: [
+                    Container(width: 48, height: 48, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primaryContainer,
+                      boxShadow: [BoxShadow(color: scheme.primary.withAlpha(30), blurRadius: 8, offset: const Offset(0, 2))]),
+                      child: Icon(c['icon'] as IconData, color: scheme.primary, size: 24)),
+                    const SizedBox(height: 6),
+                    Text(c['label'] as String, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: scheme.onSurface)),
+                  ]),
+                ),
+              );
             }).toList()),
           )),
           // ── 附近商店 ──
