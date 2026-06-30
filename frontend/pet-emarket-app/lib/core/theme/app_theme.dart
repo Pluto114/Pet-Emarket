@@ -1,50 +1,36 @@
 import 'package:flutter/material.dart';
 
-// ── Voldog-inspired design tokens ──────────────────────────────────
-const Color brandPrimary = Color(0xFF204E4A);   // Deep forest green
-const Color accentGreen = Color(0xFF6FDA44);    // Vibrant green highlights
-const Color accentCoral = Color(0xFFEC7357);    // Active / hover states
-const Color accentYellow = Color(0xFFE1E53F);   // Stars / badges
-const Color warmCream = Color(0xFFF4F1EB);      // Page background (not stark white)
-
-const double radiusSm = 8;
-const double radiusMd = 14;
-const double radiusLg = 20;
-const double radiusXl = 100; // pill-shaped
+const Color voldogOrange = Color(0xFFFF8C42);
+const double radiusCard = 24.0;
 
 ThemeData buildLightTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: brandPrimary,
-    brightness: Brightness.light,
+  final scheme = ColorScheme.fromSeed(seedColor: voldogOrange, brightness: Brightness.light);
+  final warm = scheme.copyWith(
+    surface: const Color(0xFFFFF8F3),
+    surfaceContainerLow: const Color(0xFFFFF1E8),
+    surfaceContainer: const Color(0xFFFFECD8),
+    surfaceContainerHigh: const Color(0xFFFFE4CC),
   );
-
-  // Warm up the surface slightly so cards sit on cream, not pure white.
-  final warmScheme = scheme.copyWith(
-    surface: warmCream,
-    surfaceContainerHighest: warmCream,
-    surfaceContainerLow: Colors.white,
-  );
-
-  return _buildTheme(warmScheme, Brightness.light);
+  return _build(warm, Brightness.light);
 }
 
 ThemeData buildDarkTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: brandPrimary,
-    brightness: Brightness.dark,
+  final scheme = ColorScheme.fromSeed(seedColor: voldogOrange, brightness: Brightness.dark);
+  final warm = scheme.copyWith(
+    surface: const Color(0xFF1E1510),
+    surfaceContainerLow: const Color(0xFF281D16),
+    surfaceContainer: const Color(0xFF32251C),
+    surfaceContainerHigh: const Color(0xFF3C2D22),
   );
-  return _buildTheme(scheme, Brightness.dark);
+  return _build(warm, Brightness.dark);
 }
 
-ThemeData _buildTheme(ColorScheme scheme, Brightness brightness) {
-  final isLight = brightness == Brightness.light;
-
+ThemeData _build(ColorScheme scheme, Brightness brightness) {
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
-    scaffoldBackgroundColor: isLight ? warmCream : null,
+    scaffoldBackgroundColor: scheme.surface,
 
-    // ── AppBar ──
     appBarTheme: AppBarTheme(
       centerTitle: false,
       backgroundColor: scheme.surface,
@@ -54,110 +40,56 @@ ThemeData _buildTheme(ColorScheme scheme, Brightness brightness) {
       surfaceTintColor: Colors.transparent,
     ),
 
-    // ── Cards ──
     cardTheme: CardThemeData(
-      color: isLight ? Colors.white : null,
+      color: scheme.surfaceContainerLow,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusLg),
-        side: isLight
-            ? BorderSide(color: scheme.outlineVariant.withAlpha(50))
-            : BorderSide.none,
-      ),
-      shadowColor: Colors.black.withAlpha(8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusCard)),
     ),
 
-    // ── Input fields ──
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: isLight ? Colors.white : scheme.surfaceContainerHighest,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMd),
-        borderSide: BorderSide(color: scheme.outlineVariant.withAlpha(60)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMd),
-        borderSide: BorderSide(color: scheme.outlineVariant.withAlpha(60)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMd),
-        borderSide: BorderSide(color: scheme.primary, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      fillColor: scheme.surfaceContainerLow,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: scheme.outlineVariant.withAlpha(80))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: scheme.outlineVariant.withAlpha(80))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: scheme.primary, width: 2)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
     ),
 
-    // ── Buttons ──
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
-        ),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
-        ),
-        side: BorderSide(color: scheme.outline.withAlpha(120)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      ),
-    ),
+    filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
+      minimumSize: const Size(double.infinity, 52),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+    )),
 
-    // ── Chips / Filters ──
+    outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
+      minimumSize: const Size(double.infinity, 48),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+    )),
+
     chipTheme: ChipThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusXl),
-      ),
-      side: BorderSide(color: scheme.outlineVariant.withAlpha(80)),
-      backgroundColor: isLight ? Colors.white : scheme.surfaceContainerHighest,
-      selectedColor: scheme.primary.withAlpha(25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+      backgroundColor: scheme.surfaceContainerLow,
       labelStyle: TextStyle(fontSize: 13, color: scheme.onSurface),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     ),
 
-    // ── Bottom Navigation ──
     navigationBarTheme: NavigationBarThemeData(
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      indicatorShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusMd),
-      ),
+      elevation: 0, surfaceTintColor: Colors.transparent,
+      indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
     ),
 
-    // ── Navigation Rail ──
     navigationRailTheme: NavigationRailThemeData(
-      indicatorShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusMd),
-      ),
+      indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
 
-    // ── Dialogs ──
-    dialogTheme: DialogThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusLg),
-      ),
-    ),
+    dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusCard))),
 
-    // ── Snackbar / Toast ──
-    snackBarTheme: SnackBarThemeData(
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusMd),
-      ),
-    ),
+    snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
 
-    // ── Divider ──
-    dividerTheme: DividerThemeData(
-      color: scheme.outlineVariant.withAlpha(60),
-      thickness: 0.5,
-      space: 1,
-    ),
+    dividerTheme: DividerThemeData(color: scheme.outlineVariant.withAlpha(60), thickness: 0.5, space: 1),
   );
 }
