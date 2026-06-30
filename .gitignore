@@ -36,6 +36,10 @@ frontend/pet-emarket-app/linux/
 frontend/pet-emarket-app/macos/
 frontend/pet-emarket-app/windows/
 
+# Python
+__pycache__/
+*.pyc
+
 # Java
 target/
 .gradle/
