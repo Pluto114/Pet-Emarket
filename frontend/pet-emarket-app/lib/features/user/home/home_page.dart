@@ -43,8 +43,6 @@ class _HomePageState extends State<HomePage> {
   final _pageCtrl = PageController();
   late final Timer _bannerTimer;
   int _bi = 0;
-  final _searchCtrl = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -63,7 +61,6 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _bannerTimer.cancel();
     _pageCtrl.dispose();
-    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -78,76 +75,6 @@ class _HomePageState extends State<HomePage> {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ——— Search Bar Sliver ———
-          SliverToBoxAdapter(
-            child: Container(
-              color: PawmartColors.surfaceCard,
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 12, wide ? 40 : 16, 12),
-              child: Row(
-                children: [
-                  // Logo
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: PawmartColors.primary500,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.pets, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'PawMart',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18,
-                          color: PawmartColors.primary500,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  // Search bar
-                  Expanded(
-                    child: Container(
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: PawmartColors.neutral50,
-                        borderRadius: BorderRadius.circular(pawmartRadiusFull),
-                        border: Border.all(color: PawmartColors.neutral200),
-                      ),
-                      child: TextField(
-                        controller: _searchCtrl,
-                        decoration: InputDecoration(
-                          hintText: wide ? '搜索宠物、口粮…' : '搜索…',
-                          hintStyle: TextStyle(
-                            fontSize: 13,
-                            color: PawmartColors.textSecondary.withAlpha(150),
-                          ),
-                          prefixIcon: Icon(Icons.search_rounded, size: 20, color: PawmartColors.neutral400),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 9),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Cart icon
-                  IconButton(
-                    icon: Icon(Icons.shopping_cart_outlined, color: PawmartColors.textPrimary),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // ——— Category Chips ———
           SliverToBoxAdapter(
             child: Container(
