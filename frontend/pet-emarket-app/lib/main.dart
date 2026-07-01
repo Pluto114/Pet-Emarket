@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// Using system fonts
 import 'core/api/api_client.dart';
 import 'core/session/session_store.dart';
 import 'core/theme/app_theme.dart';
@@ -6,7 +7,10 @@ import 'features/auth/auth_page.dart';
 import 'features/admin/admin_shell.dart';
 import 'features/user/user_shell.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Preload Google Fonts to prevent runtime errors
+  // Using system fonts, no preloading needed
   runApp(const PetEmarketApp());
 }
 
