@@ -224,34 +224,34 @@ CREATE TABLE IF NOT EXISTS media_asset (
 -- Indexes
 -- =====================================================================
 
-CREATE INDEX IF NOT EXISTS idx_user_account_username ON user_account(username);
-CREATE INDEX IF NOT EXISTS idx_user_account_role ON user_account(role);
+CREATE INDEX idx_user_account_username ON user_account(username);
+CREATE INDEX idx_user_account_role ON user_account(role);
 
-CREATE INDEX IF NOT EXISTS idx_product_store_id ON product(store_id);
-CREATE INDEX IF NOT EXISTS idx_product_category ON product(category);
-CREATE INDEX IF NOT EXISTS idx_product_type ON product(type);
-CREATE INDEX IF NOT EXISTS idx_product_status ON product(status);
+CREATE INDEX idx_product_store_id ON product(store_id);
+CREATE INDEX idx_product_category ON product(category);
+CREATE INDEX idx_product_type ON product(type);
+CREATE INDEX idx_product_status ON product(status);
 
-CREATE INDEX IF NOT EXISTS idx_cart_item_user_id ON cart_item(user_id);
-CREATE INDEX IF NOT EXISTS idx_cart_item_user_product ON cart_item(user_id, product_id);
+CREATE INDEX idx_cart_item_user_id ON cart_item(user_id);
+CREATE INDEX idx_cart_item_user_product ON cart_item(user_id, product_id);
 
-CREATE INDEX IF NOT EXISTS idx_pet_order_user_id ON pet_order(user_id);
-CREATE INDEX IF NOT EXISTS idx_pet_order_status ON pet_order(status);
-CREATE INDEX IF NOT EXISTS idx_pet_order_order_no ON pet_order(order_no);
+CREATE INDEX idx_pet_order_user_id ON pet_order(user_id);
+CREATE INDEX idx_pet_order_status ON pet_order(status);
+CREATE INDEX idx_pet_order_order_no ON pet_order(order_no);
 
-CREATE INDEX IF NOT EXISTS idx_order_item_order_id ON order_item(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_status_log_order_id ON order_status_log(order_id);
+CREATE INDEX idx_order_item_order_id ON order_item(order_id);
+CREATE INDEX idx_order_status_log_order_id ON order_status_log(order_id);
 
-CREATE INDEX IF NOT EXISTS idx_payment_record_order_id ON payment_record(order_id);
-CREATE INDEX IF NOT EXISTS idx_payment_record_payment_no ON payment_record(payment_no);
+CREATE INDEX idx_payment_record_order_id ON payment_record(order_id);
+CREATE INDEX idx_payment_record_payment_no ON payment_record(payment_no);
 
-CREATE INDEX IF NOT EXISTS idx_point_ledger_user_id ON point_ledger(user_id);
+CREATE INDEX idx_point_ledger_user_id ON point_ledger(user_id);
 
-CREATE INDEX IF NOT EXISTS idx_user_behavior_user_id ON user_behavior(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_behavior_product_id ON user_behavior(product_id);
-CREATE INDEX IF NOT EXISTS idx_user_behavior_type ON user_behavior(behavior_type);
+CREATE INDEX idx_user_behavior_user_id ON user_behavior(user_id);
+CREATE INDEX idx_user_behavior_product_id ON user_behavior(product_id);
+CREATE INDEX idx_user_behavior_type ON user_behavior(behavior_type);
 
-CREATE INDEX IF NOT EXISTS idx_shipping_address_user_id ON shipping_address(user_id);
+CREATE INDEX idx_shipping_address_user_id ON shipping_address(user_id);
 
-CREATE INDEX IF NOT EXISTS idx_media_asset_product_id ON media_asset(product_id);
-CREATE INDEX IF NOT EXISTS idx_media_asset_status ON media_asset(status);
+CREATE INDEX idx_media_asset_product_id ON media_asset(product_id);
+CREATE INDEX idx_media_asset_status ON media_asset(status);
