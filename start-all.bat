@@ -6,6 +6,12 @@ echo.
 
 set BASE=%~dp0
 
+if exist "%BASE%.env" (
+  for /f "usebackq tokens=1,* delims==" %%A in ("%BASE%.env") do (
+    if not "%%A"=="" set "%%A=%%B"
+  )
+)
+
 if exist "%BASE%.tools\apache-maven-3.9.9\bin\mvn.cmd" (
   set "MVN=%BASE%.tools\apache-maven-3.9.9\bin\mvn.cmd"
 ) else (

@@ -53,6 +53,9 @@ public class PetStore {
     @Column(length = 500)
     private String featureTags;
 
+    @Column(length = 64)
+    private String amapPoiId;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -158,6 +161,14 @@ public class PetStore {
 
     public void setFeatureTags(String featureTags) {
         this.featureTags = featureTags;
+    }
+
+    public String getAmapPoiId() {
+        return amapPoiId;
+    }
+
+    public void setAmapPoiId(String amapPoiId) {
+        this.amapPoiId = amapPoiId;
     }
 
     public Instant getCreatedAt() {

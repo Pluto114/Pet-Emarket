@@ -18,11 +18,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional(readOnly = true)
@@ -40,17 +45,27 @@ public class AuthService {
         if (userRepository.existsByUsername(request.username())) {
             throw new BusinessException("100004", "Username already exists");
         }
+        String email = emailVerificationService.normalizeEmail(request.email());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new BusinessException("100005", "Email already exists");
+        }
+        emailVerificationService.verifyRegisterCode(email, request.emailCode());
+
         UserAccount user = new UserAccount();
         user.setUsername(request.username());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setDisplayName(defaultText(request.displayName(), request.username()));
         user.setPhone(defaultText(request.phone(), ""));
-        user.setEmail(defaultText(request.email(), ""));
+        user.setEmail(email);
         user.setRole(UserRole.CUSTOMER);
         user.setMemberLevel(MemberLevel.NORMAL);
         user.setStatus(AccountStatus.ACTIVE);
         userRepository.save(user);
         return new AuthResponse(jwtService.generate(user), UserResponse.from(user));
+    }
+
+    public EmailCodeResponse sendEmailCode(SendEmailCodeRequest request) {
+        return emailVerificationService.sendRegisterCode(request);
     }
 
     private String defaultText(String value, String fallback) {

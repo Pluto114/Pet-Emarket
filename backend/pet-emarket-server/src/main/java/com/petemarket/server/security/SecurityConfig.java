@@ -60,10 +60,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/health", "/h2-console/**").permitAll()
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/email-code").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/live-pet-audits").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/stores/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/geo/amap/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/media/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/recommend", "/api/v1/recommendations/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/ai/chat").permitAll()

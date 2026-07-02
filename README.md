@@ -44,6 +44,57 @@ docker exec mysql-local mysql -u root -p123456 pet_emarket -e "SHOW TABLES;"
 
 ---
 
+## RAG 向量知识库搭建（Docker + MongoDB）
+
+AI 智能问答依赖 MongoDB 存储知识库文档（46 篇宠物百科）。
+
+### 1. 创建 MongoDB 容器
+
+```bash
+docker run -d --name mongodb-local -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=123456 \
+  mongo:8
+```
+
+### 2. 导入知识库 + 商店数据
+
+```bash
+cd Pet-Emarket/ai-recommendation-service
+
+# 一键创建数据库、集合、索引 + 导入 46 篇知识库 + 3 家测试商店
+docker exec -i mongodb-local mongosh -u admin -p 123456 --authenticationDatabase admin < scripts/seed_knowledge_v2.js
+```
+
+### 3. 验证
+
+```bash
+docker exec -it mongodb-local mongosh -u admin -p 123456 --authenticationDatabase admin
+> use pet_emarket
+> show collections
+# 预期: chat_history, knowledge_base, recommendation_cache, stores, user_behaviors
+> db.knowledge_base.countDocuments()
+# 预期: 46
+```
+
+### 集合说明
+
+| 集合 | 用途 |
+|------|------|
+| `knowledge_base` | RAG 知识库（46 篇宠物百科） |
+| `stores` | 商店信息（含 2dsphere 地理索引） |
+| `user_behaviors` | 用户行为日志 |
+| `chat_history` | 问答历史 |
+| `recommendation_cache` | 推荐缓存（TTL 30 分钟） |
+
+### 连接信息
+
+```
+mongodb://admin:123456@localhost:27017/pet_emarket?authSource=admin
+```
+
+---
+
 ## 完整启动流程
 
 ### 1. AI 推荐服务 (端口 8001)

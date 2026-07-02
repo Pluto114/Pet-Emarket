@@ -20,8 +20,10 @@ class _AuthPageState extends State<AuthPage> {
   final _dn = TextEditingController(text: 'Pet User');
   final _ph = TextEditingController();
   final _em = TextEditingController();
-  bool _reg = false, _busy = false;
+  final _code = TextEditingController();
+  bool _reg = false, _busy = false, _sendingCode = false;
   String? _err;
+  String? _codeHint;
 
   static const String _ossUrl1 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/410a874a2b333ad076ad6c8f85aefbd2.jpg';
   static const String _ossUrl2 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9944f9224e6cb20d8b9697fd22624d97.jpg';
@@ -35,6 +37,7 @@ class _AuthPageState extends State<AuthPage> {
     _dn.dispose();
     _ph.dispose();
     _em.dispose();
+    _code.dispose();
     super.dispose();
   }
 
@@ -42,7 +45,14 @@ class _AuthPageState extends State<AuthPage> {
     setState(() { _busy = true; _err = null; });
     try {
       if (_reg) {
-        await widget.apiClient.register(username: _usr.text.trim(), password: _pwd.text, displayName: _dn.text.trim(), phone: _ph.text.trim(), email: _em.text.trim());
+        await widget.apiClient.register(
+          username: _usr.text.trim(),
+          password: _pwd.text,
+          displayName: _dn.text.trim(),
+          phone: _ph.text.trim(),
+          email: _em.text.trim(),
+          emailCode: _code.text.trim(),
+        );
       } else {
         await widget.apiClient.login(username: _usr.text.trim(), password: _pwd.text);
       }
@@ -50,6 +60,29 @@ class _AuthPageState extends State<AuthPage> {
       setState(() => _err = e.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _sendCode() async {
+    setState(() {
+      _sendingCode = true;
+      _err = null;
+      _codeHint = null;
+    });
+    try {
+      final code = await widget.apiClient.sendRegisterEmailCode(_em.text.trim());
+      setState(() {
+        if (code.isNotEmpty) {
+          _code.text = code;
+          _codeHint = '验证码已生成，演示码：$code';
+        } else {
+          _codeHint = '验证码已发送，请查收邮箱';
+        }
+      });
+    } catch (e) {
+      setState(() => _err = e.toString());
+    } finally {
+      if (mounted) setState(() => _sendingCode = false);
     }
   }
 
@@ -177,6 +210,50 @@ class _AuthPageState extends State<AuthPage> {
             _buildField('手机号', _ph, Icons.phone_outlined, phone: true),
             const SizedBox(height: 14),
             _buildField('邮箱', _em, Icons.email_outlined, email: true),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 40,
+                    child: TextField(
+                      controller: _code,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(fontSize: 14, color: PawmartColors.textPrimary),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.verified_outlined, size: 18, color: PawmartColors.neutral400),
+                        hintText: '请输入邮箱验证码',
+                        hintStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
+                        filled: true,
+                        fillColor: PawmartColors.neutral50,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.primary500, width: 1.5)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: _sendingCode || _busy ? null : _sendCode,
+                    child: Text(
+                      _sendingCode ? '发送中' : '获取验证码',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: PawmartColors.primary500),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_codeHint != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _codeHint!,
+                style: TextStyle(fontSize: 12, color: PawmartColors.primary500),
+              ),
+            ],
           ],
           // Links
           Padding(

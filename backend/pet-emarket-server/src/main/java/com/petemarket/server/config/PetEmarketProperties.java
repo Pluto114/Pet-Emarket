@@ -9,6 +9,8 @@ public class PetEmarketProperties {
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
     private AiService aiService = new AiService();
+    private Amap amap = new Amap();
+    private Mail mail = new Mail();
 
     public Jwt getJwt() {
         return jwt;
@@ -32,6 +34,22 @@ public class PetEmarketProperties {
 
     public void setAiService(AiService aiService) {
         this.aiService = aiService;
+    }
+
+    public Amap getAmap() {
+        return amap;
+    }
+
+    public void setAmap(Amap amap) {
+        this.amap = amap;
+    }
+
+    public Mail getMail() {
+        return mail;
+    }
+
+    public void setMail(Mail mail) {
+        this.mail = mail;
     }
 
     public static class Jwt {
@@ -94,6 +112,120 @@ public class PetEmarketProperties {
 
         public void setTimeoutSeconds(long timeoutSeconds) {
             this.timeoutSeconds = timeoutSeconds;
+        }
+    }
+
+    public static class Amap {
+        private String apiKey = "";
+        private String baseUrl = "https://restapi.amap.com";
+        private long timeoutSeconds = 3;
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public long getTimeoutSeconds() {
+            return timeoutSeconds;
+        }
+
+        public void setTimeoutSeconds(long timeoutSeconds) {
+            this.timeoutSeconds = timeoutSeconds;
+        }
+    }
+
+    public static class Mail {
+        private boolean enabled = false;
+        private String host = "smtp.qq.com";
+        private int port = 465;
+        private String username = "";
+        private String password = "";
+        private String from = "";
+        private boolean sslEnabled = true;
+        private boolean starttlsEnabled = false;
+        private boolean devCodeInResponse = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getFrom() {
+            return from;
+        }
+
+        public void setFrom(String from) {
+            this.from = from;
+        }
+
+        public boolean isSslEnabled() {
+            return sslEnabled;
+        }
+
+        public void setSslEnabled(boolean sslEnabled) {
+            this.sslEnabled = sslEnabled;
+        }
+
+        public boolean isStarttlsEnabled() {
+            return starttlsEnabled;
+        }
+
+        public void setStarttlsEnabled(boolean starttlsEnabled) {
+            this.starttlsEnabled = starttlsEnabled;
+        }
+
+        public boolean isDevCodeInResponse() {
+            return devCodeInResponse;
+        }
+
+        public void setDevCodeInResponse(boolean devCodeInResponse) {
+            this.devCodeInResponse = devCodeInResponse;
         }
     }
 }
