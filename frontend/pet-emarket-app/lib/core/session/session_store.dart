@@ -9,7 +9,8 @@ class SessionStore extends ChangeNotifier {
   String? get token => _token;
   AppUser? get user => _user;
   bool get isAuthenticated => _token != null && _user != null;
-  bool get isAdmin => _user != null && (_user!.role == 'ADMIN' || _user!.role == 'MERCHANT');
+  bool get isAdmin => _user != null && _user!.role == 'ADMIN';
+  bool get isMerchant => _user != null && _user!.role == 'MERCHANT';
 
   void setSession({required String token, required AppUser user}) {
     _token = token;

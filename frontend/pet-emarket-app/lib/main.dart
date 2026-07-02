@@ -4,6 +4,7 @@ import 'core/session/session_store.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_page.dart';
 import 'features/admin/admin_shell.dart';
+import 'features/merchant/merchant_shell.dart';
 import 'features/user/user_shell.dart';
 
 void main() {
@@ -62,6 +63,14 @@ class _PetEmarketAppState extends State<PetEmarketApp> {
     }
     if (sessionStore.isAdmin) {
       return AdminShell(
+        apiClient: apiClient,
+        sessionStore: sessionStore,
+        onThemeToggle: _toggleTheme,
+        onLogout: _logout,
+      );
+    }
+    if (sessionStore.isMerchant) {
+      return MerchantShell(
         apiClient: apiClient,
         sessionStore: sessionStore,
         onThemeToggle: _toggleTheme,
