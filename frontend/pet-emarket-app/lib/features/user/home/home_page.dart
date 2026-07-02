@@ -6,6 +6,7 @@ import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../ai_assistant/ai_assistant_page.dart';
 import '../recommendation/recommendation_page.dart';
+import '../../merchant/register/merchant_register_page.dart';
 
 const _banners = [
   {'title': '萌宠领养节', 'sub': '新品活体上线，限时领券', 'emoji': '🐶'},
@@ -31,9 +32,15 @@ class _P {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({required this.apiClient, required this.sessionStore, super.key});
+  const HomePage({
+    required this.apiClient,
+    required this.sessionStore,
+    this.onGoToMerchant,
+    super.key,
+  });
   final ApiClient apiClient;
   final SessionStore sessionStore;
+  final VoidCallback? onGoToMerchant;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -191,6 +198,14 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+            ),
+          ),
+
+          // ——— Merchant Center Entry ———
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 12, wide ? 40 : 16, 4),
+              child: _buildMerchantCenterCard(ctx),
             ),
           ),
 
@@ -360,6 +375,89 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         child: const Icon(Icons.smart_toy_rounded),
+      ),
+    );
+  }
+
+  // ——— Merchant Center Card ———
+  Widget _buildMerchantCenterCard(BuildContext ctx) {
+    final isMerchant = widget.sessionStore.isMerchant;
+    return GestureDetector(
+      onTap: () {
+        if (isMerchant) {
+          widget.onGoToMerchant?.call();
+        } else {
+          Navigator.push(
+            ctx,
+            MaterialPageRoute(
+              builder: (_) => MerchantRegisterPage(
+                apiClient: widget.apiClient,
+                sessionStore: widget.sessionStore,
+                onSuccess: widget.onGoToMerchant,
+              ),
+            ),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isMerchant
+                ? [PawmartColors.primary400, PawmartColors.primary600]
+                : [PawmartColors.neutral100, PawmartColors.neutral200],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(pawmartRadiusLg),
+          boxShadow: pawmartShadow1,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: (isMerchant ? Colors.white : PawmartColors.primary500).withAlpha(40),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.storefront_rounded,
+                size: 26,
+                color: isMerchant ? Colors.white : PawmartColors.primary500,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMerchant ? '商家中心' : '成为商家',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: isMerchant ? Colors.white : PawmartColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isMerchant ? '管理你的店铺和商品' : '开启你的宠物事业',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isMerchant ? Colors.white.withAlpha(200) : PawmartColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 18,
+              color: isMerchant ? Colors.white.withAlpha(200) : PawmartColors.primary500,
+            ),
+          ],
+        ),
       ),
     );
   }

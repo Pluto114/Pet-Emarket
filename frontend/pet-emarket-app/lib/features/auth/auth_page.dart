@@ -230,14 +230,21 @@ class _AuthPageState extends State<AuthPage> {
           _dividerWithText('无需登录，直接体验'),
           const SizedBox(height: 16),
           // Dev bypass
-          SizedBox(
-            height: 48,
-            child: Row(children: [
-              Expanded(child: _userBtn()),
-              const SizedBox(width: 12),
-              Expanded(child: _adminBtn()),
-            ]),
-          ),
+          Column(children: [
+            SizedBox(
+              height: 48,
+              child: Row(children: [
+                Expanded(child: _userBtn()),
+                const SizedBox(width: 12),
+                Expanded(child: _adminBtn()),
+              ]),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 48,
+              child: _merchantBtn(),
+            ),
+          ]),
           const SizedBox(height: 10),
           Text('体验账号: admin / Admin@123456', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
         ],
@@ -293,7 +300,7 @@ class _AuthPageState extends State<AuthPage> {
 
   Widget _userBtn() {
     return OutlinedButton.icon(
-      onPressed: () => widget.sessionStore.devBypass(asAdmin: false),
+      onPressed: () => widget.sessionStore.devBypass(role: 'CUSTOMER'),
       icon: const Icon(Icons.person_outline, size: 18),
       label: Text('用户首页', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
       style: OutlinedButton.styleFrom(
@@ -307,12 +314,26 @@ class _AuthPageState extends State<AuthPage> {
 
   Widget _adminBtn() {
     return FilledButton.icon(
-      onPressed: () => widget.sessionStore.devBypass(asAdmin: true),
+      onPressed: () => widget.sessionStore.devBypass(role: 'ADMIN'),
       icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
       label: Text('管理后台', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
       style: FilledButton.styleFrom(
         backgroundColor: PawmartColors.primary500,
         foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  Widget _merchantBtn() {
+    return OutlinedButton.icon(
+      onPressed: () => widget.sessionStore.devBypass(role: 'MERCHANT'),
+      icon: const Icon(Icons.storefront_outlined, size: 18),
+      label: Text('商家中心', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: PawmartColors.accent600,
+        side: BorderSide(color: PawmartColors.accent200),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 12),
       ),

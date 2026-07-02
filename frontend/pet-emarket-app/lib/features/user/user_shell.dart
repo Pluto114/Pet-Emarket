@@ -23,12 +23,14 @@ class UserShell extends StatefulWidget {
     required this.sessionStore,
     required this.onThemeToggle,
     required this.onLogout,
+    this.onGoToMerchant,
     super.key,
   });
   final ApiClient apiClient;
   final SessionStore sessionStore;
   final VoidCallback onThemeToggle;
   final VoidCallback onLogout;
+  final VoidCallback? onGoToMerchant;
 
   @override
   State<UserShell> createState() => _UserShellState();
@@ -207,7 +209,11 @@ class _UserShellState extends State<UserShell> {
     final wide = w > 800;
 
     final pages = <Widget>[
-      HomePage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
+      HomePage(
+        apiClient: widget.apiClient,
+        sessionStore: widget.sessionStore,
+        onGoToMerchant: widget.onGoToMerchant,
+      ),
       NearbyStorePage(apiClient: widget.apiClient),
       CartPage(apiClient: widget.apiClient),
       OrderPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),

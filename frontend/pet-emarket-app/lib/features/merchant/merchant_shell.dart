@@ -13,12 +13,14 @@ class MerchantShell extends StatefulWidget {
     required this.sessionStore,
     required this.onThemeToggle,
     required this.onLogout,
+    this.onBackToUser,
     super.key,
   });
   final ApiClient apiClient;
   final SessionStore sessionStore;
   final VoidCallback onThemeToggle;
   final VoidCallback onLogout;
+  final VoidCallback? onBackToUser;
 
   @override
   State<MerchantShell> createState() => _MerchantShellState();
@@ -50,6 +52,19 @@ class _MerchantShellState extends State<MerchantShell> {
           appBar: AppBar(
             title: Text(menuItems[selectedIndex].label),
             actions: [
+              if (widget.onBackToUser != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: TextButton.icon(
+                    onPressed: widget.onBackToUser,
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                    label: const Text('用户首页', style: TextStyle(fontSize: 13)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                ),
               IconButton(
                 tooltip: '切换主题',
                 icon: Icon(Theme.of(context).brightness == Brightness.light

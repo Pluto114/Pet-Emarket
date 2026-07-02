@@ -39,6 +39,20 @@ class AppUser {
     );
   }
 
+  AppUser copyWithRole(String newRole) {
+    return AppUser(
+      id: id,
+      username: username,
+      displayName: displayName,
+      role: newRole,
+      memberLevel: memberLevel,
+      status: status,
+      pointsBalance: pointsBalance,
+      phone: phone,
+      email: email,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

@@ -30,17 +30,40 @@ class SessionStore extends ChangeNotifier {
   }
 
   /// Dev-only: skip login without backend.
-  void devBypass({required bool asAdmin}) {
+  void devBypass({String role = 'CUSTOMER'}) {
     _token = 'dev-token-${DateTime.now().millisecondsSinceEpoch}';
+    late final String id, username, displayName, memberLevel, email;
+    switch (role) {
+      case 'ADMIN':
+        id = 'dev-admin-001';
+        username = 'admin';
+        displayName = 'Dev Admin';
+        memberLevel = 'VIP';
+        email = 'admin@petemarket.dev';
+        break;
+      case 'MERCHANT':
+        id = 'dev-merchant-001';
+        username = 'merchant';
+        displayName = 'Dev Merchant';
+        memberLevel = 'NORMAL';
+        email = 'merchant@petemarket.dev';
+        break;
+      default: // CUSTOMER
+        id = 'dev-user-001';
+        username = 'customer';
+        displayName = 'Dev Customer';
+        memberLevel = 'NORMAL';
+        email = 'user@petemarket.dev';
+    }
     _user = AppUser(
-      id: asAdmin ? 'dev-admin-001' : 'dev-user-001',
-      username: asAdmin ? 'admin' : 'customer',
-      displayName: asAdmin ? 'Dev Admin' : 'Dev Customer',
-      role: asAdmin ? 'ADMIN' : 'CUSTOMER',
-      memberLevel: asAdmin ? 'VIP' : 'NORMAL',
+      id: id,
+      username: username,
+      displayName: displayName,
+      role: role,
+      memberLevel: memberLevel,
       status: 'ACTIVE',
       phone: '18800000000',
-      email: asAdmin ? 'admin@petemarket.dev' : 'user@petemarket.dev',
+      email: email,
     );
     notifyListeners();
   }
