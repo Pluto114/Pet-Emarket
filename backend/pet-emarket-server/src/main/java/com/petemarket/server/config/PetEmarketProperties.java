@@ -149,9 +149,9 @@ public class PetEmarketProperties {
         private boolean enabled = false;
         private String host = "smtp.qq.com";
         private int port = 465;
-        private String username = "3449940090@qq.com";
+        private String username = "";
         private String password = "";
-        private String from = "3449940090@qq.com";
+        private String from = "";
         private boolean sslEnabled = true;
         private boolean starttlsEnabled = false;
         private boolean devCodeInResponse = false;

@@ -46,9 +46,9 @@ pet-emarket:
     enabled: ${MAIL_ENABLED:false}
     host: ${SMTP_HOST:smtp.qq.com}
     port: ${SMTP_PORT:465}
-    username: ${SMTP_USERNAME:3449940090@qq.com}
+    username: ${SMTP_USERNAME:}
     password: ${SMTP_PASSWORD:}
-    from: ${MAIL_FROM:3449940090@qq.com}
+    from: ${MAIL_FROM:}
     ssl-enabled: ${SMTP_SSL_ENABLED:true}
     starttls-enabled: ${SMTP_STARTTLS_ENABLED:false}
     dev-code-in-response: ${MAIL_DEV_CODE_IN_RESPONSE:false}
