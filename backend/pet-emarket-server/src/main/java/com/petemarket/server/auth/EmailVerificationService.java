@@ -17,11 +17,13 @@ public class EmailVerificationService {
     private static final int MAX_ATTEMPTS = 5;
 
     private final UserRepository userRepository;
+    private final EmailDeliveryService emailDeliveryService;
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<String, VerificationCode> codes = new ConcurrentHashMap<>();
 
-    public EmailVerificationService(UserRepository userRepository) {
+    public EmailVerificationService(UserRepository userRepository, EmailDeliveryService emailDeliveryService) {
         this.userRepository = userRepository;
+        this.emailDeliveryService = emailDeliveryService;
     }
 
     public EmailCodeResponse sendRegisterCode(SendEmailCodeRequest request) {
@@ -37,8 +39,13 @@ public class EmailVerificationService {
         }
 
         String code = "%06d".formatted(secureRandom.nextInt(1_000_000));
+        emailDeliveryService.sendRegisterCode(email, code, (int) CODE_TTL.toSeconds());
         codes.put(email, new VerificationCode(code, now.plus(CODE_TTL), now, 0));
-        return new EmailCodeResponse(email, (int) CODE_TTL.toSeconds(), code);
+        return new EmailCodeResponse(
+                email,
+                (int) CODE_TTL.toSeconds(),
+                emailDeliveryService.shouldExposeDevCode() ? code : null
+        );
     }
 
     public void verifyRegisterCode(String emailValue, String codeValue) {
