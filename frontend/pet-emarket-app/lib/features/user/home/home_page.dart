@@ -50,6 +50,9 @@ class _HomePageState extends State<HomePage> {
   final _pageCtrl = PageController();
   late final Timer _bannerTimer;
   int _bi = 0;
+
+  ColorScheme get _cs => Theme.of(context).colorScheme;
+
   @override
   void initState() {
     super.initState();
@@ -77,14 +80,14 @@ class _HomePageState extends State<HomePage> {
     final wide = w > 800;
 
     return Scaffold(
-      backgroundColor: PawmartColors.surfaceBg,
+      backgroundColor: _cs.surface,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           // ——— Category Chips ———
           SliverToBoxAdapter(
             child: Container(
-              color: PawmartColors.neutral50,
+              color: _cs.surfaceContainerHighest,
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -128,8 +131,8 @@ class _HomePageState extends State<HomePage> {
                           final b = _banners[i];
                           final colors = [
                             [
-                              PawmartColors.primary400,
-                              PawmartColors.primary600,
+                              _cs.primary,
+                              _cs.primary,
                             ],
                             [PawmartColors.accent300, PawmartColors.accent500],
                             [
@@ -273,7 +276,7 @@ class _HomePageState extends State<HomePage> {
                 wide ? 40 : 16,
                 24,
               ),
-              color: PawmartColors.neutral50,
+              color: _cs.surfaceContainerHighest,
               child: Column(
                 children: [
                   pawmartSectionHeader('AI 为你推荐'),
@@ -282,7 +285,7 @@ class _HomePageState extends State<HomePage> {
                     '根据宠物品种和年龄，为你精选最适合的商品',
                     style: TextStyle(
                       fontSize: 14,
-                      color: PawmartColors.textSecondary,
+                      color: _cs.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -456,8 +459,8 @@ class _HomePageState extends State<HomePage> {
           gradient: LinearGradient(
             colors:
                 isMerchant
-                    ? [PawmartColors.primary400, PawmartColors.primary600]
-                    : [PawmartColors.neutral100, PawmartColors.neutral200],
+                    ? [_cs.primary, _cs.primary]
+                    : [_cs.outlineVariant, _cs.outline],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -470,14 +473,14 @@ class _HomePageState extends State<HomePage> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: (isMerchant ? Colors.white : PawmartColors.primary500)
+                color: (isMerchant ? Colors.white : _cs.primary)
                     .withAlpha(40),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.storefront_rounded,
                 size: 26,
-                color: isMerchant ? Colors.white : PawmartColors.primary500,
+                color: isMerchant ? Colors.white : _cs.primary,
               ),
             ),
             const SizedBox(width: 16),
@@ -491,7 +494,7 @@ class _HomePageState extends State<HomePage> {
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color:
-                          isMerchant ? Colors.white : PawmartColors.textPrimary,
+                          isMerchant ? Colors.white : _cs.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -502,7 +505,7 @@ class _HomePageState extends State<HomePage> {
                       color:
                           isMerchant
                               ? Colors.white.withAlpha(200)
-                              : PawmartColors.textSecondary,
+                              : _cs.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -514,7 +517,7 @@ class _HomePageState extends State<HomePage> {
               color:
                   isMerchant
                       ? Colors.white.withAlpha(200)
-                      : PawmartColors.primary500,
+                      : _cs.primary,
             ),
           ],
         ),
@@ -529,7 +532,7 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? PawmartColors.accent400 : PawmartColors.neutral100,
+          color: active ? PawmartColors.accent400 : _cs.outlineVariant,
           borderRadius: BorderRadius.circular(pawmartRadiusFull),
         ),
         child: Text(
@@ -538,7 +541,7 @@ class _HomePageState extends State<HomePage> {
             fontSize: 13,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             color:
-                active ? PawmartColors.textOnAccent : PawmartColors.textPrimary,
+                active ? PawmartColors.textOnAccent : _cs.onSurface,
           ),
         ),
       ),
@@ -548,14 +551,14 @@ class _HomePageState extends State<HomePage> {
   // ——— Product Card ———
   Widget _productCard(_P p) {
     final colors = [
-      PawmartColors.primary100,
-      PawmartColors.accent50,
-      PawmartColors.neutral100,
-      PawmartColors.primary50,
+      _cs.primaryContainer,
+      _cs.secondaryContainer,
+      _cs.outlineVariant,
+      _cs.primaryContainer,
     ];
     return Container(
       decoration: BoxDecoration(
-        color: PawmartColors.surfaceCard,
+        color: _cs.surface,
         borderRadius: BorderRadius.circular(pawmartRadiusMd),
         boxShadow: pawmartShadow1,
       ),
@@ -575,7 +578,7 @@ class _HomePageState extends State<HomePage> {
               child: Icon(
                 p.t == '活体' ? Icons.pets : Icons.shopping_bag_outlined,
                 size: 36,
-                color: PawmartColors.primary400,
+                color: _cs.primary,
               ),
             ),
           ),
@@ -591,14 +594,14 @@ class _HomePageState extends State<HomePage> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: PawmartColors.primary50,
+                    color: _cs.primaryContainer,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     p.sub,
                     style: TextStyle(
                       fontSize: 10,
-                      color: PawmartColors.primary600,
+                      color: _cs.primary,
                     ),
                   ),
                 ),
@@ -611,7 +614,7 @@ class _HomePageState extends State<HomePage> {
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                     height: 1.2,
-                    color: PawmartColors.textPrimary,
+                    color: _cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -622,7 +625,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: PawmartColors.primary500,
+                        color: _cs.primary,
                       ),
                     ),
                     const Spacer(),
@@ -655,9 +658,9 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: PawmartColors.surfaceCard,
+          color: _cs.surface,
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
-          border: Border.all(color: PawmartColors.neutral200),
+          border: Border.all(color: _cs.outline),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,10 +669,10 @@ class _HomePageState extends State<HomePage> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: PawmartColors.primary50,
+                color: _cs.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 20, color: PawmartColors.primary500),
+              child: Icon(icon, size: 20, color: _cs.primary),
             ),
             const SizedBox(height: 10),
             Text(
@@ -677,7 +680,7 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: PawmartColors.textPrimary,
+                color: _cs.onSurface,
               ),
             ),
             const SizedBox(height: 4),
@@ -685,7 +688,7 @@ class _HomePageState extends State<HomePage> {
               desc,
               style: TextStyle(
                 fontSize: 12,
-                color: PawmartColors.textSecondary,
+                color: _cs.onSurfaceVariant,
                 height: 1.4,
               ),
             ),
@@ -704,10 +707,10 @@ class _HomePageState extends State<HomePage> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: PawmartColors.primary50,
+              color: _cs.primaryContainer,
               borderRadius: BorderRadius.circular(pawmartRadiusFull),
             ),
-            child: Icon(icon, size: 20, color: PawmartColors.primary500),
+            child: Icon(icon, size: 20, color: _cs.primary),
           ),
           const SizedBox(height: 8),
           Text(
@@ -715,12 +718,12 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: PawmartColors.textPrimary,
+              color: _cs.onSurface,
             ),
           ),
           Text(
             sub,
-            style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary),
+            style: TextStyle(fontSize: 11, color: _cs.onSurfaceVariant),
           ),
         ],
       ),
