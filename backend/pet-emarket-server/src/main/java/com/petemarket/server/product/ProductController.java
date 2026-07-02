@@ -34,10 +34,19 @@ public class ProductController {
         return ApiResponse.ok(PageData.of(productService.list(keyword, type, status)));
     }
 
+    @GetMapping("/managed")
+    public ApiResponse<PageData<ProductResponse>> listManaged(@AuthenticationPrincipal UserAccount currentUser,
+                                                              @RequestParam(required = false) String keyword,
+                                                              @RequestParam(required = false) ProductType type,
+                                                              @RequestParam(required = false) ProductStatus status) {
+        requireProductManager(currentUser);
+        return ApiResponse.ok(PageData.of(productService.listManaged(currentUser, keyword, type, status)));
+    }
+
     @GetMapping("/live-pet-audits")
     public ApiResponse<PageData<ProductResponse>> listLivePetAudits(@AuthenticationPrincipal UserAccount currentUser,
                                                                     @RequestParam(required = false) ProductAuditStatus auditStatus) {
-        requireProductManager(currentUser);
+        requireAdmin(currentUser);
         return ApiResponse.ok(PageData.of(productService.listLivePetAudits(auditStatus)));
     }
 
@@ -50,7 +59,7 @@ public class ProductController {
     public ApiResponse<ProductResponse> create(@AuthenticationPrincipal UserAccount currentUser,
                                                @Valid @RequestBody UpsertProductRequest request) {
         requireProductManager(currentUser);
-        return ApiResponse.ok(productService.create(request), "product created");
+        return ApiResponse.ok(productService.create(request, currentUser), "product created");
     }
 
     @PutMapping("/{id}")
@@ -58,13 +67,13 @@ public class ProductController {
                                                @PathVariable Long id,
                                                @Valid @RequestBody UpsertProductRequest request) {
         requireProductManager(currentUser);
-        return ApiResponse.ok(productService.update(id, request), "product updated");
+        return ApiResponse.ok(productService.update(id, request, currentUser), "product updated");
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal UserAccount currentUser, @PathVariable Long id) {
         requireProductManager(currentUser);
-        productService.delete(id);
+        productService.delete(id, currentUser);
         return ApiResponse.ok(null, "product deleted");
     }
 
@@ -72,12 +81,18 @@ public class ProductController {
     public ApiResponse<ProductResponse> audit(@AuthenticationPrincipal UserAccount currentUser,
                                               @PathVariable Long id,
                                               @Valid @RequestBody ProductAuditRequest request) {
-        requireProductManager(currentUser);
+        requireAdmin(currentUser);
         return ApiResponse.ok(productService.auditLivePet(id, request.approved(), request.remark(), currentUser.getId()), "product audited");
     }
 
     private void requireProductManager(UserAccount user) {
         if (user == null || (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.MERCHANT)) {
+            throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    private void requireAdmin(UserAccount user) {
+        if (user == null || user.getRole() != UserRole.ADMIN) {
             throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
         }
     }

@@ -14,6 +14,7 @@ class PetStore {
     this.phone = '',
     this.businessHours = '',
     this.featureTags = '',
+    this.ownerUserId = '',
     this.distanceKm,
   });
 
@@ -29,6 +30,7 @@ class PetStore {
   final String phone;
   final String businessHours;
   final String featureTags;
+  final String ownerUserId;
   final double? distanceKm;
 
   factory PetStore.fromJson(Map<String, dynamic> json) {
@@ -45,7 +47,11 @@ class PetStore {
       phone: json['phone']?.toString() ?? '',
       businessHours: json['businessHours']?.toString() ?? '',
       featureTags: json['featureTags']?.toString() ?? '',
-      distanceKm: json['distanceKm'] == null ? null : NumberParser.toDouble(json['distanceKm']),
+      ownerUserId: json['ownerUserId']?.toString() ?? '',
+      distanceKm:
+          json['distanceKm'] == null
+              ? null
+              : NumberParser.toDouble(json['distanceKm']),
     );
   }
 }

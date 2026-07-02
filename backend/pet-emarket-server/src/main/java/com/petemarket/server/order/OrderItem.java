@@ -23,6 +23,7 @@ public class OrderItem {
     private PetOrder order;
 
     private Long productId;
+    private Long storeId;
     private String productName;
     private String productType;
     private String category;
@@ -56,6 +57,14 @@ public class OrderItem {
 
     public void setProductId(Long productId) {
         this.productId = productId;
+    }
+
+    public Long getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(Long storeId) {
+        this.storeId = storeId;
     }
 
     public String getProductName() {

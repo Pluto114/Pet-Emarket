@@ -6,7 +6,11 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/toast.dart';
 
 class MerchantProductPage extends StatefulWidget {
-  const MerchantProductPage({required this.apiClient, required this.sessionStore, super.key});
+  const MerchantProductPage({
+    required this.apiClient,
+    required this.sessionStore,
+    super.key,
+  });
   final ApiClient apiClient;
   final SessionStore sessionStore;
 
@@ -21,15 +25,29 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
   final keywordCtrl = TextEditingController();
 
   @override
-  void initState() { super.initState(); load(); }
+  void initState() {
+    super.initState();
+    load();
+  }
+
   @override
-  void dispose() { keywordCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    keywordCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> load() async {
-    setState(() { loading = true; errorText = null; });
+    setState(() {
+      loading = true;
+      errorText = null;
+    });
     try {
-      products = await widget.apiClient.listProducts(keyword: keywordCtrl.text);
-    } catch (e) { errorText = e.toString(); }
+      products = await widget.apiClient.listManagedProducts(
+        keyword: keywordCtrl.text,
+      );
+    } catch (e) {
+      errorText = e.toString();
+    }
     if (mounted) setState(() => loading = false);
   }
 
@@ -43,7 +61,14 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('商品管理', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700))),
+              Expanded(
+                child: Text(
+                  '商品管理',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
               FilledButton.icon(
                 onPressed: () => _showDialog(),
                 icon: const Icon(Icons.add),
@@ -70,7 +95,13 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
             ],
           ),
           const SizedBox(height: 12),
-          if (loading) const Center(child: Padding(padding: EdgeInsets.all(28), child: CircularProgressIndicator())),
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(28),
+                child: CircularProgressIndicator(),
+              ),
+            ),
           if (errorText != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -82,7 +113,14 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
                     children: [
                       Icon(Icons.error_outline, color: theme.colorScheme.error),
                       const SizedBox(width: 12),
-                      Expanded(child: Text(errorText!, style: TextStyle(color: theme.colorScheme.onErrorContainer))),
+                      Expanded(
+                        child: Text(
+                          errorText!,
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
                       TextButton(onPressed: load, child: const Text('重试')),
                     ],
                   ),
@@ -95,41 +133,76 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.inventory_2, size: 48, color: theme.colorScheme.onSurfaceVariant.withAlpha(100)),
+                    Icon(
+                      Icons.inventory_2,
+                      size: 48,
+                      color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+                    ),
                     const SizedBox(height: 12),
-                    Text('暂无商品', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      '暂无商品',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('点击上方按钮添加您的第一个商品', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      '点击上方按钮添加您的第一个商品',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           if (!loading && errorText == null)
-            ...products.map((p) => Card(
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: p.isLivePet
-                      ? const Color(0xFF7C4DFF).withAlpha(25)
-                      : theme.colorScheme.primaryContainer,
-                  child: Icon(
-                    p.isLivePet ? Icons.pets : Icons.shopping_bag,
-                    color: p.isLivePet ? const Color(0xFF7C4DFF) : theme.colorScheme.primary,
-                    size: 20,
+            ...products.map(
+              (p) => Card(
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        p.isLivePet
+                            ? const Color(0xFF7C4DFF).withAlpha(25)
+                            : theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      p.isLivePet ? Icons.pets : Icons.shopping_bag,
+                      color:
+                          p.isLivePet
+                              ? const Color(0xFF7C4DFF)
+                              : theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    p.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    '${p.type == 'PET_LIVE' ? '活体宠物' : '周边商品'} | ${p.category} | ¥${p.price.toStringAsFixed(2)} | 库存 ${p.stock}',
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _statusChip(p.status),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 20),
+                        onPressed: () => _showDialog(product: p),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          size: 20,
+                          color: Colors.red,
+                        ),
+                        onPressed: () => _delete(p),
+                      ),
+                    ],
                   ),
                 ),
-                title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${p.type == 'PET_LIVE' ? '活体宠物' : '周边商品'} | ${p.category} | ¥${p.price.toStringAsFixed(2)} | 库存 ${p.stock}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _statusChip(p.status),
-                    const SizedBox(width: 4),
-                    IconButton(icon: const Icon(Icons.edit, size: 20), onPressed: () => _showDialog(product: p)),
-                    IconButton(icon: const Icon(Icons.delete, size: 20, color: Colors.red), onPressed: () => _delete(p)),
-                  ],
-                ),
               ),
-            )),
+            ),
         ],
       ),
     );
@@ -167,7 +240,10 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
         color: bg,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(label, style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -219,14 +295,30 @@ class _ProductDialog extends StatefulWidget {
 
 class _ProductDialogState extends State<_ProductDialog> {
   late final nameCtrl = TextEditingController(text: widget.product?.name ?? '');
-  late final catCtrl = TextEditingController(text: widget.product?.category ?? '');
-  late final priceCtrl = TextEditingController(text: widget.product?.price.toString() ?? '');
-  late final stockCtrl = TextEditingController(text: widget.product?.stock.toString() ?? '');
-  late final descCtrl = TextEditingController(text: widget.product?.description ?? '');
-  late final petCodeCtrl = TextEditingController(text: widget.product?.livePet?['petCode']?.toString() ?? '');
-  late final healthCtrl = TextEditingController(text: widget.product?.livePet?['healthStatus']?.toString() ?? '');
-  late final vaccineCtrl = TextEditingController(text: widget.product?.livePet?['vaccineCertNo']?.toString() ?? '');
-  late final quarantineCtrl = TextEditingController(text: widget.product?.livePet?['quarantineCertNo']?.toString() ?? '');
+  late final catCtrl = TextEditingController(
+    text: widget.product?.category ?? '',
+  );
+  late final priceCtrl = TextEditingController(
+    text: widget.product?.price.toString() ?? '',
+  );
+  late final stockCtrl = TextEditingController(
+    text: widget.product?.stock.toString() ?? '',
+  );
+  late final descCtrl = TextEditingController(
+    text: widget.product?.description ?? '',
+  );
+  late final petCodeCtrl = TextEditingController(
+    text: widget.product?.livePet?['petCode']?.toString() ?? '',
+  );
+  late final healthCtrl = TextEditingController(
+    text: widget.product?.livePet?['healthStatus']?.toString() ?? '',
+  );
+  late final vaccineCtrl = TextEditingController(
+    text: widget.product?.livePet?['vaccineCertNo']?.toString() ?? '',
+  );
+  late final quarantineCtrl = TextEditingController(
+    text: widget.product?.livePet?['quarantineCertNo']?.toString() ?? '',
+  );
   String type = 'GOODS';
   String status = 'ON_SALE';
 
@@ -261,7 +353,10 @@ class _ProductDialogState extends State<_ProductDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '商品名称')),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: '商品名称'),
+              ),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -271,7 +366,10 @@ class _ProductDialogState extends State<_ProductDialog> {
                       decoration: const InputDecoration(labelText: '类型'),
                       items: const [
                         DropdownMenuItem(value: 'GOODS', child: Text('周边商品')),
-                        DropdownMenuItem(value: 'PET_LIVE', child: Text('活体宠物')),
+                        DropdownMenuItem(
+                          value: 'PET_LIVE',
+                          child: Text('活体宠物'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => type = v ?? type),
                     ),
@@ -292,41 +390,79 @@ class _ProductDialogState extends State<_ProductDialog> {
                 ],
               ),
               const SizedBox(height: 10),
-              TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类')),
+              TextField(
+                controller: catCtrl,
+                decoration: const InputDecoration(labelText: '分类'),
+              ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Expanded(child: TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: '价格'), keyboardType: TextInputType.number)),
+                  Expanded(
+                    child: TextField(
+                      controller: priceCtrl,
+                      decoration: const InputDecoration(labelText: '价格'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: TextField(controller: stockCtrl, decoration: const InputDecoration(labelText: '库存'), keyboardType: TextInputType.number)),
+                  Expanded(
+                    child: TextField(
+                      controller: stockCtrl,
+                      decoration: const InputDecoration(labelText: '库存'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
-              TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述'), maxLines: 2),
+              TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: '描述'),
+                maxLines: 2,
+              ),
               if (type == 'PET_LIVE') ...[
                 const Divider(height: 24),
-                const Text('活体宠物档案', style: TextStyle(fontWeight: FontWeight.w700)),
+                const Text(
+                  '活体宠物档案',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: petCodeCtrl, decoration: const InputDecoration(labelText: '宠物编号')),
+                TextField(
+                  controller: petCodeCtrl,
+                  decoration: const InputDecoration(labelText: '宠物编号'),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: healthCtrl, decoration: const InputDecoration(labelText: '健康状态')),
+                TextField(
+                  controller: healthCtrl,
+                  decoration: const InputDecoration(labelText: '健康状态'),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: vaccineCtrl, decoration: const InputDecoration(labelText: '疫苗证明编号')),
+                TextField(
+                  controller: vaccineCtrl,
+                  decoration: const InputDecoration(labelText: '疫苗证明编号'),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: quarantineCtrl, decoration: const InputDecoration(labelText: '检疫证明编号')),
+                TextField(
+                  controller: quarantineCtrl,
+                  decoration: const InputDecoration(labelText: '检疫证明编号'),
+                ),
               ],
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
         FilledButton(
           onPressed: () {
             final payload = <String, dynamic>{
               'name': nameCtrl.text.trim(),
               'type': type,
-              'category': catCtrl.text.trim().isEmpty ? 'General' : catCtrl.text.trim(),
+              'category':
+                  catCtrl.text.trim().isEmpty ? 'General' : catCtrl.text.trim(),
               'price': double.tryParse(priceCtrl.text) ?? 0,
               'stock': int.tryParse(stockCtrl.text) ?? 0,
               'status': status,
@@ -334,7 +470,8 @@ class _ProductDialogState extends State<_ProductDialog> {
               if (type == 'PET_LIVE') 'petCode': petCodeCtrl.text.trim(),
               if (type == 'PET_LIVE') 'healthStatus': healthCtrl.text.trim(),
               if (type == 'PET_LIVE') 'vaccineCertNo': vaccineCtrl.text.trim(),
-              if (type == 'PET_LIVE') 'quarantineCertNo': quarantineCtrl.text.trim(),
+              if (type == 'PET_LIVE')
+                'quarantineCertNo': quarantineCtrl.text.trim(),
             };
             Navigator.pop(context, payload);
           },
@@ -344,10 +481,3 @@ class _ProductDialogState extends State<_ProductDialog> {
     );
   }
 }
-
-
-
-
-
-
-

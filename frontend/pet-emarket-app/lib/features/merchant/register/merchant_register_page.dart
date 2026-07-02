@@ -8,12 +8,10 @@ class MerchantRegisterPage extends StatefulWidget {
   const MerchantRegisterPage({
     required this.apiClient,
     required this.sessionStore,
-    this.onSuccess,
     super.key,
   });
   final ApiClient apiClient;
   final SessionStore sessionStore;
-  final VoidCallback? onSuccess;
 
   @override
   State<MerchantRegisterPage> createState() => _MerchantRegisterPageState();
@@ -26,8 +24,11 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   final _cityCtrl = TextEditingController();
   final _districtCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  final _longitudeCtrl = TextEditingController(text: '120.1551');
+  final _latitudeCtrl = TextEditingController(text: '30.2741');
   final _hoursCtrl = TextEditingController();
-  final _tagsCtrl = TextEditingController();
+  final _licenseCtrl = TextEditingController();
+  final _reasonCtrl = TextEditingController();
   bool _submitting = false;
 
   @override
@@ -37,8 +38,11 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
     _cityCtrl.dispose();
     _districtCtrl.dispose();
     _addressCtrl.dispose();
+    _longitudeCtrl.dispose();
+    _latitudeCtrl.dispose();
     _hoursCtrl.dispose();
-    _tagsCtrl.dispose();
+    _licenseCtrl.dispose();
+    _reasonCtrl.dispose();
     super.dispose();
   }
 
@@ -47,53 +51,33 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
 
     setState(() => _submitting = true);
     try {
-      final user = widget.sessionStore.user!;
-
-      // 1. Upgrade user role to MERCHANT
-      await widget.apiClient.updateUser(user.id, {
-        'username': user.username,
-        'displayName': user.displayName,
-        'role': 'MERCHANT',
-        'memberLevel': user.memberLevel,
-        'phone': _phoneCtrl.text.trim(),
-        'email': user.email,
-      });
-
-      // 2. Update local session
-      widget.sessionStore.updateUser(user.copyWithRole('MERCHANT'));
-
-      // 3. Create store
-      await widget.apiClient.createStore({
-        'name': _nameCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
+      final user = widget.sessionStore.user;
+      await widget.apiClient.submitMerchantApplication({
+        'storeName': _nameCtrl.text.trim(),
         'city': _cityCtrl.text.trim(),
         'district': _districtCtrl.text.trim(),
         'address': _addressCtrl.text.trim(),
-        'businessHours': _hoursCtrl.text.trim(),
-        'tags': _tagsCtrl.text.trim(),
-        'longitude': 0.0,
-        'latitude': 0.0,
-        'status': 'OPEN',
+        'longitude': double.tryParse(_longitudeCtrl.text.trim()) ?? 120.1551,
+        'latitude': double.tryParse(_latitudeCtrl.text.trim()) ?? 30.2741,
+        'contactName': user?.displayName ?? '',
+        'contactPhone': _phoneCtrl.text.trim(),
+        'businessLicenseNo': _licenseCtrl.text.trim(),
+        'reason':
+            _reasonCtrl.text.trim().isEmpty
+                ? _hoursCtrl.text.trim()
+                : _reasonCtrl.text.trim(),
       });
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('入驻成功！欢迎成为 PawMart 商家')),
-      );
-      widget.onSuccess?.call();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('入驻申请已提交，请等待管理员审核')));
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      // Even if store creation fails, role upgrade may have succeeded
-      if (widget.sessionStore.isMerchant) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('入驻成功！请前往商家后台完善店铺信息')),
-        );
-        widget.onSuccess?.call();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('入驻失败：$e')),
-        );
-      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('提交失败：$e')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -105,9 +89,7 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
 
     return Scaffold(
       backgroundColor: PawmartColors.surfaceBg,
-      appBar: AppBar(
-        title: const Text('商家入驻'),
-      ),
+      appBar: AppBar(title: const Text('商家入驻')),
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(wide ? 40 : 20),
@@ -123,7 +105,10 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [PawmartColors.primary400, PawmartColors.primary600],
+                        colors: [
+                          PawmartColors.primary400,
+                          PawmartColors.primary600,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -131,7 +116,11 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                     ),
                     child: const Column(
                       children: [
-                        Icon(Icons.storefront_rounded, size: 48, color: Colors.white),
+                        Icon(
+                          Icons.storefront_rounded,
+                          size: 48,
+                          color: Colors.white,
+                        ),
                         SizedBox(height: 12),
                         Text(
                           '成为 PawMart 商家',
@@ -156,27 +145,107 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                   Text('店铺信息', style: _sectionLabel()),
                   const SizedBox(height: 14),
 
-                  _buildField('店铺名称 *', _nameCtrl, Icons.store, (v) => (v ?? '').trim().isEmpty ? '请输入店铺名称' : null),
+                  _buildField(
+                    '店铺名称 *',
+                    _nameCtrl,
+                    Icons.store,
+                    (v) => (v ?? '').trim().isEmpty ? '请输入店铺名称' : null,
+                  ),
                   const SizedBox(height: 14),
-                  _buildField('联系电话 *', _phoneCtrl, Icons.phone, (v) {
-                    if ((v ?? '').trim().isEmpty) return '请输入联系电话';
-                    if ((v ?? '').trim().length < 7) return '请输入有效电话号码';
-                    return null;
-                  }, keyboardType: TextInputType.phone),
+                  _buildField(
+                    '联系电话 *',
+                    _phoneCtrl,
+                    Icons.phone,
+                    (v) {
+                      if ((v ?? '').trim().isEmpty) return '请输入联系电话';
+                      if ((v ?? '').trim().length < 7) return '请输入有效电话号码';
+                      return null;
+                    },
+                    keyboardType: TextInputType.phone,
+                  ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
-                      Expanded(child: _buildField('城市 *', _cityCtrl, Icons.location_city, (v) => (v ?? '').trim().isEmpty ? '请输入城市' : null)),
+                      Expanded(
+                        child: _buildField(
+                          '城市 *',
+                          _cityCtrl,
+                          Icons.location_city,
+                          (v) => (v ?? '').trim().isEmpty ? '请输入城市' : null,
+                        ),
+                      ),
                       const SizedBox(width: 14),
-                      Expanded(child: _buildField('区域 *', _districtCtrl, Icons.map, (v) => (v ?? '').trim().isEmpty ? '请输入区域' : null)),
+                      Expanded(
+                        child: _buildField(
+                          '区域 *',
+                          _districtCtrl,
+                          Icons.map,
+                          (v) => (v ?? '').trim().isEmpty ? '请输入区域' : null,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
-                  _buildField('详细地址 *', _addressCtrl, Icons.location_on, (v) => (v ?? '').trim().isEmpty ? '请输入详细地址' : null),
+                  _buildField(
+                    '详细地址 *',
+                    _addressCtrl,
+                    Icons.location_on,
+                    (v) => (v ?? '').trim().isEmpty ? '请输入详细地址' : null,
+                  ),
                   const SizedBox(height: 14),
-                  _buildField('营业时间', _hoursCtrl, Icons.schedule, null, hint: '如：9:00-21:00'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildField(
+                          '经度 *',
+                          _longitudeCtrl,
+                          Icons.explore,
+                          (v) =>
+                              double.tryParse((v ?? '').trim()) == null
+                                  ? '请输入有效经度'
+                                  : null,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: _buildField(
+                          '纬度 *',
+                          _latitudeCtrl,
+                          Icons.explore_outlined,
+                          (v) =>
+                              double.tryParse((v ?? '').trim()) == null
+                                  ? '请输入有效纬度'
+                                  : null,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 14),
-                  _buildField('特色标签', _tagsCtrl, Icons.label_outline, null, hint: '用逗号分隔，如：宠物美容,活体销售'),
+                  _buildField(
+                    '营业时间',
+                    _hoursCtrl,
+                    Icons.schedule,
+                    null,
+                    hint: '如：9:00-21:00',
+                  ),
+                  const SizedBox(height: 14),
+                  _buildField(
+                    '营业执照号',
+                    _licenseCtrl,
+                    Icons.badge_outlined,
+                    null,
+                    hint: '可选',
+                  ),
+                  const SizedBox(height: 14),
+                  _buildField(
+                    '申请说明',
+                    _reasonCtrl,
+                    Icons.description_outlined,
+                    null,
+                    hint: '可填写经营范围、特色服务等',
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -187,15 +256,27 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                       onPressed: _submitting ? null : _submit,
                       style: FilledButton.styleFrom(
                         backgroundColor: PawmartColors.primary500,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: _submitting
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                            )
-                          : const Text('确认入驻', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      child:
+                          _submitting
+                              ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                              : const Text(
+                                '确认入驻',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                     ),
                   ),
 
@@ -203,13 +284,22 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                   SizedBox(
                     height: 50,
                     child: OutlinedButton(
-                      onPressed: _submitting ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _submitting ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: PawmartColors.textSecondary,
                         side: BorderSide(color: PawmartColors.neutral200),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text('返回', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      child: const Text(
+                        '返回',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
 
@@ -224,7 +314,11 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   }
 
   TextStyle _sectionLabel() {
-    return const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary);
+    return const TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
+      color: PawmartColors.textPrimary,
+    );
   }
 
   Widget _buildField(
@@ -238,7 +332,10 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: ctrl,
@@ -248,10 +345,16 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 18, color: PawmartColors.neutral400),
             hintText: hint ?? '请输入$label',
-            hintStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary.withAlpha(150)),
+            hintStyle: TextStyle(
+              fontSize: 14,
+              color: PawmartColors.textSecondary.withAlpha(150),
+            ),
             filled: true,
             fillColor: PawmartColors.surfaceCard,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: PawmartColors.neutral200),
@@ -262,7 +365,10 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: PawmartColors.primary500, width: 1.5),
+              borderSide: const BorderSide(
+                color: PawmartColors.primary500,
+                width: 1.5,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

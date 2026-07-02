@@ -73,7 +73,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext ctx) {
-    
     final w = MediaQuery.of(ctx).size.width;
     final wide = w > 800;
 
@@ -108,7 +107,12 @@ class _HomePageState extends State<HomePage> {
           // ——— Banner Carousel ———
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 16, wide ? 40 : 16, 8),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 40 : 16,
+                16,
+                wide ? 40 : 16,
+                8,
+              ),
               child: SizedBox(
                 height: 180,
                 child: ClipRRect(
@@ -123,9 +127,15 @@ class _HomePageState extends State<HomePage> {
                         itemBuilder: (_, i) {
                           final b = _banners[i];
                           final colors = [
-                            [PawmartColors.primary400, PawmartColors.primary600],
+                            [
+                              PawmartColors.primary400,
+                              PawmartColors.primary600,
+                            ],
                             [PawmartColors.accent300, PawmartColors.accent500],
-                            [PawmartColors.primary300, PawmartColors.primary700],
+                            [
+                              PawmartColors.primary300,
+                              PawmartColors.primary700,
+                            ],
                           ];
                           return Container(
                             decoration: BoxDecoration(
@@ -148,7 +158,8 @@ class _HomePageState extends State<HomePage> {
                                 Padding(
                                   padding: const EdgeInsets.all(24),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
@@ -188,7 +199,10 @@ class _HomePageState extends State<HomePage> {
                               height: 6,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(3),
-                                color: _bi == i ? Colors.white : Colors.white.withAlpha(100),
+                                color:
+                                    _bi == i
+                                        ? Colors.white
+                                        : Colors.white.withAlpha(100),
                               ),
                             );
                           }),
@@ -204,7 +218,12 @@ class _HomePageState extends State<HomePage> {
           // ——— Merchant Center Entry ———
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 12, wide ? 40 : 16, 4),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 40 : 16,
+                12,
+                wide ? 40 : 16,
+                4,
+              ),
               child: _buildMerchantCenterCard(ctx),
             ),
           ),
@@ -212,7 +231,12 @@ class _HomePageState extends State<HomePage> {
           // ——— New Arrivals Section ———
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 16, wide ? 40 : 16, 4),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 40 : 16,
+                16,
+                wide ? 40 : 16,
+                4,
+              ),
               child: pawmartSectionHeader('新品上市', actionLabel: '查看全部'),
             ),
           ),
@@ -243,7 +267,12 @@ class _HomePageState extends State<HomePage> {
           SliverToBoxAdapter(
             child: Container(
               margin: const EdgeInsets.only(top: 24),
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 28, wide ? 40 : 16, 24),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 40 : 16,
+                28,
+                wide ? 40 : 16,
+                24,
+              ),
               color: PawmartColors.neutral50,
               child: Column(
                 children: [
@@ -260,11 +289,7 @@ class _HomePageState extends State<HomePage> {
                   // 3 feature cards
                   Row(
                     children: [
-                      _featureCard(
-                        Icons.pets,
-                        '按品种推荐',
-                        '金毛、柯基、布偶…不同品种有不同营养需求',
-                      ),
+                      _featureCard(Icons.pets, '按品种推荐', '金毛、柯基、布偶…不同品种有不同营养需求'),
                       const SizedBox(width: 12),
                       _featureCard(
                         Icons.schedule,
@@ -283,12 +308,16 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(
                     height: 46,
                     child: FilledButton(
-                      onPressed: () => Navigator.push(
-                        ctx,
-                        MaterialPageRoute(
-                          builder: (_) => RecommendationPage(apiClient: widget.apiClient),
-                        ),
-                      ),
+                      onPressed:
+                          () => Navigator.push(
+                            ctx,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => RecommendationPage(
+                                    apiClient: widget.apiClient,
+                                  ),
+                            ),
+                          ),
                       style: FilledButton.styleFrom(
                         backgroundColor: PawmartColors.accent400,
                         foregroundColor: PawmartColors.textOnAccent,
@@ -296,7 +325,10 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Text(
                         '开始智能推荐',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
@@ -308,16 +340,29 @@ class _HomePageState extends State<HomePage> {
           // ——— Brand Promise Section ———
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 32, wide ? 40 : 16, 32),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 40 : 16,
+                32,
+                wide ? 40 : 16,
+                32,
+              ),
               child: Row(
                 children: [
                   _brandPromise(Icons.shield_outlined, '正品保障', '假一赔十'),
                   const SizedBox(width: 12),
-                  _brandPromise(Icons.local_shipping_outlined, '极速配送', '主要城市次日达'),
+                  _brandPromise(
+                    Icons.local_shipping_outlined,
+                    '极速配送',
+                    '主要城市次日达',
+                  ),
                   const SizedBox(width: 12),
                   _brandPromise(Icons.replay_outlined, '7天无理由', '不满意随时退换'),
                   const SizedBox(width: 12),
-                  _brandPromise(Icons.support_agent_outlined, '专属客服', '7x24小时在线'),
+                  _brandPromise(
+                    Icons.support_agent_outlined,
+                    '专属客服',
+                    '7x24小时在线',
+                  ),
                 ],
               ),
             ),
@@ -327,7 +372,12 @@ class _HomePageState extends State<HomePage> {
           SliverToBoxAdapter(
             child: Container(
               color: PawmartColors.neutral900,
-              padding: EdgeInsets.fromLTRB(wide ? 40 : 24, 32, wide ? 40 : 24, 24),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 40 : 24,
+                32,
+                wide ? 40 : 24,
+                24,
+              ),
               child: Column(
                 children: [
                   Text(
@@ -368,12 +418,13 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          ctx,
-          MaterialPageRoute(
-            builder: (_) => AiAssistantPage(apiClient: widget.apiClient),
-          ),
-        ),
+        onPressed:
+            () => Navigator.push(
+              ctx,
+              MaterialPageRoute(
+                builder: (_) => AiAssistantPage(apiClient: widget.apiClient),
+              ),
+            ),
         child: const Icon(Icons.smart_toy_rounded),
       ),
     );
@@ -390,11 +441,11 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             ctx,
             MaterialPageRoute(
-              builder: (_) => MerchantRegisterPage(
-                apiClient: widget.apiClient,
-                sessionStore: widget.sessionStore,
-                onSuccess: widget.onGoToMerchant,
-              ),
+              builder:
+                  (_) => MerchantRegisterPage(
+                    apiClient: widget.apiClient,
+                    sessionStore: widget.sessionStore,
+                  ),
             ),
           );
         }
@@ -403,9 +454,10 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isMerchant
-                ? [PawmartColors.primary400, PawmartColors.primary600]
-                : [PawmartColors.neutral100, PawmartColors.neutral200],
+            colors:
+                isMerchant
+                    ? [PawmartColors.primary400, PawmartColors.primary600]
+                    : [PawmartColors.neutral100, PawmartColors.neutral200],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -418,7 +470,8 @@ class _HomePageState extends State<HomePage> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: (isMerchant ? Colors.white : PawmartColors.primary500).withAlpha(40),
+                color: (isMerchant ? Colors.white : PawmartColors.primary500)
+                    .withAlpha(40),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -437,7 +490,8 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: isMerchant ? Colors.white : PawmartColors.textPrimary,
+                      color:
+                          isMerchant ? Colors.white : PawmartColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -445,7 +499,10 @@ class _HomePageState extends State<HomePage> {
                     isMerchant ? '管理你的店铺和商品' : '开启你的宠物事业',
                     style: TextStyle(
                       fontSize: 13,
-                      color: isMerchant ? Colors.white.withAlpha(200) : PawmartColors.textSecondary,
+                      color:
+                          isMerchant
+                              ? Colors.white.withAlpha(200)
+                              : PawmartColors.textSecondary,
                     ),
                   ),
                 ],
@@ -454,7 +511,10 @@ class _HomePageState extends State<HomePage> {
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 18,
-              color: isMerchant ? Colors.white.withAlpha(200) : PawmartColors.primary500,
+              color:
+                  isMerchant
+                      ? Colors.white.withAlpha(200)
+                      : PawmartColors.primary500,
             ),
           ],
         ),
@@ -477,7 +537,8 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active ? PawmartColors.textOnAccent : PawmartColors.textPrimary,
+            color:
+                active ? PawmartColors.textOnAccent : PawmartColors.textPrimary,
           ),
         ),
       ),
@@ -506,7 +567,9 @@ class _HomePageState extends State<HomePage> {
             height: 120,
             decoration: BoxDecoration(
               color: colors[p.t.hashCode.abs() % colors.length],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(pawmartRadiusMd),
+              ),
             ),
             child: Center(
               child: Icon(
@@ -523,7 +586,10 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: PawmartColors.primary50,
                     borderRadius: BorderRadius.circular(4),
@@ -567,7 +633,11 @@ class _HomePageState extends State<HomePage> {
                         color: PawmartColors.accent400,
                         borderRadius: BorderRadius.circular(pawmartRadiusFull),
                       ),
-                      child: const Icon(Icons.add_shopping_cart_rounded, size: 14, color: PawmartColors.textOnAccent),
+                      child: const Icon(
+                        Icons.add_shopping_cart_rounded,
+                        size: 14,
+                        color: PawmartColors.textOnAccent,
+                      ),
                     ),
                   ],
                 ),
@@ -642,7 +712,11 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: PawmartColors.textPrimary,
+            ),
           ),
           Text(
             sub,
@@ -656,10 +730,7 @@ class _HomePageState extends State<HomePage> {
   Widget _footerLink(String text) {
     return Text(
       text,
-      style: TextStyle(
-        fontSize: 13,
-        color: Colors.white.withAlpha(180),
-      ),
+      style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(180)),
     );
   }
 }

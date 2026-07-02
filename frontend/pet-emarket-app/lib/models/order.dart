@@ -97,6 +97,8 @@ class PetOrder {
 
 class OrderItem {
   const OrderItem({
+    required this.productId,
+    required this.storeId,
     required this.productName,
     required this.productType,
     required this.unitPrice,
@@ -104,6 +106,8 @@ class OrderItem {
     required this.subtotal,
   });
 
+  final String productId;
+  final String storeId;
   final String productName;
   final String productType;
   final double unitPrice;
@@ -112,6 +116,8 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
+      productId: json['productId']?.toString() ?? '',
+      storeId: json['storeId']?.toString() ?? '',
       productName: json['productName']?.toString() ?? '',
       productType: json['productType']?.toString() ?? '',
       unitPrice: NumberParser.toDouble(json['unitPrice']),

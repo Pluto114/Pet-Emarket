@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
+import '../user/profile/profile_tab.dart';
 import 'dashboard/merchant_dashboard_page.dart';
-import 'product/merchant_product_page.dart';
 import 'order/merchant_order_page.dart';
+import 'product/merchant_product_page.dart';
 import 'store/merchant_store_page.dart';
 
 class MerchantShell extends StatefulWidget {
@@ -16,6 +17,7 @@ class MerchantShell extends StatefulWidget {
     this.onBackToUser,
     super.key,
   });
+
   final ApiClient apiClient;
   final SessionStore sessionStore;
   final VoidCallback onThemeToggle;
@@ -30,70 +32,71 @@ class _MerchantShellState extends State<MerchantShell> {
   int selectedIndex = 0;
 
   static const menuItems = [
-    _MenuItem(icon: Icons.dashboard, label: '仪表盘'),
-    _MenuItem(icon: Icons.inventory_2, label: '商品管理'),
-    _MenuItem(icon: Icons.receipt_long, label: '订单管理'),
-    _MenuItem(icon: Icons.store, label: '店铺设置'),
+    _MenuItem(icon: Icons.space_dashboard_outlined, label: '商家概览'),
+    _MenuItem(icon: Icons.inventory_2_outlined, label: '我的商品'),
+    _MenuItem(icon: Icons.receipt_long_outlined, label: '店铺订单'),
+    _MenuItem(icon: Icons.storefront_outlined, label: '我的店铺'),
+    _MenuItem(icon: Icons.person_outline, label: '账号'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      MerchantDashboardPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
-      MerchantProductPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
+      MerchantDashboardPage(
+        apiClient: widget.apiClient,
+        sessionStore: widget.sessionStore,
+      ),
+      MerchantProductPage(
+        apiClient: widget.apiClient,
+        sessionStore: widget.sessionStore,
+      ),
       MerchantOrderPage(apiClient: widget.apiClient),
-      MerchantStorePage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
+      MerchantStorePage(
+        apiClient: widget.apiClient,
+        sessionStore: widget.sessionStore,
+      ),
+      ProfileTab(
+        apiClient: widget.apiClient,
+        sessionStore: widget.sessionStore,
+        onThemeToggle: widget.onThemeToggle,
+        onLogout: widget.onLogout,
+      ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 800;
+        final user = widget.sessionStore.user;
         return Scaffold(
           appBar: AppBar(
             title: Text(menuItems[selectedIndex].label),
             actions: [
               if (widget.onBackToUser != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: TextButton.icon(
-                    onPressed: widget.onBackToUser,
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                    label: const Text('用户首页', style: TextStyle(fontSize: 13)),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
+                TextButton.icon(
+                  onPressed: widget.onBackToUser,
+                  icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                  label: const Text('用户首页'),
                 ),
-              IconButton(
-                tooltip: '切换主题',
-                icon: Icon(Theme.of(context).brightness == Brightness.light
-                    ? Icons.dark_mode
-                    : Icons.light_mode),
-                onPressed: widget.onThemeToggle,
-              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Center(
                   child: Chip(
-                    avatar: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        (widget.sessionStore.user?.displayName ?? 'M').isNotEmpty
-                            ? widget.sessionStore.user!.displayName[0].toUpperCase()
-                            : 'M',
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context).colorScheme.onPrimary),
-                      ),
+                    avatar: const CircleAvatar(
+                      child: Icon(Icons.storefront, size: 16),
                     ),
-                    label: Text(widget.sessionStore.user?.displayName ?? '商家',
-                        style: const TextStyle(fontSize: 13)),
-                    padding: EdgeInsets.zero,
+                    label: Text(user?.displayName ?? '商家'),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
+              ),
+              IconButton(
+                tooltip: '切换主题',
+                icon: Icon(
+                  Theme.of(context).brightness == Brightness.light
+                      ? Icons.dark_mode
+                      : Icons.light_mode,
+                ),
+                onPressed: widget.onThemeToggle,
               ),
               IconButton(
                 tooltip: '退出登录',
@@ -107,106 +110,39 @@ class _MerchantShellState extends State<MerchantShell> {
               if (wide)
                 NavigationRail(
                   selectedIndex: selectedIndex,
-                  onDestinationSelected: (i) => setState(() => selectedIndex = i),
+                  onDestinationSelected:
+                      (i) => setState(() => selectedIndex = i),
                   labelType: NavigationRailLabelType.all,
-                  destinations: menuItems.map((m) => NavigationRailDestination(
-                    icon: Icon(m.icon),
-                    label: Text(m.label),
-                  )).toList(),
+                  destinations:
+                      menuItems
+                          .map(
+                            (m) => NavigationRailDestination(
+                              icon: Icon(m.icon),
+                              label: Text(m.label),
+                            ),
+                          )
+                          .toList(),
                 ),
               Expanded(child: pages[selectedIndex]),
             ],
           ),
-          bottomNavigationBar: wide
-              ? null
-              : NavigationBar(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (i) => setState(() => selectedIndex = i),
-                  animationDuration: const Duration(milliseconds: 300),
-                  destinations: menuItems
-                      .map((m) => NavigationDestination(
-                          icon: Icon(m.icon), label: m.label))
-                      .toList(),
-                ),
-          drawer: wide
-              ? null
-              : Drawer(
-                  child: Column(
-                    children: [
-                      DrawerHeader(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              child: Text(
-                                (widget.sessionStore.user?.displayName ?? 'M').isNotEmpty
-                                    ? widget.sessionStore.user!.displayName[0].toUpperCase()
-                                    : 'M',
-                                style: TextStyle(
-                                    fontSize: 20,
-                                    color: Theme.of(context).colorScheme.onPrimary),
+          bottomNavigationBar:
+              wide
+                  ? null
+                  : NavigationBar(
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected:
+                        (i) => setState(() => selectedIndex = i),
+                    destinations:
+                        menuItems
+                            .map(
+                              (m) => NavigationDestination(
+                                icon: Icon(m.icon),
+                                label: m.label,
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(widget.sessionStore.user?.displayName ?? '商家',
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700)),
-                            const Text('MERCHANT',
-                                style: TextStyle(fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView(
-                          children: [
-                            for (var i = 0; i < menuItems.length; i++)
-                              ListTile(
-                                selected: selectedIndex == i,
-                                selectedTileColor: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer
-                                    .withAlpha(80),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                leading: Icon(menuItems[i].icon,
-                                    color: selectedIndex == i
-                                        ? Theme.of(context).colorScheme.primary
-                                        : null),
-                                title: Text(menuItems[i].label),
-                                onTap: () {
-                                  setState(() => selectedIndex = i);
-                                  Navigator.pop(context);
-                                },
-                              ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.brightness_6),
-                        title: const Text('切换主题'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          widget.onThemeToggle();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.logout),
-                        title: const Text('退出登录'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          widget.onLogout();
-                        },
-                      ),
-                    ],
+                            )
+                            .toList(),
                   ),
-                ),
         );
       },
     );
@@ -214,7 +150,8 @@ class _MerchantShellState extends State<MerchantShell> {
 }
 
 class _MenuItem {
+  const _MenuItem({required this.icon, required this.label});
+
   final IconData icon;
   final String label;
-  const _MenuItem({required this.icon, required this.label});
 }

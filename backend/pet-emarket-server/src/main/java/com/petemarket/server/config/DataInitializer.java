@@ -39,6 +39,10 @@ public class DataInitializer {
             if (!userRepository.existsByUsername("demo")) {
                 userRepository.save(user("demo", "Demo@123456", "Demo User", UserRole.CUSTOMER, MemberLevel.VIP, passwordEncoder));
             }
+            if (!userRepository.existsByUsername("merchant")) {
+                userRepository.save(user("merchant", "Merchant@123456", "Demo Merchant", UserRole.MERCHANT, MemberLevel.VIP, passwordEncoder));
+            }
+            Long merchantId = userRepository.findByUsername("merchant").map(UserAccount::getId).orElse(null);
 
             List<PetStore> stores = storeRepository.count() == 0
                     ? storeRepository.saveAll(List.of(
@@ -50,6 +54,18 @@ public class DataInitializer {
                             "18800001003", "10:00-22:00", 4.7, "Dog goods, toys, member service")
             ))
                     : storeRepository.findAll();
+            if (merchantId != null) {
+                boolean updatedOwner = false;
+                for (PetStore store : stores) {
+                    if (store.getOwnerUserId() == null) {
+                        store.setOwnerUserId(merchantId);
+                        updatedOwner = true;
+                    }
+                }
+                if (updatedOwner) {
+                    stores = storeRepository.saveAll(stores);
+                }
+            }
 
             if (productRepository.count() == 0) {
                 Long storeA = stores.get(0).getId();

@@ -8,6 +8,7 @@ import '../../models/amap_poi.dart';
 import '../../models/ai_chat.dart';
 import '../../models/cart_item.dart';
 import '../../models/media_asset.dart';
+import '../../models/merchant_application.dart';
 import '../../models/order.dart';
 import '../../models/product.dart';
 import '../../models/recommendation.dart';
@@ -118,6 +119,25 @@ class ApiClient {
       '/api/v1/products',
       query: query,
       authenticated: false,
+    );
+    return (data['items'] as List)
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
+  }
+
+  Future<List<Product>> listManagedProducts({
+    String keyword = '',
+    String type = '',
+    String status = '',
+  }) async {
+    final query = <String, String>{};
+    if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
+    if (type.trim().isNotEmpty) query['type'] = type.trim();
+    if (status.trim().isNotEmpty) query['status'] = status.trim();
+    final data = await _request(
+      'GET',
+      '/api/v1/products/managed',
+      query: query,
     );
     return (data['items'] as List)
         .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
@@ -246,6 +266,60 @@ class ApiClient {
 
   Future<void> deleteStore(String id) async {
     await _request('DELETE', '/api/v1/stores/$id');
+  }
+
+  Future<List<MerchantApplication>> myMerchantApplications() async {
+    final data = await _request('GET', '/api/v1/merchant/applications/me');
+    return (data['items'] as List)
+        .map(
+          (item) => MerchantApplication.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<MerchantApplication>> listMerchantApplications({
+    String status = '',
+  }) async {
+    final query = <String, String>{};
+    if (status.trim().isNotEmpty) query['status'] = status.trim();
+    final data = await _request(
+      'GET',
+      '/api/v1/merchant/applications',
+      query: query,
+    );
+    return (data['items'] as List)
+        .map(
+          (item) => MerchantApplication.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<MerchantApplication> submitMerchantApplication(
+    Map<String, dynamic> payload,
+  ) async {
+    final data = await _request(
+      'POST',
+      '/api/v1/merchant/applications',
+      body: payload,
+    );
+    return MerchantApplication.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<MerchantApplication> auditMerchantApplication(
+    String id, {
+    required bool approved,
+    String remark = '',
+  }) async {
+    final data = await _request(
+      'PUT',
+      '/api/v1/merchant/applications/$id/audit',
+      body: {'approved': approved, 'remark': remark},
+    );
+    return MerchantApplication.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   Future<List<ShippingAddress>> listAddresses() async {
@@ -476,10 +550,19 @@ class ApiClient {
       headers: headers,
       body: body == null ? null : jsonEncode(body),
     );
-    final decoded =
-        response.body.isEmpty
-            ? <String, dynamic>{}
-            : jsonDecode(response.body) as Map<String, dynamic>;
+    final responseBody = response.body.trim();
+    Map<String, dynamic> decoded = <String, dynamic>{};
+    if (responseBody.isNotEmpty) {
+      try {
+        decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+      } catch (_) {
+        decoded = {
+          'success': false,
+          'code': 'INVALID_RESPONSE',
+          'message': '后端返回了无法解析的响应',
+        };
+      }
+    }
     if (response.statusCode < 200 ||
         response.statusCode >= 300 ||
         decoded['success'] == false) {

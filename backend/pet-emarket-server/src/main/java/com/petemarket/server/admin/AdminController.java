@@ -26,7 +26,7 @@ public class AdminController {
     }
 
     private void requireAdminOrMerchant(UserAccount user) {
-        if (user == null || (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.MERCHANT)) {
+        if (user == null || user.getRole() != UserRole.ADMIN) {
             throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
         }
     }

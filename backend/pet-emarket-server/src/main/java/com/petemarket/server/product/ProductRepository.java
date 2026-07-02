@@ -8,6 +8,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByStoreId(Long storeId);
 
+    List<Product> findByStoreIdIn(List<Long> storeIds);
+
     List<Product> findByType(ProductType type);
 
     List<Product> findByTypeAndAuditStatus(ProductType type, ProductAuditStatus auditStatus);

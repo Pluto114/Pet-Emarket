@@ -26,7 +26,8 @@ class _PetEmarketAppState extends State<PetEmarketApp> {
   late final SessionStore sessionStore;
   late final ApiClient apiClient;
   ThemeMode _themeMode = ThemeMode.system;
-  String? _forceView; // null = auto-detect by role; 'user' / 'merchant' = override
+  String?
+  _forceView; // null = auto-detect by role; 'user' / 'merchant' = override
 
   @override
   void initState() {
@@ -37,7 +38,8 @@ class _PetEmarketAppState extends State<PetEmarketApp> {
 
   void _toggleTheme() {
     setState(() {
-      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode =
+          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
@@ -72,7 +74,8 @@ class _PetEmarketAppState extends State<PetEmarketApp> {
     }
 
     // Force-view overrides for switching between user/merchant shells
-    if (_forceView == 'merchant' && (sessionStore.isMerchant || sessionStore.isAdmin)) {
+    if (_forceView == 'merchant' &&
+        (sessionStore.isMerchant || sessionStore.isAdmin)) {
       return MerchantShell(
         apiClient: apiClient,
         sessionStore: sessionStore,

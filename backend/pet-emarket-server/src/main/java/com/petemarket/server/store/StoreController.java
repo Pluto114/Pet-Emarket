@@ -29,8 +29,9 @@ public class StoreController {
 
     @GetMapping
     public ApiResponse<PageData<StoreResponse>> list(@AuthenticationPrincipal UserAccount currentUser) {
-        boolean includeClosed = isStoreManager(currentUser);
-        return ApiResponse.ok(PageData.of(includeClosed ? storeService.listAllStores() : storeService.listOpenStores()));
+        return ApiResponse.ok(PageData.of(isStoreManager(currentUser)
+                ? storeService.listManagedStores(currentUser)
+                : storeService.listOpenStores()));
     }
 
     @GetMapping("/{id}")
@@ -50,7 +51,7 @@ public class StoreController {
     public ApiResponse<StoreResponse> create(@AuthenticationPrincipal UserAccount currentUser,
                                              @Valid @RequestBody UpsertStoreRequest request) {
         requireStoreManager(currentUser);
-        return ApiResponse.ok(storeService.create(request), "store created");
+        return ApiResponse.ok(storeService.create(request, currentUser), "store created");
     }
 
     @PutMapping("/{id}")
@@ -58,13 +59,13 @@ public class StoreController {
                                              @PathVariable Long id,
                                              @Valid @RequestBody UpsertStoreRequest request) {
         requireStoreManager(currentUser);
-        return ApiResponse.ok(storeService.update(id, request), "store updated");
+        return ApiResponse.ok(storeService.update(id, request, currentUser), "store updated");
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal UserAccount currentUser, @PathVariable Long id) {
         requireStoreManager(currentUser);
-        storeService.delete(id);
+        storeService.delete(id, currentUser);
         return ApiResponse.ok(null, "store deleted");
     }
 

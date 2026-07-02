@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record OrderItemResponse(
         Long id,
         Long productId,
+        Long storeId,
         String productName,
         String productType,
         String category,
@@ -17,6 +18,7 @@ public record OrderItemResponse(
         return new OrderItemResponse(
                 item.getId(),
                 item.getProductId(),
+                item.getStoreId(),
                 item.getProductName(),
                 item.getProductType(),
                 item.getCategory(),

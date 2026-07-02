@@ -1,6 +1,8 @@
 package com.petemarket.server.store;
 
 import com.petemarket.server.common.BusinessException;
+import com.petemarket.server.user.UserAccount;
+import com.petemarket.server.user.UserRole;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +36,29 @@ public class StoreService {
     }
 
     @Transactional(readOnly = true)
+    public List<StoreResponse> listManagedStores(UserAccount user) {
+        if (user.getRole() == UserRole.ADMIN) {
+            return listAllStores();
+        }
+        return storeRepository.findByOwnerUserIdOrderByRatingDesc(user.getId()).stream()
+                .map(store -> StoreResponse.from(store, null))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> managedStoreIds(UserAccount user) {
+        if (user.getRole() == UserRole.ADMIN) {
+            return storeRepository.findAll().stream().map(PetStore::getId).toList();
+        }
+        if (user.getRole() != UserRole.MERCHANT) {
+            return List.of();
+        }
+        return storeRepository.findByOwnerUserIdOrderByRatingDesc(user.getId()).stream()
+                .map(PetStore::getId)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public StoreResponse get(Long id) {
         return StoreResponse.from(find(id), null);
     }
@@ -60,23 +85,43 @@ public class StoreService {
     }
 
     @Transactional
-    public StoreResponse create(UpsertStoreRequest request) {
+    public StoreResponse create(UpsertStoreRequest request, UserAccount actor) {
         PetStore store = new PetStore();
         apply(store, request);
+        store.setOwnerUserId(resolveOwnerUserId(request, actor));
         storeRepository.save(store);
         return StoreResponse.from(store, null);
     }
 
     @Transactional
-    public StoreResponse update(Long id, UpsertStoreRequest request) {
+    public StoreResponse update(Long id, UpsertStoreRequest request, UserAccount actor) {
         PetStore store = find(id);
+        requireStoreOwner(actor, store);
         apply(store, request);
+        if (actor.getRole() == UserRole.ADMIN) {
+            store.setOwnerUserId(request.ownerUserId());
+        }
         return StoreResponse.from(store, null);
     }
 
     @Transactional
-    public void delete(Long id) {
-        storeRepository.delete(find(id));
+    public void delete(Long id, UserAccount actor) {
+        PetStore store = find(id);
+        requireStoreOwner(actor, store);
+        storeRepository.delete(store);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean canManageStore(UserAccount actor, Long storeId) {
+        if (actor == null) {
+            return false;
+        }
+        if (actor.getRole() == UserRole.ADMIN) {
+            return true;
+        }
+        return actor.getRole() == UserRole.MERCHANT
+                && storeId != null
+                && storeRepository.existsByIdAndOwnerUserId(storeId, actor.getId());
     }
 
     private boolean matchesKeyword(PetStore store, String keyword) {
@@ -120,6 +165,23 @@ public class StoreService {
         store.setStatus(request.status() == null ? StoreStatus.OPEN : request.status());
         store.setFeatureTags(defaultText(request.featureTags(), ""));
         store.setAmapPoiId(defaultText(request.amapPoiId(), ""));
+    }
+
+    private Long resolveOwnerUserId(UpsertStoreRequest request, UserAccount actor) {
+        if (actor.getRole() == UserRole.MERCHANT) {
+            return actor.getId();
+        }
+        return request.ownerUserId();
+    }
+
+    private void requireStoreOwner(UserAccount actor, PetStore store) {
+        if (actor.getRole() == UserRole.ADMIN) {
+            return;
+        }
+        if (actor.getRole() == UserRole.MERCHANT && actor.getId().equals(store.getOwnerUserId())) {
+            return;
+        }
+        throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
     }
 
     private String defaultText(String value, String fallback) {

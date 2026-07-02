@@ -259,6 +259,105 @@ class ApiSmokeTests {
     }
 
     @Test
+    void customerCanApplyForMerchantAndAdminApprovesSeparateMerchantRole() {
+        String adminToken = login("admin", "Admin@123456");
+        String suffix = String.valueOf(System.nanoTime());
+
+        Map<String, Object> userPayload = new LinkedHashMap<>();
+        userPayload.put("username", "qa_applicant_" + suffix);
+        userPayload.put("password", "Qa@123456");
+        userPayload.put("displayName", "QA Applicant");
+        userPayload.put("phone", "18812345678");
+        userPayload.put("email", "qa_applicant_" + suffix + "@pet-emarket.local");
+        userPayload.put("role", "CUSTOMER");
+        userPayload.put("memberLevel", "NORMAL");
+        userPayload.put("status", "ACTIVE");
+
+        ResponseEntity<JsonNode> createdUser = exchange(HttpMethod.POST, "/api/v1/users", userPayload, adminToken);
+        long userId = body(createdUser).at("/data/id").asLong();
+        String applicantToken = login("qa_applicant_" + suffix, "Qa@123456");
+
+        Map<String, Object> applicationPayload = new LinkedHashMap<>();
+        applicationPayload.put("storeName", "QA Applicant Store " + suffix);
+        applicationPayload.put("city", "Hangzhou");
+        applicationPayload.put("district", "Xihu");
+        applicationPayload.put("address", "QA Applicant Road 1");
+        applicationPayload.put("longitude", 120.1551);
+        applicationPayload.put("latitude", 30.2741);
+        applicationPayload.put("contactName", "QA Applicant");
+        applicationPayload.put("contactPhone", "18812345678");
+        applicationPayload.put("businessLicenseNo", "QA-LICENSE-" + suffix);
+        applicationPayload.put("reason", "QA merchant onboarding");
+
+        ResponseEntity<JsonNode> submitted = exchange(
+                HttpMethod.POST,
+                "/api/v1/merchant/applications",
+                applicationPayload,
+                applicantToken
+        );
+        long applicationId = body(submitted).at("/data/id").asLong();
+
+        assertThat(submitted.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(submitted).at("/data/status").asText()).isEqualTo("PENDING");
+
+        ResponseEntity<JsonNode> mine = exchange(HttpMethod.GET, "/api/v1/merchant/applications/me", null, applicantToken);
+        ResponseEntity<JsonNode> pending = exchange(HttpMethod.GET, "/api/v1/merchant/applications?status=PENDING", null, adminToken);
+
+        assertThat(mine.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(mine).at("/data/items").size()).isEqualTo(1);
+        assertThat(pending.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(pending).at("/data/items").size()).isGreaterThan(0);
+
+        ResponseEntity<JsonNode> approved = exchange(
+                HttpMethod.PUT,
+                "/api/v1/merchant/applications/" + applicationId + "/audit",
+                Map.of("approved", true, "remark", "QA approved"),
+                adminToken
+        );
+        long storeId = body(approved).at("/data/storeId").asLong();
+
+        assertThat(approved.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(approved).at("/data/status").asText()).isEqualTo("APPROVED");
+        assertThat(storeId).isGreaterThan(0);
+
+        String merchantToken = login("qa_applicant_" + suffix, "Qa@123456");
+        JsonNode upgradedUser = me(merchantToken);
+        ResponseEntity<JsonNode> merchantStores = exchange(HttpMethod.GET, "/api/v1/stores", null, merchantToken);
+        ResponseEntity<JsonNode> merchantDashboard = exchange(HttpMethod.GET, "/api/v1/admin/dashboard", null, merchantToken);
+        ResponseEntity<JsonNode> merchantAuditList = exchange(HttpMethod.GET, "/api/v1/products/live-pet-audits", null, merchantToken);
+
+        assertThat(upgradedUser.at("/data/role").asText()).isEqualTo("MERCHANT");
+        assertThat(merchantStores.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(merchantStores).at("/data/items").size()).isEqualTo(1);
+        assertThat(body(merchantStores).at("/data/items/0/ownerUserId").asLong()).isEqualTo(userId);
+        assertThat(merchantDashboard.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(merchantAuditList.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        Map<String, Object> productPayload = new LinkedHashMap<>();
+        productPayload.put("storeId", storeId);
+        productPayload.put("name", "QA Merchant Goods " + suffix);
+        productPayload.put("type", "GOODS");
+        productPayload.put("category", "Food");
+        productPayload.put("price", new BigDecimal("88.00"));
+        productPayload.put("stock", 10);
+        productPayload.put("status", "ON_SALE");
+        productPayload.put("description", "Merchant owned product");
+
+        ResponseEntity<JsonNode> createdProduct = exchange(HttpMethod.POST, "/api/v1/products", productPayload, merchantToken);
+        long productId = body(createdProduct).at("/data/id").asLong();
+        ResponseEntity<JsonNode> merchantProducts = exchange(HttpMethod.GET, "/api/v1/products/managed", null, merchantToken);
+
+        assertThat(createdProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdProduct).at("/data/storeId").asLong()).isEqualTo(storeId);
+        assertThat(merchantProducts.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(merchantProducts).at("/data/items").size()).isEqualTo(1);
+
+        assertThat(exchange(HttpMethod.DELETE, "/api/v1/products/" + productId, null, merchantToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(exchange(HttpMethod.DELETE, "/api/v1/stores/" + storeId, null, merchantToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(exchange(HttpMethod.DELETE, "/api/v1/users/" + userId, null, adminToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     void customerOrderLifecycleDeductsAndRestoresInventory() {
         String adminToken = login("admin", "Admin@123456");
         String suffix = String.valueOf(System.nanoTime());

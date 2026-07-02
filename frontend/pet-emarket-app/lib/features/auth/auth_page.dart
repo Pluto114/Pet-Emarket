@@ -4,9 +4,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/toast.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({required this.apiClient, required this.sessionStore, super.key});
+  const AuthPage({
+    required this.apiClient,
+    required this.sessionStore,
+    super.key,
+  });
   final ApiClient apiClient;
   final SessionStore sessionStore;
 
@@ -25,10 +30,14 @@ class _AuthPageState extends State<AuthPage> {
   String? _err;
   String? _codeHint;
 
-  static const String _ossUrl1 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/410a874a2b333ad076ad6c8f85aefbd2.jpg';
-  static const String _ossUrl2 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9944f9224e6cb20d8b9697fd22624d97.jpg';
-  static const String _ossUrl3 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9e8c37828cc4c7cade02789ab736d64d.jpg';
-  static const String _ossUrl4 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/acabf95540953c92ceda9ae6cd9399f1.jpg';
+  static const String _ossUrl1 =
+      'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/410a874a2b333ad076ad6c8f85aefbd2.jpg';
+  static const String _ossUrl2 =
+      'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9944f9224e6cb20d8b9697fd22624d97.jpg';
+  static const String _ossUrl3 =
+      'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9e8c37828cc4c7cade02789ab736d64d.jpg';
+  static const String _ossUrl4 =
+      'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/acabf95540953c92ceda9ae6cd9399f1.jpg';
 
   @override
   void dispose() {
@@ -42,11 +51,29 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _sub() async {
-    setState(() { _busy = true; _err = null; });
+    final username = _usr.text.trim();
+    if (username.isEmpty || _pwd.text.isEmpty) {
+      setState(() => _err = '请输入用户名和密码');
+      return;
+    }
+    if (_reg) {
+      if (_em.text.trim().isEmpty || !_em.text.contains('@')) {
+        setState(() => _err = '请输入有效邮箱，并先获取验证码');
+        return;
+      }
+      if (_code.text.trim().isEmpty) {
+        setState(() => _err = '请输入邮箱验证码');
+        return;
+      }
+    }
+    setState(() {
+      _busy = true;
+      _err = null;
+    });
     try {
       if (_reg) {
         await widget.apiClient.register(
-          username: _usr.text.trim(),
+          username: username,
           password: _pwd.text,
           displayName: _dn.text.trim(),
           phone: _ph.text.trim(),
@@ -54,7 +81,7 @@ class _AuthPageState extends State<AuthPage> {
           emailCode: _code.text.trim(),
         );
       } else {
-        await widget.apiClient.login(username: _usr.text.trim(), password: _pwd.text);
+        await widget.apiClient.login(username: username, password: _pwd.text);
       }
     } catch (e) {
       setState(() => _err = e.toString());
@@ -64,13 +91,18 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _sendCode() async {
+    final email = _em.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _err = '请输入有效邮箱后再获取验证码');
+      return;
+    }
     setState(() {
       _sendingCode = true;
       _err = null;
       _codeHint = null;
     });
     try {
-      final code = await widget.apiClient.sendRegisterEmailCode(_em.text.trim());
+      final code = await widget.apiClient.sendRegisterEmailCode(email);
       setState(() {
         if (code.isNotEmpty) {
           _code.text = code;
@@ -83,6 +115,21 @@ class _AuthPageState extends State<AuthPage> {
       setState(() => _err = e.toString());
     } finally {
       if (mounted) setState(() => _sendingCode = false);
+    }
+  }
+
+  Future<void> _quickLogin(String username, String password) async {
+    setState(() {
+      _busy = true;
+      _err = null;
+      _reg = false;
+    });
+    try {
+      await widget.apiClient.login(username: username, password: password);
+    } catch (e) {
+      setState(() => _err = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -100,7 +147,10 @@ class _AuthPageState extends State<AuthPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                if (wide) _buildSection1Wide(ctx, s) else _buildSection1Narrow(ctx, s),
+                if (wide)
+                  _buildSection1Wide(ctx, s)
+                else
+                  _buildSection1Narrow(ctx, s),
                 _buildPromises(ctx),
                 _buildFeatures(ctx),
                 _buildCategories(ctx),
@@ -122,7 +172,13 @@ class _AuthPageState extends State<AuthPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(flex: 5, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: _buildForm(ctx))),
+          Expanded(
+            flex: 5,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: _buildForm(ctx),
+            ),
+          ),
           const SizedBox(width: 60),
           Expanded(flex: 7, child: _buildHero(ctx)),
         ],
@@ -141,25 +197,72 @@ class _AuthPageState extends State<AuthPage> {
             height: 200,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: Stack(fit: StackFit.expand, children: [
-                CachedNetworkImage(imageUrl: _ossUrl1, fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Container(
-                    decoration: BoxDecoration(gradient: LinearGradient(colors: [PawmartColors.primary100, PawmartColors.primary200])),
-                    child: Center(child: Icon(Icons.pets, size: 80, color: PawmartColors.primary300.withAlpha(120))),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: _ossUrl1,
+                    fit: BoxFit.cover,
+                    errorWidget:
+                        (_, __, ___) => Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                PawmartColors.primary100,
+                                PawmartColors.primary200,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.pets,
+                              size: 80,
+                              color: PawmartColors.primary300.withAlpha(120),
+                            ),
+                          ),
+                        ),
                   ),
-                ),
-                Positioned(bottom: 0, left: 0, right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, PawmartColors.primary700.withAlpha(180)])),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('PawMart', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('为每一只爱宠，找到最贴心的呵护', style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(200))),
-                    ]),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            PawmartColors.primary700.withAlpha(180),
+                          ],
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PawMart',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '为每一只爱宠，找到最贴心的呵护',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withAlpha(200),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -185,19 +288,40 @@ class _AuthPageState extends State<AuthPage> {
           Row(
             children: [
               Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(color: PawmartColors.primary500, borderRadius: BorderRadius.circular(10)),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: PawmartColors.primary500,
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: const Icon(Icons.pets, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 10),
-              Text('PawMart', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: PawmartColors.textPrimary)),
+              Text(
+                'PawMart',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: PawmartColors.textPrimary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
           // Title
-          Text(_reg ? '创建账号' : '欢迎回来', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+          Text(
+            _reg ? '创建账号' : '欢迎回来',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: PawmartColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(_reg ? '注册后开启宠物之旅' : '登录你的账号，探索优质宠物好物', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+          Text(
+            _reg ? '注册后开启宠物之旅' : '登录你的账号，探索优质宠物好物',
+            style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary),
+          ),
           const SizedBox(height: 24),
           // Form
           _buildField('手机号 / 邮箱', _usr, Icons.person_outline),
@@ -219,17 +343,46 @@ class _AuthPageState extends State<AuthPage> {
                     child: TextField(
                       controller: _code,
                       keyboardType: TextInputType.number,
-                      style: TextStyle(fontSize: 14, color: PawmartColors.textPrimary),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: PawmartColors.textPrimary,
+                      ),
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.verified_outlined, size: 18, color: PawmartColors.neutral400),
+                        prefixIcon: Icon(
+                          Icons.verified_outlined,
+                          size: 18,
+                          color: PawmartColors.neutral400,
+                        ),
                         hintText: '请输入邮箱验证码',
-                        hintStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: PawmartColors.textSecondary,
+                        ),
                         filled: true,
                         fillColor: PawmartColors.neutral50,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.primary500, width: 1.5)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: PawmartColors.neutral200,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: PawmartColors.neutral200,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: PawmartColors.primary500,
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -241,7 +394,10 @@ class _AuthPageState extends State<AuthPage> {
                     onPressed: _sendingCode || _busy ? null : _sendCode,
                     child: Text(
                       _sendingCode ? '发送中' : '获取验证码',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: PawmartColors.primary500),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: PawmartColors.primary500,
+                      ),
                     ),
                   ),
                 ),
@@ -262,21 +418,35 @@ class _AuthPageState extends State<AuthPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
-                  onPressed: () => setState(() { _reg = !_reg; _err = null; }),
-                  child: Text(_reg ? '已有账号？去登录' : '没有账号？去注册', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: PawmartColors.primary500)),
+                  onPressed:
+                      () => setState(() {
+                        _reg = !_reg;
+                        _err = null;
+                      }),
+                  child: Text(
+                    _reg ? '已有账号？去登录' : '没有账号？去注册',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: PawmartColors.primary500,
+                    ),
+                  ),
                 ),
                 if (!_reg)
                   TextButton(
-                    onPressed: () {},
-                    child: Text('忘记密码？', style: TextStyle(fontSize: 13, color: PawmartColors.primary500)),
+                    onPressed: () => showInfo(context, '密码找回功能待接入短信/邮箱流程'),
+                    child: Text(
+                      '忘记密码？',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: PawmartColors.primary500,
+                      ),
+                    ),
                   ),
               ],
             ),
           ),
-          if (_err != null) ...[
-            _buildError(_err!),
-            const SizedBox(height: 12),
-          ],
+          if (_err != null) ...[_buildError(_err!), const SizedBox(height: 12)],
           // Login button
           SizedBox(
             height: 48,
@@ -285,11 +455,27 @@ class _AuthPageState extends State<AuthPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: PawmartColors.accent400,
                 foregroundColor: PawmartColors.textOnAccent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9999),
+                ),
               ),
-              child: _busy
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: PawmartColors.textOnAccent))
-                : Text(_reg ? '注册并登录' : '登录', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              child:
+                  _busy
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: PawmartColors.textOnAccent,
+                        ),
+                      )
+                      : Text(
+                        _reg ? '注册并登录' : '登录',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
             ),
           ),
           const SizedBox(height: 24),
@@ -297,62 +483,100 @@ class _AuthPageState extends State<AuthPage> {
           _dividerWithText('其他登录方式'),
           const SizedBox(height: 16),
           // Social buttons
-          Row(children: [
-            Expanded(child: _socialBtn(Icons.wechat, '微信登录', PawmartColors.success)),
-            const SizedBox(width: 10),
-            Expanded(child: _socialBtn(Icons.smartphone_outlined, '验证码登录', PawmartColors.info)),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: _socialBtn(Icons.wechat, '微信登录', PawmartColors.success),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _socialBtn(
+                  Icons.smartphone_outlined,
+                  '验证码登录',
+                  PawmartColors.info,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           // Divider
-          _dividerWithText('无需登录，直接体验'),
+          _dividerWithText('演示账号'),
           const SizedBox(height: 16),
-          // Dev bypass
-          Column(children: [
-            SizedBox(
-              height: 48,
-              child: Row(children: [
-                Expanded(child: _userBtn()),
-                const SizedBox(width: 12),
-                Expanded(child: _adminBtn()),
-              ]),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 48,
-              child: _merchantBtn(),
-            ),
-          ]),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              SizedBox(width: 135, height: 44, child: _userBtn()),
+              SizedBox(width: 135, height: 44, child: _merchantBtn()),
+              SizedBox(width: 135, height: 44, child: _adminBtn()),
+            ],
+          ),
           const SizedBox(height: 10),
-          Text('体验账号: admin / Admin@123456', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
+          Text(
+            'admin / merchant / demo 均可快速登录',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildField(String hint, TextEditingController ctrl, IconData icon, {bool obscure = false, bool phone = false, bool email = false}) {
+  Widget _buildField(
+    String hint,
+    TextEditingController ctrl,
+    IconData icon, {
+    bool obscure = false,
+    bool phone = false,
+    bool email = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(hint, style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+        Text(
+          hint,
+          style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
+        ),
         const SizedBox(height: 6),
         SizedBox(
           height: 40,
           child: TextField(
             controller: ctrl,
             obscureText: obscure,
-            keyboardType: phone ? TextInputType.phone : (email ? TextInputType.emailAddress : null),
+            keyboardType:
+                phone
+                    ? TextInputType.phone
+                    : (email ? TextInputType.emailAddress : null),
             onSubmitted: obscure ? (_) => _sub() : null,
             style: TextStyle(fontSize: 14, color: PawmartColors.textPrimary),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, size: 18, color: PawmartColors.neutral400),
               hintText: '请输入$hint',
-              hintStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
+              hintStyle: TextStyle(
+                fontSize: 14,
+                color: PawmartColors.textSecondary,
+              ),
               filled: true,
               fillColor: PawmartColors.neutral50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.primary500, width: 1.5)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: PawmartColors.neutral200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: PawmartColors.neutral200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: PawmartColors.primary500,
+                  width: 1.5,
+                ),
+              ),
             ),
           ),
         ),
@@ -362,9 +586,12 @@ class _AuthPageState extends State<AuthPage> {
 
   Widget _socialBtn(IconData icon, String label, Color color) {
     return OutlinedButton.icon(
-      onPressed: () {},
+      onPressed: () => showInfo(context, '$label 待接入第三方开放平台'),
       icon: Icon(icon, size: 18, color: color),
-      label: Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+      label: Text(
+        label,
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: PawmartColors.textPrimary,
         side: BorderSide(color: PawmartColors.neutral200),
@@ -377,9 +604,30 @@ class _AuthPageState extends State<AuthPage> {
 
   Widget _userBtn() {
     return OutlinedButton.icon(
-      onPressed: () => widget.sessionStore.devBypass(role: 'CUSTOMER'),
+      onPressed: _busy ? null : () => _quickLogin('demo', 'Demo@123456'),
       icon: const Icon(Icons.person_outline, size: 18),
-      label: Text('用户首页', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      label: Text(
+        '用户',
+        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: PawmartColors.primary500,
+        side: BorderSide(color: PawmartColors.primary200),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  Widget _merchantBtn() {
+    return OutlinedButton.icon(
+      onPressed:
+          _busy ? null : () => _quickLogin('merchant', 'Merchant@123456'),
+      icon: const Icon(Icons.storefront_outlined, size: 18),
+      label: Text(
+        '商家',
+        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: PawmartColors.primary500,
         side: BorderSide(color: PawmartColors.primary200),
@@ -391,9 +639,12 @@ class _AuthPageState extends State<AuthPage> {
 
   Widget _adminBtn() {
     return FilledButton.icon(
-      onPressed: () => widget.sessionStore.devBypass(role: 'ADMIN'),
+      onPressed: _busy ? null : () => _quickLogin('admin', 'Admin@123456'),
       icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-      label: Text('管理后台', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      label: Text(
+        '管理员',
+        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: PawmartColors.primary500,
         foregroundColor: Colors.white,
@@ -403,41 +654,42 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
-  Widget _merchantBtn() {
-    return OutlinedButton.icon(
-      onPressed: () => widget.sessionStore.devBypass(role: 'MERCHANT'),
-      icon: const Icon(Icons.storefront_outlined, size: 18),
-      label: Text('商家中心', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: PawmartColors.accent600,
-        side: BorderSide(color: PawmartColors.accent200),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
-    );
-  }
-
   Widget _buildError(String msg) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: PawmartColors.error.withAlpha(20), borderRadius: BorderRadius.circular(10)),
-      child: Row(children: [
-        Icon(Icons.error_outline, size: 18, color: PawmartColors.error),
-        const SizedBox(width: 8),
-        Expanded(child: Text(msg, style: TextStyle(fontSize: 13, color: PawmartColors.error))),
-      ]),
+      decoration: BoxDecoration(
+        color: PawmartColors.error.withAlpha(20),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 18, color: PawmartColors.error),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: TextStyle(fontSize: 13, color: PawmartColors.error),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _dividerWithText(String label) {
-    return Row(children: [
-      const Expanded(child: Divider(color: PawmartColors.neutral200)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(label, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
-      ),
-      const Expanded(child: Divider(color: PawmartColors.neutral200)),
-    ]);
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: PawmartColors.neutral200)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+          ),
+        ),
+        const Expanded(child: Divider(color: PawmartColors.neutral200)),
+      ],
+    );
   }
 
   // ═══ Hero Image ═══
@@ -450,25 +702,72 @@ class _AuthPageState extends State<AuthPage> {
           height: 480,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Stack(fit: StackFit.expand, children: [
-              CachedNetworkImage(imageUrl: _ossUrl1, fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => Container(
-                  decoration: BoxDecoration(gradient: LinearGradient(colors: [PawmartColors.primary100, PawmartColors.primary200])),
-                  child: Center(child: Icon(Icons.pets, size: 80, color: PawmartColors.primary300.withAlpha(120))),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: _ossUrl1,
+                  fit: BoxFit.cover,
+                  errorWidget:
+                      (_, __, ___) => Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              PawmartColors.primary100,
+                              PawmartColors.primary200,
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.pets,
+                            size: 80,
+                            color: PawmartColors.primary300.withAlpha(120),
+                          ),
+                        ),
+                      ),
                 ),
-              ),
-              Positioned(bottom: 0, left: 0, right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, PawmartColors.primary700.withAlpha(180)])),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('为每一只爱宠', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
-                    const SizedBox(height: 6),
-                    Text('找到最贴心的呵护', style: TextStyle(fontSize: 16, color: Colors.white.withAlpha(200))),
-                  ]),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          PawmartColors.primary700.withAlpha(180),
+                        ],
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '为每一只爱宠',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '找到最贴心的呵护',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white.withAlpha(200),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ),
         ),
       ],
@@ -483,7 +782,8 @@ class _AuthPageState extends State<AuthPage> {
       color: PawmartColors.primary500,
       child: LayoutBuilder(
         builder: (_, constraints) {
-          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          final maxW =
+              constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
           return Center(
             child: SizedBox(
               width: maxW,
@@ -508,13 +808,27 @@ class _AuthPageState extends State<AuthPage> {
       child: Column(
         children: [
           Container(
-            width: 48, height: 48,
-            decoration: BoxDecoration(color: Colors.white.withAlpha(40), shape: BoxShape.circle),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(40),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, size: 24, color: Colors.white),
           ),
           const SizedBox(height: 8),
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-          Text(desc, style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(200))),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            desc,
+            style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(200)),
+          ),
         ],
       ),
     );
@@ -527,35 +841,55 @@ class _AuthPageState extends State<AuthPage> {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       child: LayoutBuilder(
         builder: (_, constraints) {
-          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          final maxW =
+              constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
           return Center(
             child: SizedBox(
               width: maxW,
               child: Column(
                 children: [
-                  Text('为什么选择 PawMart？', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+                  Text(
+                    '为什么选择 PawMart？',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: PawmartColors.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text('我们用科技与热爱，重新定义宠物消费体验', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+                  Text(
+                    '我们用科技与热爱，重新定义宠物消费体验',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: PawmartColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 36),
                   const Row(
                     children: [
-                      Expanded(child: _FeatureCard(
-                        icon: Icons.auto_awesome,
-                        title: '智能推荐',
-                        desc: '基于宠物画像的 AI 智能推荐，精准匹配品种、年龄和健康状况，为你的爱宠量身定制好物清单。',
-                      )),
+                      Expanded(
+                        child: _FeatureCard(
+                          icon: Icons.auto_awesome,
+                          title: '智能推荐',
+                          desc: '基于宠物画像的 AI 智能推荐，精准匹配品种、年龄和健康状况，为你的爱宠量身定制好物清单。',
+                        ),
+                      ),
                       SizedBox(width: 20),
-                      Expanded(child: _FeatureCard(
-                        icon: Icons.pets,
-                        title: '品种专属',
-                        desc: '覆盖 200+ 品种的专属营养与护理方案，从拉布拉多到布偶猫，满足每一种宠物的独特需求。',
-                      )),
+                      Expanded(
+                        child: _FeatureCard(
+                          icon: Icons.pets,
+                          title: '品种专属',
+                          desc: '覆盖 200+ 品种的专属营养与护理方案，从拉布拉多到布偶猫，满足每一种宠物的独特需求。',
+                        ),
+                      ),
                       SizedBox(width: 20),
-                      Expanded(child: _FeatureCard(
-                        icon: Icons.people,
-                        title: '社区互动',
-                        desc: '百万宠物主人的活跃社区，分享养宠心得、获取专业建议，结交志同道合的宠物朋友。',
-                      )),
+                      Expanded(
+                        child: _FeatureCard(
+                          icon: Icons.people,
+                          title: '社区互动',
+                          desc: '百万宠物主人的活跃社区，分享养宠心得、获取专业建议，结交志同道合的宠物朋友。',
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -581,15 +915,29 @@ class _AuthPageState extends State<AuthPage> {
       color: PawmartColors.neutral50,
       child: LayoutBuilder(
         builder: (_, constraints) {
-          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          final maxW =
+              constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
           return Center(
             child: SizedBox(
               width: maxW,
               child: Column(
                 children: [
-                  Text('热门品类', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+                  Text(
+                    '热门品类',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: PawmartColors.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text('覆盖宠物生活全方位需求', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+                  Text(
+                    '覆盖宠物生活全方位需求',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: PawmartColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 32),
                   LayoutBuilder(
                     builder: (_, inner) {
@@ -597,7 +945,10 @@ class _AuthPageState extends State<AuthPage> {
                       return Wrap(
                         spacing: 16,
                         runSpacing: 16,
-                        children: cats.map((c) => _categoryCard(c.$1, c.$2, isWide)).toList(),
+                        children:
+                            cats
+                                .map((c) => _categoryCard(c.$1, c.$2, isWide))
+                                .toList(),
                       );
                     },
                   ),
@@ -617,15 +968,41 @@ class _AuthPageState extends State<AuthPage> {
       height: 180,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Stack(fit: StackFit.expand, children: [
-          CachedNetworkImage(imageUrl: imgUrl, fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => Container(color: PawmartColors.primary200),
-          ),
-          Container(
-            decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, PawmartColors.primary700.withAlpha(180)])),
-          ),
-          Positioned(bottom: 16, left: 16, child: Text(label, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white))),
-        ]),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: imgUrl,
+              fit: BoxFit.cover,
+              errorWidget:
+                  (_, __, ___) => Container(color: PawmartColors.primary200),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    PawmartColors.primary700.withAlpha(180),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -638,21 +1015,40 @@ class _AuthPageState extends State<AuthPage> {
       color: PawmartColors.primary50,
       child: Column(
         children: [
-          Text('立即加入 PawMart', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+          Text(
+            '立即加入 PawMart',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: PawmartColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 12),
-          Text('为你的爱宠找到最好的呵护', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+          Text(
+            '为你的爱宠找到最好的呵护',
+            style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             height: 48,
             child: FilledButton(
-              onPressed: () => setState(() { _reg = true; _err = null; }),
+              onPressed:
+                  () => setState(() {
+                    _reg = true;
+                    _err = null;
+                  }),
               style: FilledButton.styleFrom(
                 backgroundColor: PawmartColors.accent400,
                 foregroundColor: PawmartColors.textOnAccent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9999),
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 32),
               ),
-              child: Text('免费注册', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              child: Text(
+                '免费注册',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              ),
             ),
           ),
         ],
@@ -668,21 +1064,44 @@ class _AuthPageState extends State<AuthPage> {
       color: PawmartColors.neutral900,
       child: LayoutBuilder(
         builder: (_, constraints) {
-          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          final maxW =
+              constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
           return Center(
             child: SizedBox(
               width: maxW,
               child: Column(
                 children: [
-                  Text('PawMart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                  Text(
+                    'PawMart',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text('© 2026 PawMart. 保留所有权利。', style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(150))),
+                  Text(
+                    '© 2026 PawMart. 保留所有权利。',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withAlpha(150),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 24,
-                    children: ['关于我们', '联系客服', '隐私政策', '用户协议', '帮助中心'].map((l) =>
-                      Text(l, style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(180)))
-                    ).toList(),
+                    children:
+                        ['关于我们', '联系客服', '隐私政策', '用户协议', '帮助中心']
+                            .map(
+                              (l) => Text(
+                                l,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withAlpha(180),
+                                ),
+                              ),
+                            )
+                            .toList(),
                   ),
                 ],
               ),
@@ -697,7 +1116,11 @@ class _AuthPageState extends State<AuthPage> {
 class _FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title, desc;
-  const _FeatureCard({required this.icon, required this.title, required this.desc});
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.desc,
+  });
 
   @override
   Widget build(BuildContext ctx) {
@@ -712,14 +1135,32 @@ class _FeatureCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: PawmartColors.primary50, borderRadius: BorderRadius.circular(10)),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: PawmartColors.primary50,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Icon(icon, size: 22, color: PawmartColors.primary500),
           ),
           const SizedBox(height: 12),
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: PawmartColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(desc, style: TextStyle(fontSize: 14, color: PawmartColors.textSecondary, height: 1.5)),
+          Text(
+            desc,
+            style: TextStyle(
+              fontSize: 14,
+              color: PawmartColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );

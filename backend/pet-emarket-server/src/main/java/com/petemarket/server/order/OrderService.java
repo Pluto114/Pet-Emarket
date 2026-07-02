@@ -13,6 +13,7 @@ import com.petemarket.server.product.Product;
 import com.petemarket.server.product.ProductRepository;
 import com.petemarket.server.product.ProductStatus;
 import com.petemarket.server.product.ProductType;
+import com.petemarket.server.store.StoreService;
 import com.petemarket.server.user.UserAccount;
 import com.petemarket.server.user.UserRole;
 import java.math.BigDecimal;
@@ -32,6 +33,7 @@ public class OrderService {
     private final LoyaltyService loyaltyService;
     private final UserBehaviorService userBehaviorService;
     private final ShippingAddressService shippingAddressService;
+    private final StoreService storeService;
 
     public OrderService(OrderRepository orderRepository,
                         CartItemRepository cartItemRepository,
@@ -39,7 +41,8 @@ public class OrderService {
                         PaymentService paymentService,
                         LoyaltyService loyaltyService,
                         UserBehaviorService userBehaviorService,
-                        ShippingAddressService shippingAddressService) {
+                        ShippingAddressService shippingAddressService,
+                        StoreService storeService) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
@@ -47,13 +50,16 @@ public class OrderService {
         this.loyaltyService = loyaltyService;
         this.userBehaviorService = userBehaviorService;
         this.shippingAddressService = shippingAddressService;
+        this.storeService = storeService;
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponse> list(UserAccount currentUser) {
-        List<PetOrder> orders = isAdminOrMerchant(currentUser)
+        List<PetOrder> orders = currentUser.getRole() == UserRole.ADMIN
                 ? orderRepository.findAllByOrderByCreatedAtDesc()
-                : orderRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+                : currentUser.getRole() == UserRole.MERCHANT
+                        ? merchantOrders(currentUser)
+                        : orderRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
         return orders.stream().map(OrderResponse::from).toList();
     }
 
@@ -189,6 +195,7 @@ public class OrderService {
     private OrderItem snapshotItem(Product product, Integer quantity, BigDecimal subtotal) {
         OrderItem item = new OrderItem();
         item.setProductId(product.getId());
+        item.setStoreId(product.getStoreId());
         item.setProductName(product.getName());
         item.setProductType(product.getType().name());
         item.setCategory(product.getCategory());
@@ -263,7 +270,13 @@ public class OrderService {
     private PetOrder findAndAuthorize(UserAccount user, Long id) {
         PetOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("300404", "Order not found", HttpStatus.NOT_FOUND));
-        if (!isAdminOrMerchant(user) && !order.getUserId().equals(user.getId())) {
+        if (user.getRole() == UserRole.ADMIN) {
+            return order;
+        }
+        if (user.getRole() == UserRole.MERCHANT && orderContainsManagedStore(user, order)) {
+            return order;
+        }
+        if (!order.getUserId().equals(user.getId())) {
             throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
         }
         return order;
@@ -271,6 +284,22 @@ public class OrderService {
 
     private boolean isAdminOrMerchant(UserAccount user) {
         return user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.MERCHANT;
+    }
+
+    private List<PetOrder> merchantOrders(UserAccount user) {
+        return orderRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(order -> orderContainsManagedStore(user, order))
+                .toList();
+    }
+
+    private boolean orderContainsManagedStore(UserAccount user, PetOrder order) {
+        List<Long> storeIds = storeService.managedStoreIds(user);
+        if (storeIds.isEmpty()) {
+            return false;
+        }
+        return order.getItems().stream()
+                .map(OrderItem::getStoreId)
+                .anyMatch(storeIds::contains);
     }
 
     private void requireAdminOrMerchant(UserAccount user) {

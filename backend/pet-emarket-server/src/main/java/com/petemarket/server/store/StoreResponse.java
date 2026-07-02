@@ -16,6 +16,7 @@ public record StoreResponse(
         StoreStatus status,
         String featureTags,
         String amapPoiId,
+        Long ownerUserId,
         Double distanceKm,
         Instant createdAt,
         Instant updatedAt
@@ -35,6 +36,7 @@ public record StoreResponse(
                 store.getStatus(),
                 store.getFeatureTags(),
                 store.getAmapPoiId(),
+                store.getOwnerUserId(),
                 distanceKm,
                 store.getCreatedAt(),
                 store.getUpdatedAt()

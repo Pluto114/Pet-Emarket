@@ -9,8 +9,9 @@ class SessionStore extends ChangeNotifier {
   String? get token => _token;
   AppUser? get user => _user;
   bool get isAuthenticated => _token != null && _user != null;
-  bool get isAdmin => _user != null && _user!.role == 'ADMIN';
-  bool get isMerchant => _user != null && _user!.role == 'MERCHANT';
+  bool get isAdmin => _user?.role == 'ADMIN';
+  bool get isMerchant => _user?.role == 'MERCHANT';
+  bool get isManager => isAdmin || isMerchant;
 
   void setSession({required String token, required AppUser user}) {
     _token = token;
@@ -29,41 +30,20 @@ class SessionStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Dev-only: skip login without backend.
+  /// Local preview fallback only. Prefer real quick-login buttons in AuthPage.
   void devBypass({String role = 'CUSTOMER'}) {
+    final normalizedRole =
+        role == 'ADMIN' || role == 'MERCHANT' ? role : 'CUSTOMER';
     _token = 'dev-token-${DateTime.now().millisecondsSinceEpoch}';
-    late final String id, username, displayName, memberLevel, email;
-    switch (role) {
-      case 'ADMIN':
-        id = 'dev-admin-001';
-        username = 'admin';
-        displayName = 'Dev Admin';
-        memberLevel = 'VIP';
-        email = 'admin@petemarket.dev';
-        break;
-      case 'MERCHANT':
-        id = 'dev-merchant-001';
-        username = 'merchant';
-        displayName = 'Dev Merchant';
-        memberLevel = 'NORMAL';
-        email = 'merchant@petemarket.dev';
-        break;
-      default: // CUSTOMER
-        id = 'dev-user-001';
-        username = 'customer';
-        displayName = 'Dev Customer';
-        memberLevel = 'NORMAL';
-        email = 'user@petemarket.dev';
-    }
     _user = AppUser(
-      id: id,
-      username: username,
-      displayName: displayName,
-      role: role,
-      memberLevel: memberLevel,
+      id: 'dev-${normalizedRole.toLowerCase()}-001',
+      username: normalizedRole.toLowerCase(),
+      displayName: 'Dev $normalizedRole',
+      role: normalizedRole,
+      memberLevel: normalizedRole == 'CUSTOMER' ? 'NORMAL' : 'VIP',
       status: 'ACTIVE',
       phone: '18800000000',
-      email: email,
+      email: '${normalizedRole.toLowerCase()}@petemarket.dev',
     );
     notifyListeners();
   }

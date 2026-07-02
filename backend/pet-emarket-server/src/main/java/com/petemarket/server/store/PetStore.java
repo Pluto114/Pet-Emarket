@@ -56,6 +56,8 @@ public class PetStore {
     @Column(length = 64)
     private String amapPoiId;
 
+    private Long ownerUserId;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -169,6 +171,14 @@ public class PetStore {
 
     public void setAmapPoiId(String amapPoiId) {
         this.amapPoiId = amapPoiId;
+    }
+
+    public Long getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public void setOwnerUserId(Long ownerUserId) {
+        this.ownerUserId = ownerUserId;
     }
 
     public Instant getCreatedAt() {

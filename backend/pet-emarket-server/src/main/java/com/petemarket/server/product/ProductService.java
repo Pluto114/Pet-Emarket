@@ -1,6 +1,9 @@
 package com.petemarket.server.product;
 
 import com.petemarket.server.common.BusinessException;
+import com.petemarket.server.store.StoreService;
+import com.petemarket.server.user.UserAccount;
+import com.petemarket.server.user.UserRole;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -11,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProductService {
     private final ProductRepository productRepository;
+    private final StoreService storeService;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, StoreService storeService) {
         this.productRepository = productRepository;
+        this.storeService = storeService;
     }
 
     @Transactional(readOnly = true)
@@ -36,6 +41,17 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public List<ProductResponse> listManaged(UserAccount actor, String keyword, ProductType type, ProductStatus status) {
+        List<Long> storeIds = storeService.managedStoreIds(actor);
+        if (storeIds.isEmpty()) {
+            return List.of();
+        }
+        return filteredProducts(productRepository.findByStoreIdIn(storeIds), keyword, type, status).stream()
+                .map(ProductResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<ProductResponse> listLivePetAudits(ProductAuditStatus auditStatus) {
         List<Product> products = auditStatus == null
                 ? productRepository.findByType(ProductType.PET_LIVE)
@@ -49,23 +65,30 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse create(UpsertProductRequest request) {
+    public ProductResponse create(UpsertProductRequest request, UserAccount actor) {
+        Long storeId = request.storeId() == null ? defaultManagedStoreId(actor) : request.storeId();
+        requireCanManageStore(actor, storeId);
         Product product = new Product();
-        apply(product, request);
+        apply(product, request, storeId);
         productRepository.save(product);
         return ProductResponse.from(product);
     }
 
     @Transactional
-    public ProductResponse update(Long id, UpsertProductRequest request) {
+    public ProductResponse update(Long id, UpsertProductRequest request, UserAccount actor) {
         Product product = find(id);
-        apply(product, request);
+        requireCanManageStore(actor, product.getStoreId());
+        Long targetStoreId = request.storeId() == null ? product.getStoreId() : request.storeId();
+        requireCanManageStore(actor, targetStoreId);
+        apply(product, request, targetStoreId);
         return ProductResponse.from(product);
     }
 
     @Transactional
-    public void delete(Long id) {
-        productRepository.delete(find(id));
+    public void delete(Long id, UserAccount actor) {
+        Product product = find(id);
+        requireCanManageStore(actor, product.getStoreId());
+        productRepository.delete(product);
     }
 
     @Transactional
@@ -87,8 +110,20 @@ public class ProductService {
                 .orElseThrow(() -> new BusinessException("200404", "Product not found", HttpStatus.NOT_FOUND));
     }
 
-    private void apply(Product product, UpsertProductRequest request) {
-        product.setStoreId(request.storeId() == null ? 1L : request.storeId());
+    private List<Product> filteredProducts(List<Product> products, String keyword, ProductType type, ProductStatus status) {
+        String normalized = keyword == null ? "" : keyword.trim().toLowerCase();
+        return products.stream()
+                .filter(product -> normalized.isBlank()
+                        || product.getName().toLowerCase().contains(normalized)
+                        || product.getCategory().toLowerCase().contains(normalized)
+                        || defaultText(product.getDescription(), "").toLowerCase().contains(normalized))
+                .filter(product -> type == null || product.getType() == type)
+                .filter(product -> status == null || product.getStatus() == status)
+                .toList();
+    }
+
+    private void apply(Product product, UpsertProductRequest request, Long storeId) {
+        product.setStoreId(storeId);
         product.setName(request.name());
         product.setType(request.type() == null ? ProductType.GOODS : request.type());
         product.setCategory(defaultText(request.category(), "General"));
@@ -129,6 +164,24 @@ public class ProductService {
         if (product.getAuditStatus() == ProductAuditStatus.REJECTED) {
             product.setStatus(ProductStatus.OFF_SALE);
         }
+    }
+
+    private Long defaultManagedStoreId(UserAccount actor) {
+        List<Long> storeIds = storeService.managedStoreIds(actor);
+        if (storeIds.isEmpty()) {
+            throw new BusinessException("200400", "Merchant has no store yet", HttpStatus.BAD_REQUEST);
+        }
+        return storeIds.get(0);
+    }
+
+    private void requireCanManageStore(UserAccount actor, Long storeId) {
+        if (actor.getRole() == UserRole.ADMIN) {
+            return;
+        }
+        if (actor.getRole() == UserRole.MERCHANT && storeService.canManageStore(actor, storeId)) {
+            return;
+        }
+        throw new BusinessException("100403", "Forbidden", HttpStatus.FORBIDDEN);
     }
 
     private String defaultText(String value, String fallback) {
