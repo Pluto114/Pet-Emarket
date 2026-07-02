@@ -16,6 +16,7 @@ public record UpsertStoreRequest(
         String businessHours,
         Double rating,
         StoreStatus status,
-        String featureTags
+        String featureTags,
+        String amapPoiId
 ) {
 }

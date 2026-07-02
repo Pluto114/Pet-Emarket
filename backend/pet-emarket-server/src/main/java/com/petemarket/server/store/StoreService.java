@@ -119,6 +119,7 @@ public class StoreService {
         store.setRating(request.rating() == null ? 5.0 : Math.min(5.0, Math.max(0.0, request.rating())));
         store.setStatus(request.status() == null ? StoreStatus.OPEN : request.status());
         store.setFeatureTags(defaultText(request.featureTags(), ""));
+        store.setAmapPoiId(defaultText(request.amapPoiId(), ""));
     }
 
     private String defaultText(String value, String fallback) {

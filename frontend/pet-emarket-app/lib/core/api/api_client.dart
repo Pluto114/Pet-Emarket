@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../models/app_user.dart';
 import '../../models/admin_dashboard.dart';
+import '../../models/amap_poi.dart';
 import '../../models/ai_chat.dart';
 import '../../models/cart_item.dart';
 import '../../models/media_asset.dart';
@@ -43,6 +44,7 @@ class ApiClient {
     required String username,
     required String password,
     required String displayName,
+    required String emailCode,
     String phone = '',
     String email = '',
   }) async {
@@ -55,6 +57,7 @@ class ApiClient {
         'displayName': displayName,
         'phone': phone,
         'email': email,
+        'emailCode': emailCode,
       },
       authenticated: false,
     );
@@ -63,6 +66,16 @@ class ApiClient {
     );
     sessionStore.setSession(token: data['token'].toString(), user: user);
     return user;
+  }
+
+  Future<String> sendRegisterEmailCode(String email) async {
+    final data = await _request(
+      'POST',
+      '/api/v1/auth/email-code',
+      body: {'email': email},
+      authenticated: false,
+    );
+    return data['devCode']?.toString() ?? '';
   }
 
   Future<AppUser> me() async {
@@ -193,6 +206,31 @@ class ApiClient {
         .map(
           (item) => PetStore.fromJson(Map<String, dynamic>.from(item as Map)),
         )
+        .toList();
+  }
+
+  Future<List<AmapPoi>> nearbyAmapPetStores({
+    double longitude = 120.1551,
+    double latitude = 30.2741,
+    int radius = 5000,
+    int limit = 20,
+    String keywords = '',
+  }) async {
+    final query = <String, String>{
+      'longitude': longitude.toString(),
+      'latitude': latitude.toString(),
+      'radius': radius.toString(),
+      'limit': limit.toString(),
+    };
+    if (keywords.trim().isNotEmpty) query['keywords'] = keywords.trim();
+    final data = await _request(
+      'GET',
+      '/api/v1/geo/amap/nearby-pet-stores',
+      query: query,
+      authenticated: false,
+    );
+    return (data['items'] as List)
+        .map((item) => AmapPoi.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
   }
 

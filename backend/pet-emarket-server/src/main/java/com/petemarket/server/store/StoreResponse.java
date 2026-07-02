@@ -15,6 +15,7 @@ public record StoreResponse(
         Double rating,
         StoreStatus status,
         String featureTags,
+        String amapPoiId,
         Double distanceKm,
         Instant createdAt,
         Instant updatedAt
@@ -33,6 +34,7 @@ public record StoreResponse(
                 store.getRating(),
                 store.getStatus(),
                 store.getFeatureTags(),
+                store.getAmapPoiId(),
                 distanceKm,
                 store.getCreatedAt(),
                 store.getUpdatedAt()

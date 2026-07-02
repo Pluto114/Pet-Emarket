@@ -35,7 +35,20 @@ pet-emarket:
       - "http://localhost:8080"
       - "http://localhost:5000"
   ai-service:
-    enabled: true
-    base-url: "http://localhost:8001"
-    timeout-seconds: 10
-
+    enabled: ${AI_SERVICE_ENABLED:true}
+    base-url: ${AI_SERVICE_BASE_URL:http://localhost:8001}
+    timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:10}
+  amap:
+    api-key: ${AMAP_API_KEY:}
+    base-url: ${AMAP_BASE_URL:https://restapi.amap.com}
+    timeout-seconds: ${AMAP_TIMEOUT_SECONDS:3}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    host: ${SMTP_HOST:smtp.qq.com}
+    port: ${SMTP_PORT:465}
+    username: ${SMTP_USERNAME:3449940090@qq.com}
+    password: ${SMTP_PASSWORD:}
+    from: ${MAIL_FROM:3449940090@qq.com}
+    ssl-enabled: ${SMTP_SSL_ENABLED:true}
+    starttls-enabled: ${SMTP_STARTTLS_ENABLED:false}
+    dev-code-in-response: ${MAIL_DEV_CODE_IN_RESPONSE:false}

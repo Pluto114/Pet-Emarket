@@ -9,6 +9,7 @@ public class PetEmarketProperties {
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
     private AiService aiService = new AiService();
+    private Amap amap = new Amap();
 
     public Jwt getJwt() {
         return jwt;
@@ -32,6 +33,14 @@ public class PetEmarketProperties {
 
     public void setAiService(AiService aiService) {
         this.aiService = aiService;
+    }
+
+    public Amap getAmap() {
+        return amap;
+    }
+
+    public void setAmap(Amap amap) {
+        this.amap = amap;
     }
 
     public static class Jwt {
@@ -78,6 +87,36 @@ public class PetEmarketProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public long getTimeoutSeconds() {
+            return timeoutSeconds;
+        }
+
+        public void setTimeoutSeconds(long timeoutSeconds) {
+            this.timeoutSeconds = timeoutSeconds;
+        }
+    }
+
+    public static class Amap {
+        private String apiKey = "";
+        private String baseUrl = "https://restapi.amap.com";
+        private long timeoutSeconds = 3;
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
         }
 
         public String getBaseUrl() {

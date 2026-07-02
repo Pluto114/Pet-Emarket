@@ -30,6 +30,11 @@ public class AuthController {
         return ApiResponse.ok(authService.register(request), "register success");
     }
 
+    @PostMapping("/email-code")
+    public ApiResponse<EmailCodeResponse> sendEmailCode(@Valid @RequestBody SendEmailCodeRequest request) {
+        return ApiResponse.ok(authService.sendEmailCode(request), "email code generated");
+    }
+
     @GetMapping("/me")
     public ApiResponse<UserResponse> me(@AuthenticationPrincipal UserAccount currentUser) {
         return ApiResponse.ok(UserResponse.from(currentUser));
