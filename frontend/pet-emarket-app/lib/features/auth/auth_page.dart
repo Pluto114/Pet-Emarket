@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// Using system fonts
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
@@ -22,6 +23,11 @@ class _AuthPageState extends State<AuthPage> {
   bool _reg = false, _busy = false;
   String? _err;
 
+  static const String _ossUrl1 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/410a874a2b333ad076ad6c8f85aefbd2.jpg';
+  static const String _ossUrl2 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9944f9224e6cb20d8b9697fd22624d97.jpg';
+  static const String _ossUrl3 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/9e8c37828cc4c7cade02789ab736d64d.jpg';
+  static const String _ossUrl4 = 'https://pet-emarket.oss-cn-guangzhou.aliyuncs.com/image/pages/acabf95540953c92ceda9ae6cd9399f1.jpg';
+
   @override
   void dispose() {
     _usr.dispose();
@@ -33,24 +39,12 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _sub() async {
-    setState(() {
-      _busy = true;
-      _err = null;
-    });
+    setState(() { _busy = true; _err = null; });
     try {
       if (_reg) {
-        await widget.apiClient.register(
-          username: _usr.text.trim(),
-          password: _pwd.text,
-          displayName: _dn.text.trim(),
-          phone: _ph.text.trim(),
-          email: _em.text.trim(),
-        );
+        await widget.apiClient.register(username: _usr.text.trim(), password: _pwd.text, displayName: _dn.text.trim(), phone: _ph.text.trim(), email: _em.text.trim());
       } else {
-        await widget.apiClient.login(
-          username: _usr.text.trim(),
-          password: _pwd.text,
-        );
+        await widget.apiClient.login(username: _usr.text.trim(), password: _pwd.text);
       }
     } catch (e) {
       setState(() => _err = e.toString());
@@ -64,502 +58,570 @@ class _AuthPageState extends State<AuthPage> {
     final t = Theme.of(ctx);
     final s = t.colorScheme;
     final screenW = MediaQuery.of(ctx).size.width;
-    final wide = screenW > 860;
+    final wide = screenW > 900;
 
     return Scaffold(
-      backgroundColor: s.surface,
+      backgroundColor: PawmartColors.surfaceBg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            child: wide ? _buildWideLayout(ctx, s) : _buildNarrowLayout(ctx, s),
+            child: Column(
+              children: [
+                if (wide) _buildSection1Wide(ctx, s) else _buildSection1Narrow(ctx, s),
+                _buildPromises(ctx),
+                _buildFeatures(ctx),
+                _buildCategories(ctx),
+                _buildCTA(ctx),
+                _buildFooter(ctx),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ——— Wide screen: side-by-side layout ———
-  Widget _buildWideLayout(BuildContext ctx, ColorScheme s) {
+  // ═══ Section 1: Login + Hero (Wide) ═══
+  Widget _buildSection1Wide(BuildContext ctx, ColorScheme s) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 1200),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left: Brand + Form
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: _buildFormColumn(ctx, s),
-            ),
-          ),
+          Expanded(flex: 5, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: _buildForm(ctx))),
           const SizedBox(width: 60),
-          // Right: Hero Image
-          Expanded(
-            child: _buildHeroImage(ctx),
-          ),
+          Expanded(flex: 7, child: _buildHero(ctx)),
         ],
       ),
     );
   }
 
-  // ——— Narrow screen: stacked layout ———
-  Widget _buildNarrowLayout(BuildContext ctx, ColorScheme s) {
+  // ═══ Section 1: Login + Hero (Narrow) ═══
+  Widget _buildSection1Narrow(BuildContext ctx, ColorScheme s) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Compact hero on top
-          Container(
-            height: 180,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(pawmartRadiusXl),
-              gradient: LinearGradient(
-                colors: [PawmartColors.primary100, PawmartColors.primary200],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -20,
-                  bottom: -20,
-                  child: Icon(Icons.pets, size: 120, color: PawmartColors.primary300.withAlpha(80)),
-                ),
-                Positioned(
-                  left: -10,
-                  top: -10,
-                  child: Icon(Icons.pets, size: 80, color: PawmartColors.primary200.withAlpha(60)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'PawMart',
-                        style: GoogleFonts.nunito(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: PawmartColors.primary700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '为每一只爱宠\n找到最贴心的呵护',
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: PawmartColors.primary600,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+          SizedBox(
+            height: 200,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(fit: StackFit.expand, children: [
+                CachedNetworkImage(imageUrl: _ossUrl1, fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(
+                    decoration: BoxDecoration(gradient: LinearGradient(colors: [PawmartColors.primary100, PawmartColors.primary200])),
+                    child: Center(child: Icon(Icons.pets, size: 80, color: PawmartColors.primary300.withAlpha(120))),
                   ),
                 ),
-              ],
+                Positioned(bottom: 0, left: 0, right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, PawmartColors.primary700.withAlpha(180)])),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('PawMart', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('为每一只爱宠，找到最贴心的呵护', style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(200))),
+                    ]),
+                  ),
+                ),
+              ]),
             ),
           ),
           const SizedBox(height: 24),
-          _buildFormCard(ctx, s),
+          _buildForm(ctx),
         ],
       ),
     );
   }
 
-  // ——— Form shared by both layouts ———
-  Widget _buildFormColumn(BuildContext ctx, ColorScheme s) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Brand
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: PawmartColors.primary500,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.pets, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'PawMart',
-              style: GoogleFonts.nunito(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: PawmartColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '为每一只爱宠，找到最贴心的呵护',
-          style: GoogleFonts.nunito(
-            fontSize: 14,
-            color: PawmartColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 32),
-        _buildFormCard(ctx, s),
-      ],
-    );
-  }
-
-  Widget _buildFormCard(BuildContext ctx, ColorScheme s) {
+  // ═══ Login Form Card ═══
+  Widget _buildForm(BuildContext ctx) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: PawmartColors.surfaceCard,
-        borderRadius: BorderRadius.circular(pawmartRadiusLg),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: pawmartShadow2,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            _reg ? '创建账号' : '欢迎回来',
-            style: GoogleFonts.nunito(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: PawmartColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _reg ? '注册后开启宠物之旅 🐾' : '登录继续访问 PawMart',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              color: PawmartColors.textSecondary,
-            ),
+          // Paw brand
+          Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(color: PawmartColors.primary500, borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.pets, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Text('PawMart', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: PawmartColors.textPrimary)),
+            ],
           ),
           const SizedBox(height: 24),
-          // Username
-          TextField(
-            controller: _usr,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.person_outline, size: 20),
-              hintText: '用户名',
-            ),
-          ),
+          // Title
+          Text(_reg ? '创建账号' : '欢迎回来', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+          const SizedBox(height: 6),
+          Text(_reg ? '注册后开启宠物之旅' : '登录你的账号，探索优质宠物好物', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+          const SizedBox(height: 24),
+          // Form
+          _buildField('手机号 / 邮箱', _usr, Icons.person_outline),
           const SizedBox(height: 14),
-          // Password
-          TextField(
-            controller: _pwd,
-            obscureText: true,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.lock_outline, size: 20),
-              hintText: '密码',
-            ),
-            onSubmitted: (_) => _sub(),
-          ),
+          _buildField('密码', _pwd, Icons.lock_outline, obscure: true),
           if (_reg) ...[
             const SizedBox(height: 14),
-            TextField(
-              controller: _dn,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.badge_outlined, size: 20),
-                hintText: '昵称',
-              ),
-            ),
+            _buildField('昵称', _dn, Icons.badge_outlined),
             const SizedBox(height: 14),
-            TextField(
-              controller: _ph,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.phone_outlined, size: 20),
-                hintText: '手机号',
-              ),
-            ),
+            _buildField('手机号', _ph, Icons.phone_outlined, phone: true),
             const SizedBox(height: 14),
-            TextField(
-              controller: _em,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.email_outlined, size: 20),
-                hintText: '邮箱',
-              ),
-            ),
+            _buildField('邮箱', _em, Icons.email_outlined, email: true),
           ],
-          // Error
-          if (_err != null) ...[
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: PawmartColors.error.withAlpha(20),
-                borderRadius: BorderRadius.circular(pawmartRadiusMd),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, size: 18, color: PawmartColors.error),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _err!,
-                      style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.error),
-                    ),
+          // Links
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => setState(() { _reg = !_reg; _err = null; }),
+                  child: Text(_reg ? '已有账号？去登录' : '没有账号？去注册', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: PawmartColors.primary500)),
+                ),
+                if (!_reg)
+                  TextButton(
+                    onPressed: () {},
+                    child: Text('忘记密码？', style: TextStyle(fontSize: 13, color: PawmartColors.primary500)),
                   ),
-                ],
-              ),
+              ],
             ),
+          ),
+          if (_err != null) ...[
+            _buildError(_err!),
+            const SizedBox(height: 12),
           ],
-          const SizedBox(height: 24),
-          // Login / Register button (accent yellow, pill-shaped)
+          // Login button
           SizedBox(
-            height: 50,
+            height: 48,
             child: FilledButton(
               onPressed: _busy ? null : _sub,
               style: FilledButton.styleFrom(
                 backgroundColor: PawmartColors.accent400,
                 foregroundColor: PawmartColors.textOnAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(pawmartRadiusFull),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
               ),
               child: _busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: PawmartColors.textOnAccent),
-                    )
-                  : Text(
-                      _reg ? '注册并登录' : '登录',
-                      style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: PawmartColors.textOnAccent))
+                : Text(_reg ? '注册并登录' : '登录', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ),
           ),
-          const SizedBox(height: 12),
-          // Toggle login/register
-          Center(
-            child: TextButton(
-              onPressed: _busy ? null : () => setState(() {
-                _reg = !_reg;
-                _err = null;
-              }),
-              child: Text(
-                _reg ? '已有账号？去登录' : '没有账号？去注册',
-                style: GoogleFonts.nunito(
-                  fontWeight: FontWeight.w600,
-                  color: PawmartColors.primary500,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 24),
           // Divider
-          Row(
-            children: [
-              const Expanded(child: Divider()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  '快速体验',
-                  style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
-                ),
-              ),
-              const Expanded(child: Divider()),
-            ],
-          ),
-          const SizedBox(height: 14),
-          // Dev bypass buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => widget.sessionStore.devBypass(asAdmin: true),
-                  icon: const Icon(Icons.admin_panel_settings, size: 18),
-                  label: Text(
-                    '管理员',
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => widget.sessionStore.devBypass(asAdmin: false),
-                  icon: const Icon(Icons.person, size: 18),
-                  label: Text(
-                    '用户',
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
+          _dividerWithText('其他登录方式'),
+          const SizedBox(height: 16),
+          // Social buttons
+          Row(children: [
+            Expanded(child: _socialBtn(Icons.wechat, '微信登录', PawmartColors.success)),
+            const SizedBox(width: 10),
+            Expanded(child: _socialBtn(Icons.smartphone_outlined, '验证码登录', PawmartColors.info)),
+          ]),
+          const SizedBox(height: 20),
+          // Divider
+          _dividerWithText('无需登录，直接体验'),
+          const SizedBox(height: 16),
+          // Dev bypass
+          SizedBox(
+            height: 48,
+            child: Row(children: [
+              Expanded(child: _userBtn()),
+              const SizedBox(width: 12),
+              Expanded(child: _adminBtn()),
+            ]),
           ),
           const SizedBox(height: 10),
-          Text(
-            'demo / Demo@123456',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+          Text('体验账号: admin / Admin@123456', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField(String hint, TextEditingController ctrl, IconData icon, {bool obscure = false, bool phone = false, bool email = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(hint, style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 40,
+          child: TextField(
+            controller: ctrl,
+            obscureText: obscure,
+            keyboardType: phone ? TextInputType.phone : (email ? TextInputType.emailAddress : null),
+            onSubmitted: obscure ? (_) => _sub() : null,
+            style: TextStyle(fontSize: 14, color: PawmartColors.textPrimary),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, size: 18, color: PawmartColors.neutral400),
+              hintText: '请输入$hint',
+              hintStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
+              filled: true,
+              fillColor: PawmartColors.neutral50,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.neutral200)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: PawmartColors.primary500, width: 1.5)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _socialBtn(IconData icon, String label, Color color) {
+    return OutlinedButton.icon(
+      onPressed: () {},
+      icon: Icon(icon, size: 18, color: color),
+      label: Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: PawmartColors.textPrimary,
+        side: BorderSide(color: PawmartColors.neutral200),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        minimumSize: const Size(0, 32),
+      ),
+    );
+  }
+
+  Widget _userBtn() {
+    return OutlinedButton.icon(
+      onPressed: () => widget.sessionStore.devBypass(asAdmin: false),
+      icon: const Icon(Icons.person_outline, size: 18),
+      label: Text('用户首页', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: PawmartColors.primary500,
+        side: BorderSide(color: PawmartColors.primary200),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  Widget _adminBtn() {
+    return FilledButton.icon(
+      onPressed: () => widget.sessionStore.devBypass(asAdmin: true),
+      icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+      label: Text('管理后台', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      style: FilledButton.styleFrom(
+        backgroundColor: PawmartColors.primary500,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildError(String msg) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: PawmartColors.error.withAlpha(20), borderRadius: BorderRadius.circular(10)),
+      child: Row(children: [
+        Icon(Icons.error_outline, size: 18, color: PawmartColors.error),
+        const SizedBox(width: 8),
+        Expanded(child: Text(msg, style: TextStyle(fontSize: 13, color: PawmartColors.error))),
+      ]),
+    );
+  }
+
+  Widget _dividerWithText(String label) {
+    return Row(children: [
+      const Expanded(child: Divider(color: PawmartColors.neutral200)),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(label, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
+      ),
+      const Expanded(child: Divider(color: PawmartColors.neutral200)),
+    ]);
+  }
+
+  // ═══ Hero Image ═══
+  Widget _buildHero(BuildContext ctx) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 480,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(fit: StackFit.expand, children: [
+              CachedNetworkImage(imageUrl: _ossUrl1, fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => Container(
+                  decoration: BoxDecoration(gradient: LinearGradient(colors: [PawmartColors.primary100, PawmartColors.primary200])),
+                  child: Center(child: Icon(Icons.pets, size: 80, color: PawmartColors.primary300.withAlpha(120))),
+                ),
+              ),
+              Positioned(bottom: 0, left: 0, right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, PawmartColors.primary700.withAlpha(180)])),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('为每一只爱宠', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
+                    const SizedBox(height: 6),
+                    Text('找到最贴心的呵护', style: TextStyle(fontSize: 16, color: Colors.white.withAlpha(200))),
+                  ]),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══ Section 2: Brand Promises ═══
+  Widget _buildPromises(BuildContext ctx) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 40),
+      color: PawmartColors.primary500,
+      child: LayoutBuilder(
+        builder: (_, constraints) {
+          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          return Center(
+            child: SizedBox(
+              width: maxW,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _promiseItem(Icons.star, '品质保障', '严选全球优质品牌，安全放心'),
+                  _promiseItem(Icons.local_shipping, '极速配送', '全国仓储网络，次日达服务'),
+                  _promiseItem(Icons.favorite, '贴心售后', '7天无忧退换，专业客服支持'),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _promiseItem(IconData icon, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(color: Colors.white.withAlpha(40), shape: BoxShape.circle),
+            child: Icon(icon, size: 24, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+          Text(desc, style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(200))),
+        ],
+      ),
+    );
+  }
+
+  // ═══ Section 3: Features ═══
+  Widget _buildFeatures(BuildContext ctx) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      child: LayoutBuilder(
+        builder: (_, constraints) {
+          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          return Center(
+            child: SizedBox(
+              width: maxW,
+              child: Column(
+                children: [
+                  Text('为什么选择 PawMart？', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text('我们用科技与热爱，重新定义宠物消费体验', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+                  const SizedBox(height: 36),
+                  const Row(
+                    children: [
+                      Expanded(child: _FeatureCard(
+                        icon: Icons.auto_awesome,
+                        title: '智能推荐',
+                        desc: '基于宠物画像的 AI 智能推荐，精准匹配品种、年龄和健康状况，为你的爱宠量身定制好物清单。',
+                      )),
+                      SizedBox(width: 20),
+                      Expanded(child: _FeatureCard(
+                        icon: Icons.pets,
+                        title: '品种专属',
+                        desc: '覆盖 200+ 品种的专属营养与护理方案，从拉布拉多到布偶猫，满足每一种宠物的独特需求。',
+                      )),
+                      SizedBox(width: 20),
+                      Expanded(child: _FeatureCard(
+                        icon: Icons.people,
+                        title: '社区互动',
+                        desc: '百万宠物主人的活跃社区，分享养宠心得、获取专业建议，结交志同道合的宠物朋友。',
+                      )),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ═══ Section 4: Categories ═══
+  Widget _buildCategories(BuildContext ctx) {
+    final cats = [
+      (_ossUrl2, '狗粮'),
+      (_ossUrl3, '猫粮'),
+      (_ossUrl4, '宠物用品'),
+      (_ossUrl1, '宠物保健'),
+    ];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      color: PawmartColors.neutral50,
+      child: LayoutBuilder(
+        builder: (_, constraints) {
+          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          return Center(
+            child: SizedBox(
+              width: maxW,
+              child: Column(
+                children: [
+                  Text('热门品类', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text('覆盖宠物生活全方位需求', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+                  const SizedBox(height: 32),
+                  LayoutBuilder(
+                    builder: (_, inner) {
+                      final isWide = inner.maxWidth > 600;
+                      return Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: cats.map((c) => _categoryCard(c.$1, c.$2, isWide)).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _categoryCard(String imgUrl, String label, bool isWide) {
+    final w = isWide ? 220.0 : (MediaQuery.of(context).size.width - 80) / 2;
+    return SizedBox(
+      width: w,
+      height: 180,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(fit: StackFit.expand, children: [
+          CachedNetworkImage(imageUrl: imgUrl, fit: BoxFit.cover,
+            errorWidget: (_, __, ___) => Container(color: PawmartColors.primary200),
+          ),
+          Container(
+            decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, PawmartColors.primary700.withAlpha(180)])),
+          ),
+          Positioned(bottom: 16, left: 16, child: Text(label, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white))),
+        ]),
+      ),
+    );
+  }
+
+  // ═══ Section 5: CTA ═══
+  Widget _buildCTA(BuildContext ctx) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      color: PawmartColors.primary50,
+      child: Column(
+        children: [
+          Text('立即加入 PawMart', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+          const SizedBox(height: 12),
+          Text('为你的爱宠找到最好的呵护', style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary)),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 48,
+            child: FilledButton(
+              onPressed: () => setState(() { _reg = true; _err = null; }),
+              style: FilledButton.styleFrom(
+                backgroundColor: PawmartColors.accent400,
+                foregroundColor: PawmartColors.textOnAccent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+              ),
+              child: Text('免费注册', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ——— Hero Image Section (wide layout) ———
-  Widget _buildHeroImage(BuildContext ctx) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 380,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(pawmartRadiusXl),
-            gradient: LinearGradient(
-              colors: [PawmartColors.primary100, PawmartColors.primary200],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+  // ═══ Section 6: Footer ═══
+  Widget _buildFooter(BuildContext ctx) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      color: PawmartColors.neutral900,
+      child: LayoutBuilder(
+        builder: (_, constraints) {
+          final maxW = constraints.maxWidth > 1024 ? 1024.0 : constraints.maxWidth;
+          return Center(
+            child: SizedBox(
+              width: maxW,
+              child: Column(
+                children: [
+                  Text('PawMart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  Text('© 2026 PawMart. 保留所有权利。', style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(150))),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 24,
+                    children: ['关于我们', '联系客服', '隐私政策', '用户协议', '帮助中心'].map((l) =>
+                      Text(l, style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(180)))
+                    ).toList(),
+                  ),
+                ],
+              ),
             ),
-            boxShadow: pawmartShadow3,
-          ),
-          child: Stack(
-            children: [
-              // Pet icons as placeholder
-              Positioned(
-                right: 30,
-                top: 40,
-                child: Transform.rotate(
-                  angle: -0.1,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(180),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(Icons.pets, size: 50, color: PawmartColors.primary400),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 20,
-                bottom: 60,
-                child: Transform.rotate(
-                  angle: 0.15,
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(180),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(Icons.pets, size: 40, color: PawmartColors.primary300),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 40,
-                bottom: 30,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(180),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: const Icon(Icons.pets, size: 30, color: PawmartColors.accent400),
-                ),
-              ),
-              // Overlay text
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(pawmartRadiusXl)),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        PawmartColors.primary700.withAlpha(180),
-                      ],
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '为每一只爱宠',
-                        style: GoogleFonts.nunito(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '找到最贴心的呵护',
-                        style: GoogleFonts.nunito(
-                          fontSize: 15,
-                          color: Colors.white.withAlpha(200),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        // Brand promise strip below hero
-        Row(
-          children: [
-            _promiseItem(Icons.shield_outlined, '品质保障', '严选全球优质品牌'),
-            const SizedBox(width: 16),
-            _promiseItem(Icons.local_shipping_outlined, '极速配送', '全国次日达服务'),
-            const SizedBox(width: 16),
-            _promiseItem(Icons.support_agent_outlined, '贴心售后', '7天无忧退换'),
-          ],
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
+}
 
-  Widget _promiseItem(IconData icon, String title, String subtitle) {
-    return Expanded(
+class _FeatureCard extends StatelessWidget {
+  final IconData icon;
+  final String title, desc;
+  const _FeatureCard({required this.icon, required this.title, required this.desc});
+
+  @override
+  Widget build(BuildContext ctx) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: PawmartColors.surfaceCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: PawmartColors.neutral200),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: PawmartColors.accent400.withAlpha(30),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 22, color: PawmartColors.accent400),
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: PawmartColors.primary50, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 22, color: PawmartColors.primary500),
           ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            style: GoogleFonts.nunito(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: PawmartColors.textPrimary,
-            ),
-          ),
-          Text(
-            subtitle,
-            style: GoogleFonts.nunito(
-              fontSize: 10,
-              color: PawmartColors.textSecondary,
-            ),
-          ),
+          const SizedBox(height: 12),
+          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+          const SizedBox(height: 8),
+          Text(desc, style: TextStyle(fontSize: 14, color: PawmartColors.textSecondary, height: 1.5)),
         ],
       ),
     );

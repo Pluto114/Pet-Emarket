@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// Font: using system fonts
 
 // ═══════════════════════════════════════════
 // PawMart Design System — Flutter Theme
@@ -87,7 +87,8 @@ List<BoxShadow> pawmartShadow3 = [
 
 // ——— Light Theme ———
 ThemeData buildLightTheme() {
-  final textTheme = GoogleFonts.nunitoTextTheme();
+  // Using default system fonts
+  final textTheme = TextTheme();
   final s = ColorScheme.light(
     primary: PawmartColors.primary500,
     onPrimary: PawmartColors.textOnPrimary,
@@ -110,7 +111,7 @@ ThemeData buildLightTheme() {
     colorScheme: s,
     scaffoldBackgroundColor: PawmartColors.surfaceBg,
     textTheme: textTheme,
-    primaryTextTheme: textTheme,
+    // primaryTextTheme: using default from colorScheme
 
     appBarTheme: AppBarTheme(
       centerTitle: false,
@@ -119,7 +120,7 @@ ThemeData buildLightTheme() {
       elevation: 0,
       scrolledUnderElevation: 2,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: GoogleFonts.nunito(
+      titleTextStyle: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
         color: PawmartColors.textPrimary,
@@ -139,11 +140,11 @@ ThemeData buildLightTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: PawmartColors.neutral50,
-      hintStyle: GoogleFonts.nunito(
+      hintStyle: TextStyle(
         fontSize: 14,
         color: PawmartColors.textSecondary,
       ),
-      labelStyle: GoogleFonts.nunito(
+      labelStyle: TextStyle(
         fontSize: 14,
         color: PawmartColors.textSecondary,
       ),
@@ -173,7 +174,7 @@ ThemeData buildLightTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(pawmartRadiusFull),
         ),
-        textStyle: GoogleFonts.nunito(
+        textStyle: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 16,
         ),
@@ -188,7 +189,7 @@ ThemeData buildLightTheme() {
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
         ),
         side: BorderSide(color: PawmartColors.neutral200),
-        textStyle: GoogleFonts.nunito(
+        textStyle: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
         ),
@@ -201,7 +202,7 @@ ThemeData buildLightTheme() {
         borderRadius: BorderRadius.circular(pawmartRadiusFull),
       ),
       backgroundColor: PawmartColors.neutral100,
-      labelStyle: GoogleFonts.nunito(
+      labelStyle: TextStyle(
         fontSize: 13,
         color: PawmartColors.textPrimary,
       ),
@@ -215,13 +216,13 @@ ThemeData buildLightTheme() {
       indicatorColor: PawmartColors.primary100,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return GoogleFonts.nunito(
+          return TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: PawmartColors.primary500,
           );
         }
-        return GoogleFonts.nunito(
+        return TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w400,
           color: PawmartColors.textSecondary,
@@ -259,7 +260,8 @@ ThemeData buildLightTheme() {
 
 // ——— Dark Theme ———
 ThemeData buildDarkTheme() {
-  final textTheme = GoogleFonts.nunitoTextTheme();
+  // Using default system fonts
+  final textTheme = TextTheme();
   final s = ColorScheme.dark(
     primary: PawmartColors.primary400,
     onPrimary: PawmartColors.textOnPrimary,
@@ -291,7 +293,7 @@ ThemeData buildDarkTheme() {
       elevation: 0,
       scrolledUnderElevation: 2,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: GoogleFonts.nunito(
+      titleTextStyle: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
         color: const Color(0xFFF2F0EA),
@@ -311,11 +313,11 @@ ThemeData buildDarkTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color(0xFF322E28),
-      hintStyle: GoogleFonts.nunito(
+      hintStyle: TextStyle(
         fontSize: 14,
         color: const Color(0xFFB0A894),
       ),
-      labelStyle: GoogleFonts.nunito(
+      labelStyle: TextStyle(
         fontSize: 14,
         color: const Color(0xFFB0A894),
       ),
@@ -341,7 +343,7 @@ ThemeData buildDarkTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(pawmartRadiusFull),
         ),
-        textStyle: GoogleFonts.nunito(
+        textStyle: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 16,
         ),
@@ -356,7 +358,7 @@ ThemeData buildDarkTheme() {
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
         ),
         side: BorderSide(color: const Color(0xFF4A443E)),
-        textStyle: GoogleFonts.nunito(
+        textStyle: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
         ),
@@ -369,7 +371,7 @@ ThemeData buildDarkTheme() {
         borderRadius: BorderRadius.circular(pawmartRadiusFull),
       ),
       backgroundColor: const Color(0xFF3C3730),
-      labelStyle: GoogleFonts.nunito(
+      labelStyle: TextStyle(
         fontSize: 13,
         color: const Color(0xFFF2F0EA),
       ),
@@ -426,7 +428,7 @@ Widget pawmartSectionHeader(String title, {String? actionLabel, VoidCallback? on
       const SizedBox(width: 10),
       Text(
         title,
-        style: GoogleFonts.nunito(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w800,
           color: PawmartColors.textPrimary,
@@ -438,7 +440,7 @@ Widget pawmartSectionHeader(String title, {String? actionLabel, VoidCallback? on
           onPressed: onAction,
           child: Text(
             '$actionLabel >',
-            style: GoogleFonts.nunito(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: PawmartColors.primary500,

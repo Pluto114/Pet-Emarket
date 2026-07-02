@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/cart_item.dart';
@@ -45,7 +45,7 @@ class _CartPageState extends State<CartPage> {
               onPressed: canCreateOrder ? createOrder : null,
               child: Text(
                 '生成订单',
-                style: GoogleFonts.nunito(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: canCreateOrder ? PawmartColors.primary500 : PawmartColors.textSecondary,
                 ),
@@ -68,7 +68,7 @@ class _CartPageState extends State<CartPage> {
             if (errorText != null)
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(errorText!, style: GoogleFonts.nunito(color: PawmartColors.error, fontSize: 13)),
+                child: Text(errorText!, style: TextStyle(color: PawmartColors.error, fontSize: 13)),
               ),
             if (!loading) ...[
               // Address Section
@@ -99,12 +99,12 @@ class _CartPageState extends State<CartPage> {
                         const SizedBox(height: 12),
                         Text(
                           '购物车为空',
-                          style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w600, color: PawmartColors.textSecondary),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: PawmartColors.textSecondary),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '先去逛逛，添加喜欢的商品吧',
-                          style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
+                          style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
                         ),
                       ],
                     ),
@@ -133,12 +133,12 @@ class _CartPageState extends State<CartPage> {
                     children: [
                       Text(
                         '合计',
-                        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
                       ),
                       const Spacer(),
                       Text(
                         '¥${total.toStringAsFixed(2)}',
-                        style: GoogleFonts.nunito(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: PawmartColors.primary500,
@@ -153,7 +153,7 @@ class _CartPageState extends State<CartPage> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     '请先新增并选择收货地址。',
-                    style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.error),
+                    style: TextStyle(fontSize: 13, color: PawmartColors.error),
                   ),
                 ),
             ],
@@ -185,11 +185,11 @@ class _CartPageState extends State<CartPage> {
                         children: [
                           Text(
                             '合计',
-                            style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+                            style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
                           ),
                           Text(
                             '¥${total.toStringAsFixed(2)}',
-                            style: GoogleFonts.nunito(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                               color: PawmartColors.primary500,
@@ -210,7 +210,7 @@ class _CartPageState extends State<CartPage> {
                         ),
                         child: Text(
                           '生成订单',
-                          style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15),
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                         ),
                       ),
                     ),
@@ -374,17 +374,17 @@ class _CartItemCard extends StatelessWidget {
               children: [
                 Text(
                   product.name,
-                  style: GoogleFonts.nunito(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '¥${product.price.toStringAsFixed(2)} x ${item.quantity}',
-                  style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '小计：¥${item.subtotal.toStringAsFixed(2)}',
-                  style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.primary500),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.primary500),
                 ),
               ],
             ),
@@ -406,7 +406,7 @@ class _CartItemCard extends StatelessWidget {
                 ),
                 Text(
                   '${item.quantity}',
-                  style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add, size: 16),
@@ -472,13 +472,13 @@ class _AddressSection extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '收货地址',
-                style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
               ),
               const Spacer(),
               TextButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_location_alt_outlined, size: 16),
-                label: Text('新增', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                label: Text('新增', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -487,7 +487,7 @@ class _AddressSection extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 '暂无收货地址，请新增后再下单。',
-                style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
+                style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
               ),
             )
           else
@@ -508,11 +508,11 @@ class _AddressSection extends StatelessWidget {
               ),
               title: Text(
                 '${address.receiver}  ${address.phone}',
-                style: GoogleFonts.nunito(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
               ),
               subtitle: Text(
                 address.fullAddress,
-                style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
               ),
               trailing: PopupMenuButton<String>(
                 onSelected: (value) {
@@ -570,7 +570,7 @@ class _AddressDialogState extends State<_AddressDialog> {
     return AlertDialog(
       title: Text(
         widget.address == null ? '新增收货地址' : '编辑收货地址',
-        style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
+        style: TextStyle(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
         width: 480,
@@ -621,7 +621,7 @@ class _AddressDialogState extends State<_AddressDialog> {
               SwitchListTile(
                 value: defaultAddress,
                 onChanged: (value) => setState(() => defaultAddress = value),
-                title: Text('设为默认地址', style: GoogleFonts.nunito(fontSize: 14)),
+                title: Text('设为默认地址', style: TextStyle(fontSize: 14)),
                 activeColor: PawmartColors.primary500,
                 contentPadding: EdgeInsets.zero,
               ),
@@ -632,7 +632,7 @@ class _AddressDialogState extends State<_AddressDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('取消', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+          child: Text('取消', style: TextStyle(fontWeight: FontWeight.w600)),
         ),
         FilledButton(
           onPressed: () {
@@ -647,7 +647,7 @@ class _AddressDialogState extends State<_AddressDialog> {
             };
             Navigator.pop(context, payload);
           },
-          child: Text('保存', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+          child: Text('保存', style: TextStyle(fontWeight: FontWeight.w600)),
         ),
       ],
     );

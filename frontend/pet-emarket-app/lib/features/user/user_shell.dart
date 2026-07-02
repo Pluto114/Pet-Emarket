@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
@@ -103,7 +103,7 @@ class _UserShellState extends State<UserShell> {
                     const SizedBox(width: 4),
                     Text(
                       'PawMart',
-                      style: GoogleFonts.nunito(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 17,
                         color: PawmartColors.primary500,
@@ -125,7 +125,7 @@ class _UserShellState extends State<UserShell> {
                           filled: true,
                           fillColor: PawmartColors.neutral50,
                           hintText: wide ? '搜索宠物、口粮…' : '搜索…',
-                          hintStyle: GoogleFonts.nunito(
+                          hintStyle: TextStyle(
                             fontSize: 13,
                             color: PawmartColors.textSecondary.withAlpha(150),
                           ),
@@ -167,7 +167,7 @@ class _UserShellState extends State<UserShell> {
                               ),
                               Text(
                                 item['l'] as String,
-                                style: GoogleFonts.nunito(
+                                style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                                   color: active ? PawmartColors.primary500 : PawmartColors.textSecondary,

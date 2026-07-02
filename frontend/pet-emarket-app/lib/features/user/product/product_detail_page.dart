@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
@@ -63,13 +63,13 @@ class _ProductsPageState extends State<ProductsPage> {
                 Expanded(
                   child: Text(
                     '商品管理',
-                    style: GoogleFonts.nunito(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
                   ),
                 ),
                 FilledButton.icon(
                   onPressed: canManage ? () => showProductDialog() : null,
                   icon: const Icon(Icons.add_business),
-                  label: Text('新增商品', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                  label: Text('新增商品', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -124,11 +124,11 @@ class _ProductsPageState extends State<ProductsPage> {
                               Expanded(
                                 child: Text(
                                   product.name,
-                                  style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
                                 ),
                               ),
                               Text('¥${product.price.toStringAsFixed(2)}',
-                                style: GoogleFonts.nunito(fontWeight: FontWeight.w700, color: PawmartColors.primary500),
+                                style: TextStyle(fontWeight: FontWeight.w700, color: PawmartColors.primary500),
                               ),
                             ],
                           ),
@@ -137,23 +137,23 @@ class _ProductsPageState extends State<ProductsPage> {
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              Chip(label: Text(product.type, style: GoogleFonts.nunito(fontSize: 12))),
-                              Chip(label: Text(product.category, style: GoogleFonts.nunito(fontSize: 12))),
-                              Chip(label: Text('库存 ${product.stock}', style: GoogleFonts.nunito(fontSize: 12))),
-                              Chip(label: Text(product.status, style: GoogleFonts.nunito(fontSize: 12))),
+                              Chip(label: Text(product.type, style: TextStyle(fontSize: 12))),
+                              Chip(label: Text(product.category, style: TextStyle(fontSize: 12))),
+                              Chip(label: Text('库存 ${product.stock}', style: TextStyle(fontSize: 12))),
+                              Chip(label: Text(product.status, style: TextStyle(fontSize: 12))),
                             ],
                           ),
                           if (product.description.isNotEmpty) ...[
                             const SizedBox(height: 8),
                             Text(product.description,
-                              style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
+                              style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
                             ),
                           ],
                           if (product.livePet != null) ...[
                             const SizedBox(height: 8),
                             Text(
                               '检疫证：${product.livePet!['quarantineCertNo'] ?? '-'}    疫苗证：${product.livePet!['vaccineCertNo'] ?? '-'}',
-                              style: GoogleFonts.nunito(fontSize: 12, color: PawmartColors.textSecondary),
+                              style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
                             ),
                           ],
                           if (canManage) ...[
@@ -164,19 +164,19 @@ class _ProductsPageState extends State<ProductsPage> {
                                 TextButton.icon(
                                   onPressed: product.stock > 0 ? () => addToCart(product) : null,
                                   icon: const Icon(Icons.add_shopping_cart, size: 18),
-                                  label: Text('加入购物车', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                                  label: Text('加入购物车', style: TextStyle(fontWeight: FontWeight.w600)),
                                 ),
                                 const SizedBox(width: 8),
                                 TextButton.icon(
                                   onPressed: () => showProductDialog(product: product),
                                   icon: const Icon(Icons.edit_outlined, size: 18),
-                                  label: Text('编辑', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                                  label: Text('编辑', style: TextStyle(fontWeight: FontWeight.w600)),
                                 ),
                                 const SizedBox(width: 8),
                                 TextButton.icon(
                                   onPressed: () => deleteProduct(product),
                                   icon: const Icon(Icons.delete_outline, size: 18),
-                                  label: Text('删除', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                                  label: Text('删除', style: TextStyle(fontWeight: FontWeight.w600)),
                                 ),
                               ],
                             ),
@@ -188,7 +188,7 @@ class _ProductsPageState extends State<ProductsPage> {
                               child: FilledButton.icon(
                                 onPressed: product.stock > 0 ? () => addToCart(product) : null,
                                 icon: const Icon(Icons.add_shopping_cart),
-                                label: Text('加入购物车', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                                label: Text('加入购物车', style: TextStyle(fontWeight: FontWeight.w600)),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: PawmartColors.accent400,
                                   foregroundColor: PawmartColors.textOnAccent,
@@ -317,7 +317,7 @@ class _ProductDialogState extends State<_ProductDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.product == null ? '新增商品' : '编辑商品',
-        style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
+        style: TextStyle(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
         width: 520,
@@ -416,7 +416,7 @@ class _ProductDialogState extends State<_ProductDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('取消', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+          child: Text('取消', style: TextStyle(fontWeight: FontWeight.w600)),
         ),
         FilledButton(
           onPressed: () {
@@ -435,7 +435,7 @@ class _ProductDialogState extends State<_ProductDialog> {
             };
             Navigator.pop(context, payload);
           },
-          child: Text('保存', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+          child: Text('保存', style: TextStyle(fontWeight: FontWeight.w600)),
         ),
       ],
     );
@@ -521,7 +521,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               Expanded(
                 child: Text(
                   product.name,
-                  style: GoogleFonts.nunito(
+                  style: TextStyle(
                     fontSize: wide ? 24 : 20,
                     fontWeight: FontWeight.w700,
                     color: PawmartColors.textPrimary,
@@ -535,7 +535,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   Text(
                     '¥${product.price.toStringAsFixed(2)}',
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                       fontSize: wide ? 26 : 22,
                       fontWeight: FontWeight.w800,
                       color: PawmartColors.primary500,
@@ -544,7 +544,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   if (product.stock > 0)
                     Text(
                       '库存 ${product.stock}',
-                      style: GoogleFonts.nunito(
+                      style: TextStyle(
                         fontSize: 12,
                         color: PawmartColors.textSecondary,
                       ),
@@ -568,14 +568,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 label: Text(
                   product.isLivePet ? '活体宠物' : '周边商品',
-                  style: GoogleFonts.nunito(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
               Chip(
                 avatar: const Icon(Icons.label_outline, size: 14, color: PawmartColors.primary500),
                 label: Text(
                   product.category,
-                  style: GoogleFonts.nunito(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
               Chip(
@@ -586,7 +586,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 label: Text(
                   product.status == 'ON_SALE' ? '在售' : product.status,
-                  style: GoogleFonts.nunito(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -607,7 +607,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
               child: Text(
                 product.description,
-                style: GoogleFonts.nunito(
+                style: TextStyle(
                   fontSize: 14,
                   color: PawmartColors.textSecondary,
                   height: 1.6,
@@ -656,7 +656,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   Expanded(
                     child: Text(
                       '活体宠物购买后请及时确认健康状况',
-                      style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.accent700),
+                      style: TextStyle(fontSize: 13, color: PawmartColors.accent700),
                     ),
                   ),
                 ],
@@ -686,7 +686,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         '$_qty',
-                        style: GoogleFonts.nunito(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: PawmartColors.textPrimary,
@@ -703,7 +703,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(width: 12),
               Text(
                 '库存 ${product.stock} 件',
-                style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
+                style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
               ),
             ],
           ),
@@ -733,7 +733,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     const SizedBox(width: 8),
                     Text(
                       '宠物爱好者',
-                      style: GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600, color: PawmartColors.textPrimary),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: PawmartColors.textPrimary),
                     ),
                     const Spacer(),
                     Row(
@@ -749,7 +749,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 const SizedBox(height: 8),
                 Text(
                   '质量很好，物流很快，毛孩子非常喜欢！推荐购买。',
-                  style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary, height: 1.5),
+                  style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary, height: 1.5),
                 ),
               ],
             ),
@@ -818,7 +818,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                     child: Text(
                       product.stock > 0 ? '加入购物车' : '已售罄',
-                      style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15),
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
                 ),
@@ -836,7 +836,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                     child: Text(
                       '立即购买',
-                      style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15),
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
                 ),
@@ -855,13 +855,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           width: 80,
           child: Text(
             label,
-            style: GoogleFonts.nunito(fontSize: 13, color: PawmartColors.textSecondary),
+            style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600, color: PawmartColors.textPrimary),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: PawmartColors.textPrimary),
           ),
         ),
       ],

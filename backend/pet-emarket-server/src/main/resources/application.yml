@@ -1,11 +1,11 @@
-server:
+﻿server:
   port: 8080
 
 spring:
   application:
     name: pet-emarket-server
   datasource:
-    url: jdbc:h2:mem:pet_emarket;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:file:../../../database/data/pet_emarket;MODE=MySQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -15,7 +15,7 @@ spring:
       path: /h2-console
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
@@ -38,3 +38,4 @@ pet-emarket:
     enabled: true
     base-url: "http://localhost:8001"
     timeout-seconds: 10
+

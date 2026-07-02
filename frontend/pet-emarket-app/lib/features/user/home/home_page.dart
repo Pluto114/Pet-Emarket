@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
@@ -146,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                                     children: [
                                       Text(
                                         b['title'] as String,
-                                        style: GoogleFonts.nunito(
+                                        style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w800,
                                           color: Colors.white,
@@ -155,7 +155,7 @@ class _HomePageState extends State<HomePage> {
                                       const SizedBox(height: 4),
                                       Text(
                                         b['sub'] as String,
-                                        style: GoogleFonts.nunito(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           color: Colors.white.withAlpha(200),
                                         ),
@@ -236,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 16),
                   Text(
                     '根据宠物品种和年龄，为你精选最适合的商品',
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                       fontSize: 14,
                       color: PawmartColors.textSecondary,
                     ),
@@ -281,7 +281,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Text(
                         '开始智能推荐',
-                        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 15),
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                       ),
                     ),
                   ),
@@ -317,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     'PawMart 宠物商城',
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -339,7 +339,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 16),
                   Text(
                     '© 2026 PawMart. 保留所有权利。',
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withAlpha(130),
                     ),
@@ -376,7 +376,7 @@ class _HomePageState extends State<HomePage> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.nunito(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             color: active ? PawmartColors.textOnAccent : PawmartColors.textPrimary,
@@ -432,7 +432,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Text(
                     p.sub,
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                       fontSize: 10,
                       color: PawmartColors.primary600,
                     ),
@@ -443,7 +443,7 @@ class _HomePageState extends State<HomePage> {
                   p.n,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                     height: 1.2,
@@ -455,7 +455,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Text(
                       '¥${p.p.toStringAsFixed(0)}',
-                      style: GoogleFonts.nunito(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         color: PawmartColors.primary500,
@@ -506,7 +506,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 10),
             Text(
               title,
-              style: GoogleFonts.nunito(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: PawmartColors.textPrimary,
@@ -515,7 +515,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 4),
             Text(
               desc,
-              style: GoogleFonts.nunito(
+              style: TextStyle(
                 fontSize: 12,
                 color: PawmartColors.textSecondary,
                 height: 1.4,
@@ -544,11 +544,11 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
           ),
           Text(
             sub,
-            style: GoogleFonts.nunito(fontSize: 11, color: PawmartColors.textSecondary),
+            style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary),
           ),
         ],
       ),
@@ -558,7 +558,7 @@ class _HomePageState extends State<HomePage> {
   Widget _footerLink(String text) {
     return Text(
       text,
-      style: GoogleFonts.nunito(
+      style: TextStyle(
         fontSize: 13,
         color: Colors.white.withAlpha(180),
       ),
