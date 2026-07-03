@@ -3,6 +3,8 @@ import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../models/store.dart';
 import '../../../shared/widgets/toast.dart';
+import '../../../shared/widgets/map_picker_page.dart';
+import '../../../shared/widgets/city_data.dart';
 
 class MerchantStorePage extends StatefulWidget {
   const MerchantStorePage({
@@ -269,7 +271,11 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
   Future<void> _showEditDialog(PetStore store) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
+<<<<<<< HEAD
       builder: (ctx) => _StoreEditDialog(store: store),
+=======
+      builder: (ctx) => _StoreEditDialog(store: store!, apiClient: widget.apiClient),
+>>>>>>> 20f6b791467c8608dea576f350ed7c34cea4b270
     );
     if (result == null) return;
     try {
@@ -326,7 +332,8 @@ class _InfoRow extends StatelessWidget {
 
 class _StoreEditDialog extends StatefulWidget {
   final PetStore store;
-  const _StoreEditDialog({required this.store});
+  const _StoreEditDialog({required this.store, required this.apiClient});
+  final ApiClient apiClient;
 
   @override
   State<_StoreEditDialog> createState() => _StoreEditDialogState();
@@ -335,8 +342,11 @@ class _StoreEditDialog extends StatefulWidget {
 class _StoreEditDialogState extends State<_StoreEditDialog> {
   late final nameCtrl = TextEditingController(text: widget.store.name);
   late final addressCtrl = TextEditingController(text: widget.store.address);
-  late final cityCtrl = TextEditingController(text: widget.store.city);
-  late final districtCtrl = TextEditingController(text: widget.store.district);
+  late String _province;
+  late String _city;
+  late String _district;
+  late List<String> _cities;
+  late List<String> _districts;
   late final longitudeCtrl = TextEditingController(
     text: widget.store.longitude.toString(),
   );
@@ -354,14 +364,17 @@ class _StoreEditDialogState extends State<_StoreEditDialog> {
   void initState() {
     super.initState();
     status = widget.store.status;
+    _province = '浙江省';
+    _city = widget.store.city.isNotEmpty ? widget.store.city : '杭州市';
+    _cities = CityData.citiesOf(_province);
+    _districts = CityData.districtsOf(_province, _city);
+    _district = widget.store.district.isNotEmpty ? widget.store.district : _districts.first;
   }
 
   @override
   void dispose() {
     nameCtrl.dispose();
     addressCtrl.dispose();
-    cityCtrl.dispose();
-    districtCtrl.dispose();
     longitudeCtrl.dispose();
     latitudeCtrl.dispose();
     phoneCtrl.dispose();
@@ -391,48 +404,38 @@ class _StoreEditDialogState extends State<_StoreEditDialog> {
                 maxLines: 2,
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: cityCtrl,
-                      decoration: const InputDecoration(labelText: '城市'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: districtCtrl,
-                      decoration: const InputDecoration(labelText: '区域'),
-                    ),
-                  ),
-                ],
-              ),
+              Row(children: [
+                Expanded(flex: 3, child: DropdownButtonFormField<String>(
+                  value: _province,
+                  decoration: const InputDecoration(labelText: '省', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+                  items: CityData.provinces.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: (v) { setState(() { _province = v!; _cities = CityData.citiesOf(_province); _city = _cities.first; _districts = CityData.districtsOf(_province, _city); _district = _districts.first; }); },
+                )),
+                const SizedBox(width: 8),
+                Expanded(flex: 3, child: DropdownButtonFormField<String>(
+                  value: _city,
+                  decoration: const InputDecoration(labelText: '市', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+                  items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: (v) { setState(() { _city = v!; _districts = CityData.districtsOf(_province, _city); _district = _districts.first; }); },
+                )),
+                const SizedBox(width: 8),
+                Expanded(flex: 3, child: DropdownButtonFormField<String>(
+                  value: _district,
+                  decoration: const InputDecoration(labelText: '区', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+                  items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: (v) => setState(() => _district = v!),
+                )),
+              ]),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: longitudeCtrl,
-                      decoration: const InputDecoration(labelText: '经度'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: latitudeCtrl,
-                      decoration: const InputDecoration(labelText: '纬度'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
+              Row(children: [
+                Expanded(child: TextField(controller: longitudeCtrl, decoration: const InputDecoration(labelText: '经度'), keyboardType: TextInputType.number)),
+                const SizedBox(width: 10),
+                Expanded(child: TextField(controller: latitudeCtrl, decoration: const InputDecoration(labelText: '纬度'), keyboardType: TextInputType.number)),
+              ]),
+              const SizedBox(height: 6),
+              OutlinedButton.icon(onPressed: _openMapPicker, icon: const Icon(Icons.map, size: 18), label: const Text('在地图上选点')),
               const SizedBox(height: 10),
-              TextField(
-                controller: phoneCtrl,
-                decoration: const InputDecoration(labelText: '联系电话'),
-              ),
+              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: '联系电话')),
               const SizedBox(height: 10),
               TextField(
                 controller: hoursCtrl,
@@ -467,8 +470,9 @@ class _StoreEditDialogState extends State<_StoreEditDialog> {
             final payload = {
               'name': nameCtrl.text.trim(),
               'address': addressCtrl.text.trim(),
-              'city': cityCtrl.text.trim(),
-              'district': districtCtrl.text.trim(),
+              'province': _province,
+              'city': _city,
+              'district': _district,
               'longitude':
                   double.tryParse(longitudeCtrl.text) ?? widget.store.longitude,
               'latitude':
@@ -484,5 +488,21 @@ class _StoreEditDialogState extends State<_StoreEditDialog> {
         ),
       ],
     );
+  }
+
+  Future<void> _openMapPicker() async {
+    double lng = CityData.cityCoord(_province, _city)[0];
+    double lat = CityData.cityCoord(_province, _city)[1];
+    try {
+      final geo = await widget.apiClient.geocode(CityData.addressForGeocode(_province, _city, _district));
+      lng = geo.longitude;
+      lat = geo.latitude;
+    } catch (_) {}
+    final result = await Navigator.push<MapPickerResult>(context, MaterialPageRoute(
+      builder: (_) => MapPickerPage(apiClient: widget.apiClient, lng: lng, lat: lat),
+    ));
+    if (result == null) return;
+    longitudeCtrl.text = result.longitude.toString();
+    latitudeCtrl.text = result.latitude.toString();
   }
 }
