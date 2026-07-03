@@ -78,7 +78,6 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
     );
   }
 
-<<<<<<< HEAD
   void _openDetail(BuildContext context, PetStore store) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -86,21 +85,9 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
       ),
     );
   }
-}
 
-class _AmapPoiSection extends StatelessWidget {
-  const _AmapPoiSection({required this.pois, required this.errorText});
-
-  final List<AmapPoi> pois;
-  final String? errorText;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-=======
   List<Widget> _storeTiles(ThemeData theme) => List.generate(stores.length, (i) {
     final s = stores[i];
->>>>>>> 20f6b791467c8608dea576f350ed7c34cea4b270
     return Card(
       color: selectedIndex == i ? theme.colorScheme.primaryContainer : null,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

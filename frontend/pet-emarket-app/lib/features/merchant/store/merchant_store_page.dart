@@ -271,11 +271,7 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
   Future<void> _showEditDialog(PetStore store) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-<<<<<<< HEAD
-      builder: (ctx) => _StoreEditDialog(store: store),
-=======
-      builder: (ctx) => _StoreEditDialog(store: store!, apiClient: widget.apiClient),
->>>>>>> 20f6b791467c8608dea576f350ed7c34cea4b270
+      builder: (ctx) => _StoreEditDialog(store: store, apiClient: widget.apiClient),
     );
     if (result == null) return;
     try {
