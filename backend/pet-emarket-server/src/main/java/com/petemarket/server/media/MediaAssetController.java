@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/media")
@@ -40,6 +41,21 @@ public class MediaAssetController {
                                                   @Valid @RequestBody UpsertMediaAssetRequest request) {
         requireMediaManager(currentUser);
         return ApiResponse.ok(mediaAssetService.create(request, currentUser.getId()), "media created");
+    }
+
+    @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<MediaAssetResponse> upload(@AuthenticationPrincipal UserAccount currentUser,
+                                                  @RequestParam String title,
+                                                  @RequestParam(defaultValue = "IMAGE") MediaType mediaType,
+                                                  @RequestParam(required = false) Long productId,
+                                                  @RequestParam(required = false) String description,
+                                                  @RequestParam MultipartFile file,
+                                                  @RequestParam(required = false) MultipartFile coverFile) {
+        requireMediaManager(currentUser);
+        return ApiResponse.ok(
+                mediaAssetService.upload(title, mediaType, productId, description, file, coverFile, currentUser.getId()),
+                "media uploaded"
+        );
     }
 
     @PutMapping("/{id}")

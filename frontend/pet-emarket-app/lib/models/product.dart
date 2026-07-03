@@ -45,10 +45,19 @@ class Product {
       storeId: json['storeId']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
-      tags: (json['tags'] is List) ? (json['tags'] as List).map((item) => item.toString()).toList() : const [],
-      auditStatus: json['auditStatus']?.toString() ?? json['livePet']?['auditStatus']?.toString() ?? '',
+      tags:
+          (json['tags'] is List)
+              ? (json['tags'] as List).map((item) => item.toString()).toList()
+              : const [],
+      auditStatus:
+          json['auditStatus']?.toString() ??
+          json['livePet']?['auditStatus']?.toString() ??
+          '',
       auditRemark: json['auditRemark']?.toString() ?? '',
-      livePet: json['livePet'] is Map ? Map<String, dynamic>.from(json['livePet'] as Map) : null,
+      livePet:
+          json['livePet'] is Map
+              ? Map<String, dynamic>.from(json['livePet'] as Map)
+              : null,
     );
   }
 
@@ -69,6 +78,35 @@ class Product {
       'auditRemark': auditRemark,
       'livePet': livePet,
     };
+  }
+}
+
+class ProductReview {
+  const ProductReview({
+    required this.orderId,
+    required this.orderNo,
+    required this.userId,
+    required this.rating,
+    required this.content,
+    required this.reviewedAt,
+  });
+
+  final String orderId;
+  final String orderNo;
+  final String userId;
+  final int rating;
+  final String content;
+  final String reviewedAt;
+
+  factory ProductReview.fromJson(Map<String, dynamic> json) {
+    return ProductReview(
+      orderId: json['orderId']?.toString() ?? '',
+      orderNo: json['orderNo']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
+      rating: NumberParser.toInt(json['rating']),
+      content: json['content']?.toString() ?? '',
+      reviewedAt: json['reviewedAt']?.toString() ?? '',
+    );
   }
 }
 

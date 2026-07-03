@@ -54,8 +54,13 @@ public class PetOrder {
     @Column(nullable = false)
     private Boolean pointsReversed = false;
 
+    @Column(length = 80)
     private String receiver;
+
+    @Column(length = 20)
     private String phone;
+
+    @Column(length = 255)
     private String addressDetail;
     private Integer reviewRating;
 

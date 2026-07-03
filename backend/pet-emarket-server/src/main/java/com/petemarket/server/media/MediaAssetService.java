@@ -8,13 +8,16 @@ import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class MediaAssetService {
     private final MediaAssetRepository mediaAssetRepository;
+    private final OssStorageService ossStorageService;
 
-    public MediaAssetService(MediaAssetRepository mediaAssetRepository) {
+    public MediaAssetService(MediaAssetRepository mediaAssetRepository, OssStorageService ossStorageService) {
         this.mediaAssetRepository = mediaAssetRepository;
+        this.ossStorageService = ossStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -36,6 +39,34 @@ public class MediaAssetService {
         MediaAsset asset = new MediaAsset();
         asset.setCreatedBy(operatorId);
         apply(asset, request);
+        mediaAssetRepository.save(asset);
+        return MediaAssetResponse.from(asset);
+    }
+
+    @Transactional
+    public MediaAssetResponse upload(String title,
+                                     MediaType mediaType,
+                                     Long productId,
+                                     String description,
+                                     MultipartFile file,
+                                     MultipartFile coverFile,
+                                     Long operatorId) {
+        MediaType safeType = mediaType == null ? MediaType.IMAGE : mediaType;
+        OssUploadResult main = ossStorageService.upload(file, safeType);
+        OssUploadResult cover = coverFile == null || coverFile.isEmpty()
+                ? null
+                : ossStorageService.upload(coverFile, MediaType.IMAGE);
+
+        MediaAsset asset = new MediaAsset();
+        asset.setCreatedBy(operatorId);
+        asset.setTitle(defaultText(title, defaultText(file.getOriginalFilename(), "OSS Media Asset")));
+        asset.setMediaType(safeType);
+        asset.setUrl(main.url());
+        asset.setCoverUrl(cover == null ? "" : cover.url());
+        asset.setProductId(productId);
+        asset.setDescription(defaultText(description, ""));
+        asset.setStatus(MediaStatus.PENDING);
+        asset.setAuditRemark("");
         mediaAssetRepository.save(asset);
         return MediaAssetResponse.from(asset);
     }

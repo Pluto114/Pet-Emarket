@@ -180,12 +180,18 @@ async def test_chat_business_answer_source(client):
 @pytest.mark.asyncio
 async def test_recommend_returns_proper_format(client):
     """推荐接口应返回符合统一规范的格式"""
-    resp = await client.post("/api/v1/recommend", json={
-        "userId": "user_001",
-        "lat": 30.28,
-        "lng": 120.14,
-        "limit": 3,
-    })
+    with patch("app.main.itemcf_recommend", new_callable=AsyncMock) as mock_cf:
+        mock_cf.return_value = [
+            {"productId": "1", "score": 0.91, "reason": "与你浏览过的商品相似"},
+            {"productId": "2", "score": 0.82, "reason": "同类用户也在关注"},
+            {"productId": "3", "score": 0.73, "reason": "近期热度较高"},
+        ]
+        resp = await client.post("/api/v1/recommend", json={
+            "userId": "user_001",
+            "lat": 30.28,
+            "lng": 120.14,
+            "limit": 3,
+        })
     assert resp.status_code == 200
     data = resp.json()
     assert data["success"] is True
@@ -202,13 +208,18 @@ async def test_recommend_returns_proper_format(client):
 @pytest.mark.asyncio
 async def test_recommend_respects_limit(client):
     """推荐接口应遵守 limit 参数"""
-    for limit in [1, 5, 10]:
-        resp = await client.post("/api/v1/recommend", json={
-            "userId": "user_001",
-            "limit": limit,
-        })
-        data = resp.json()
-        assert len(data["data"]["recommendations"]) <= limit
+    with patch("app.main.itemcf_recommend", new_callable=AsyncMock) as mock_cf:
+        mock_cf.return_value = [
+            {"productId": str(i), "score": 1 - i * 0.05, "reason": "算法推荐"}
+            for i in range(1, 8)
+        ]
+        for limit in [1, 5, 10]:
+            resp = await client.post("/api/v1/recommend", json={
+                "userId": "user_001",
+                "limit": limit,
+            })
+            data = resp.json()
+            assert len(data["data"]["recommendations"]) <= limit
 
 
 @pytest.mark.asyncio

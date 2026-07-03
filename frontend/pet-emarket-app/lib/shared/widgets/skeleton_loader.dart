@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class SkeletonLoader extends StatelessWidget {
-  const SkeletonLoader({super.key, this.count = 5, this.height = 80.0, this.padding = const EdgeInsets.all(16)});
+  const SkeletonLoader({
+    super.key,
+    this.count = 5,
+    this.height = 80.0,
+    this.padding = const EdgeInsets.all(16),
+  });
   final int count;
   final double height;
   final EdgeInsets padding;
@@ -18,16 +23,17 @@ class SkeletonLoader extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: padding,
         itemCount: count,
-        itemBuilder: (_, __) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Container(
-            height: height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+        itemBuilder:
+            (_, __) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                height: height,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-          ),
-        ),
       ),
     );
   }

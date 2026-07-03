@@ -5,6 +5,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -24,8 +25,14 @@ public class OrderStatusLog {
 
     private Integer fromStatus;
     private Integer toStatus;
+
+    @Column(length = 40)
     private String toStatusName;
+
+    @Column(length = 40)
     private String operatorRole;
+
+    @Column(length = 500)
     private String reason;
     private Instant createdAt;
 

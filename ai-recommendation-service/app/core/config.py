@@ -5,6 +5,7 @@
 
 import os
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
 
 load_dotenv()
 
@@ -19,18 +20,26 @@ class Settings:
     PORT: int = int(os.getenv("PORT", "8001"))
 
     # ========== MongoDB 配置 ==========
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "")
     MONGODB_HOST: str = os.getenv("MONGODB_HOST", "localhost")
     MONGODB_PORT: int = int(os.getenv("MONGODB_PORT", "27017"))
     MONGODB_USER: str = os.getenv("MONGODB_USER", "admin")
-    MONGODB_PASSWORD: str = os.getenv("MONGODB_PASSWORD", "")
+    MONGODB_PASSWORD: str = os.getenv("MONGODB_PASSWORD", "123456")
     MONGODB_DB: str = os.getenv("MONGODB_DB", "pet_emarket")
     MONGODB_AUTH_SOURCE: str = os.getenv("MONGODB_AUTH_SOURCE", "admin")
 
     @property
     def mongodb_uri(self) -> str:
+        if self.MONGODB_URI.strip():
+            return self.MONGODB_URI.strip()
+        credentials = ""
+        if self.MONGODB_USER and self.MONGODB_PASSWORD:
+            credentials = (
+                f"{quote_plus(self.MONGODB_USER)}:"
+                f"{quote_plus(self.MONGODB_PASSWORD)}@"
+            )
         return (
-            f"mongodb://{self.MONGODB_USER}:{self.MONGODB_PASSWORD}"
-            f"@{self.MONGODB_HOST}:{self.MONGODB_PORT}"
+            f"mongodb://{credentials}{self.MONGODB_HOST}:{self.MONGODB_PORT}"
             f"/{self.MONGODB_DB}?authSource={self.MONGODB_AUTH_SOURCE}"
         )
 

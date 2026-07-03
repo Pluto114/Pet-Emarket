@@ -41,7 +41,10 @@ class _UsersPageState extends State<UsersPage> {
             Row(
               children: [
                 const Expanded(
-                  child: Text('用户管理', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    '用户管理',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                  ),
                 ),
                 FilledButton.icon(
                   onPressed: isAdmin ? () => showUserDialog() : null,
@@ -58,24 +61,46 @@ class _UsersPageState extends State<UsersPage> {
                   child: Text('当前后端规定：用户列表和新增/删除用户仅管理员可操作。请使用 admin 演示账号登录。'),
                 ),
               ),
-            if (loading) const Center(child: Padding(padding: EdgeInsets.all(28), child: CircularProgressIndicator())),
-            if (errorText != null) Text(errorText!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            if (loading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(28),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            if (errorText != null)
+              Text(
+                errorText!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             if (!loading && errorText == null)
               ...users.map(
                 (user) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Card(
                     child: ListTile(
-                      leading: CircleAvatar(child: Text(user.username.isEmpty ? '?' : user.username[0].toUpperCase())),
+                      leading: CircleAvatar(
+                        child: Text(
+                          user.username.isEmpty
+                              ? '?'
+                              : user.username[0].toUpperCase(),
+                        ),
+                      ),
                       title: Text('${user.displayName} (${user.username})'),
-                      subtitle: Text('${user.role} / ${user.memberLevel} / ${user.status}\n${user.phone} ${user.email}'),
+                      subtitle: Text(
+                        '${user.role} / ${user.memberLevel} / ${user.status}\n${user.phone} ${user.email}',
+                      ),
                       isThreeLine: true,
                       trailing: Wrap(
                         spacing: 4,
                         children: [
                           IconButton(
                             tooltip: '编辑',
-                            onPressed: isAdmin || user.id == widget.sessionStore.user?.id ? () => showUserDialog(user: user) : null,
+                            onPressed:
+                                isAdmin ||
+                                        user.id == widget.sessionStore.user?.id
+                                    ? () => showUserDialog(user: user)
+                                    : null,
                             icon: const Icon(Icons.edit_outlined),
                           ),
                           IconButton(
@@ -137,7 +162,9 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   void showError(Object error) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(error.toString())));
   }
 }
 
@@ -184,34 +211,73 @@ class _UserDialogState extends State<_UserDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: username, enabled: widget.user == null, decoration: const InputDecoration(labelText: '用户名')),
+              TextField(
+                controller: username,
+                enabled: widget.user == null,
+                decoration: const InputDecoration(labelText: '用户名'),
+              ),
               const SizedBox(height: 10),
-              TextField(controller: password, obscureText: true, decoration: InputDecoration(labelText: widget.user == null ? '密码' : '新密码（可空）')),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: widget.user == null ? '密码' : '新密码（可空）',
+                ),
+              ),
               const SizedBox(height: 10),
-              TextField(controller: displayName, decoration: const InputDecoration(labelText: '昵称')),
+              TextField(
+                controller: displayName,
+                decoration: const InputDecoration(labelText: '昵称'),
+              ),
               const SizedBox(height: 10),
-              TextField(controller: phone, decoration: const InputDecoration(labelText: '手机号')),
+              TextField(
+                controller: phone,
+                decoration: const InputDecoration(labelText: '手机号'),
+              ),
               const SizedBox(height: 10),
-              TextField(controller: email, decoration: const InputDecoration(labelText: '邮箱')),
+              TextField(
+                controller: email,
+                decoration: const InputDecoration(labelText: '邮箱'),
+              ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: role,
                 decoration: const InputDecoration(labelText: '角色'),
-                items: const ['ADMIN', 'MERCHANT', 'CUSTOMER'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+                items:
+                    const ['ADMIN', 'MERCHANT', 'CUSTOMER']
+                        .map(
+                          (item) =>
+                              DropdownMenuItem(value: item, child: Text(item)),
+                        )
+                        .toList(),
                 onChanged: (value) => setState(() => role = value ?? role),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: memberLevel,
                 decoration: const InputDecoration(labelText: '会员等级'),
-                items: const ['NORMAL', 'VIP', 'SVIP'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-                onChanged: (value) => setState(() => memberLevel = value ?? memberLevel),
+                items:
+                    const ['NORMAL', 'VIP', 'SVIP']
+                        .map(
+                          (item) =>
+                              DropdownMenuItem(value: item, child: Text(item)),
+                        )
+                        .toList(),
+                onChanged:
+                    (value) =>
+                        setState(() => memberLevel = value ?? memberLevel),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: status,
                 decoration: const InputDecoration(labelText: '状态'),
-                items: const ['ACTIVE', 'DISABLED'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+                items:
+                    const ['ACTIVE', 'DISABLED']
+                        .map(
+                          (item) =>
+                              DropdownMenuItem(value: item, child: Text(item)),
+                        )
+                        .toList(),
                 onChanged: (value) => setState(() => status = value ?? status),
               ),
             ],
@@ -219,7 +285,10 @@ class _UserDialogState extends State<_UserDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
         FilledButton(
           onPressed: () {
             final payload = {

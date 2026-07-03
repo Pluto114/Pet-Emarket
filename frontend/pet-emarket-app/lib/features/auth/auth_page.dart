@@ -22,6 +22,7 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage> {
   final _usr = TextEditingController(text: 'admin');
   final _pwd = TextEditingController(text: 'Admin@123456');
+  final _pwd2 = TextEditingController();
   final _dn = TextEditingController(text: 'Pet User');
   final _ph = TextEditingController();
   final _em = TextEditingController();
@@ -43,6 +44,7 @@ class _AuthPageState extends State<AuthPage> {
   void dispose() {
     _usr.dispose();
     _pwd.dispose();
+    _pwd2.dispose();
     _dn.dispose();
     _ph.dispose();
     _em.dispose();
@@ -57,7 +59,19 @@ class _AuthPageState extends State<AuthPage> {
       return;
     }
     if (_reg) {
-      if (_em.text.trim().isEmpty || !_em.text.contains('@')) {
+      if (username.length < 3) {
+        setState(() => _err = '用户名至少 3 位');
+        return;
+      }
+      if (_pwd.text.length < 6) {
+        setState(() => _err = '密码至少 6 位');
+        return;
+      }
+      if (_pwd.text != _pwd2.text) {
+        setState(() => _err = '两次输入的密码不一致');
+        return;
+      }
+      if (!_isValidEmail(_em.text)) {
         setState(() => _err = '请输入有效邮箱，并先获取验证码');
         return;
       }
@@ -92,7 +106,7 @@ class _AuthPageState extends State<AuthPage> {
 
   Future<void> _sendCode() async {
     final email = _em.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
+    if (!_isValidEmail(email)) {
       setState(() => _err = '请输入有效邮箱后再获取验证码');
       return;
     }
@@ -112,10 +126,29 @@ class _AuthPageState extends State<AuthPage> {
         }
       });
     } catch (e) {
-      setState(() => _err = e.toString());
+      setState(() => _err = _emailCodeErrorText(e));
     } finally {
       if (mounted) setState(() => _sendingCode = false);
     }
+  }
+
+  String _emailCodeErrorText(Object error) {
+    if (error is ApiException) {
+      return switch (error.code) {
+        '100005' => '该邮箱已注册，请直接登录或更换邮箱',
+        '100006' => '验证码请求过于频繁，请稍后再试',
+        '500400' => '请输入有效邮箱地址',
+        '100011' => '邮箱服务尚未配置，请检查 SMTP 环境变量',
+        '100012' => '验证码邮件发送失败，请检查邮箱授权码或稍后再试',
+        _ => error.message,
+      };
+    }
+    return error.toString();
+  }
+
+  bool _isValidEmail(String value) {
+    final email = value.trim();
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
   }
 
   Future<void> _quickLogin(String username, String password) async {
@@ -131,6 +164,27 @@ class _AuthPageState extends State<AuthPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _setRegisterMode(bool value) {
+    setState(() {
+      _reg = value;
+      _err = null;
+      _codeHint = null;
+      if (value) {
+        _usr.clear();
+        _pwd.clear();
+        _pwd2.clear();
+        _dn.text = 'Pet User';
+        _ph.clear();
+        _em.clear();
+        _code.clear();
+      } else {
+        _usr.text = 'admin';
+        _pwd.text = 'Admin@123456';
+        _pwd2.clear();
+      }
+    });
   }
 
   @override
@@ -241,7 +295,7 @@ class _AuthPageState extends State<AuthPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'PawMart',
                             style: TextStyle(
                               fontSize: 24,
@@ -275,7 +329,7 @@ class _AuthPageState extends State<AuthPage> {
   // ═══ Login Form Card ═══
   Widget _buildForm(BuildContext ctx) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(_reg ? 24 : 32),
       decoration: BoxDecoration(
         color: PawmartColors.surfaceCard,
         borderRadius: BorderRadius.circular(16),
@@ -297,7 +351,7 @@ class _AuthPageState extends State<AuthPage> {
                 child: const Icon(Icons.pets, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 10),
-              Text(
+              const Text(
                 'PawMart',
                 style: TextStyle(
                   fontSize: 22,
@@ -311,7 +365,7 @@ class _AuthPageState extends State<AuthPage> {
           // Title
           Text(
             _reg ? '创建账号' : '欢迎回来',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: PawmartColors.textPrimary,
@@ -320,96 +374,41 @@ class _AuthPageState extends State<AuthPage> {
           const SizedBox(height: 6),
           Text(
             _reg ? '注册后开启宠物之旅' : '登录你的账号，探索优质宠物好物',
-            style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 16,
+              color: PawmartColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 24),
           // Form
-          _buildField('手机号 / 邮箱', _usr, Icons.person_outline),
-          const SizedBox(height: 14),
-          _buildField('密码', _pwd, Icons.lock_outline, obscure: true),
           if (_reg) ...[
+            _buildField('用户名', _usr, Icons.person_outline),
+            const SizedBox(height: 14),
+            _buildField('邮箱', _em, Icons.email_outlined, email: true),
+            const SizedBox(height: 14),
+            _buildEmailCodeRow(),
+            const SizedBox(height: 14),
+            _buildField('密码', _pwd, Icons.lock_outline, obscure: true),
+            const SizedBox(height: 14),
+            _buildField('确认密码', _pwd2, Icons.lock_reset, obscure: true),
             const SizedBox(height: 14),
             _buildField('昵称', _dn, Icons.badge_outlined),
             const SizedBox(height: 14),
             _buildField('手机号', _ph, Icons.phone_outlined, phone: true),
-            const SizedBox(height: 14),
-            _buildField('邮箱', _em, Icons.email_outlined, email: true),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 40,
-                    child: TextField(
-                      controller: _code,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: PawmartColors.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.verified_outlined,
-                          size: 18,
-                          color: PawmartColors.neutral400,
-                        ),
-                        hintText: '请输入邮箱验证码',
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: PawmartColors.textSecondary,
-                        ),
-                        filled: true,
-                        fillColor: PawmartColors.neutral50,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: PawmartColors.neutral200,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: PawmartColors.neutral200,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: PawmartColors.primary500,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  height: 48,
-                  child: OutlinedButton(
-                    onPressed: _sendingCode || _busy ? null : _sendCode,
-                    child: Text(
-                      _sendingCode ? '发送中' : '获取验证码',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: PawmartColors.primary500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
             if (_codeHint != null) ...[
               const SizedBox(height: 8),
               Text(
                 _codeHint!,
-                style: TextStyle(fontSize: 12, color: PawmartColors.primary500),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: PawmartColors.primary500,
+                ),
               ),
             ],
+          ] else ...[
+            _buildField('用户名', _usr, Icons.person_outline),
+            const SizedBox(height: 14),
+            _buildField('密码', _pwd, Icons.lock_outline, obscure: true),
           ],
           // Links
           Padding(
@@ -418,14 +417,10 @@ class _AuthPageState extends State<AuthPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
-                  onPressed:
-                      () => setState(() {
-                        _reg = !_reg;
-                        _err = null;
-                      }),
+                  onPressed: () => _setRegisterMode(!_reg),
                   child: Text(
                     _reg ? '已有账号？去登录' : '没有账号？去注册',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: PawmartColors.primary500,
@@ -435,7 +430,7 @@ class _AuthPageState extends State<AuthPage> {
                 if (!_reg)
                   TextButton(
                     onPressed: () => showInfo(context, '密码找回功能待接入短信/邮箱流程'),
-                    child: Text(
+                    child: const Text(
                       '忘记密码？',
                       style: TextStyle(
                         fontSize: 13,
@@ -455,6 +450,8 @@ class _AuthPageState extends State<AuthPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: PawmartColors.accent400,
                 foregroundColor: PawmartColors.textOnAccent,
+                minimumSize: const Size(100, 48),
+                maximumSize: const Size(800, 48), // 核心修复：限制最大宽度
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(9999),
                 ),
@@ -471,7 +468,7 @@ class _AuthPageState extends State<AuthPage> {
                       )
                       : Text(
                         _reg ? '注册并登录' : '登录',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -512,7 +509,7 @@ class _AuthPageState extends State<AuthPage> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
+          const Text(
             'admin / merchant / demo 均可快速登录',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
@@ -535,7 +532,10 @@ class _AuthPageState extends State<AuthPage> {
       children: [
         Text(
           hint,
-          style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
+          style: const TextStyle(
+            fontSize: 13,
+            color: PawmartColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 6),
         SizedBox(
@@ -548,11 +548,14 @@ class _AuthPageState extends State<AuthPage> {
                     ? TextInputType.phone
                     : (email ? TextInputType.emailAddress : null),
             onSubmitted: obscure ? (_) => _sub() : null,
-            style: TextStyle(fontSize: 14, color: PawmartColors.textPrimary),
+            style: const TextStyle(
+              fontSize: 14,
+              color: PawmartColors.textPrimary,
+            ),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, size: 18, color: PawmartColors.neutral400),
               hintText: '请输入$hint',
-              hintStyle: TextStyle(
+              hintStyle: const TextStyle(
                 fontSize: 14,
                 color: PawmartColors.textSecondary,
               ),
@@ -564,18 +567,90 @@ class _AuthPageState extends State<AuthPage> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: PawmartColors.neutral200),
+                borderSide: const BorderSide(color: PawmartColors.neutral200),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: PawmartColors.neutral200),
+                borderSide: const BorderSide(color: PawmartColors.neutral200),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
+                borderSide: const BorderSide(
                   color: PawmartColors.primary500,
                   width: 1.5,
                 ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailCodeRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 40,
+            child: TextField(
+              controller: _code,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                fontSize: 14,
+                color: PawmartColors.textPrimary,
+              ),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(
+                  Icons.verified_outlined,
+                  size: 18,
+                  color: PawmartColors.neutral400,
+                ),
+                hintText: '邮箱验证码',
+                hintStyle: const TextStyle(
+                  fontSize: 14,
+                  color: PawmartColors.textSecondary,
+                ),
+                filled: true,
+                fillColor: PawmartColors.neutral50,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: PawmartColors.neutral200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: PawmartColors.neutral200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: PawmartColors.primary500,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          height: 40,
+          child: OutlinedButton(
+            // 【核心修复】：防止主题无限宽导致崩溃
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(100, 40),
+              maximumSize: const Size(150, 40), // 必须加上这个
+            ),
+            onPressed: _sendingCode || _busy ? null : _sendCode,
+            child: Text(
+              _sendingCode ? '发送中' : '获取验证码',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: PawmartColors.primary500,
               ),
             ),
           ),
@@ -590,14 +665,15 @@ class _AuthPageState extends State<AuthPage> {
       icon: Icon(icon, size: 18, color: color),
       label: Text(
         label,
-        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: PawmartColors.textPrimary,
-        side: BorderSide(color: PawmartColors.neutral200),
+        side: const BorderSide(color: PawmartColors.neutral200),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(vertical: 6),
-        minimumSize: const Size(0, 32),
+        minimumSize: const Size(80, 32),
+        maximumSize: const Size(300, 48), // 核心修复：防止主题无限宽
       ),
     );
   }
@@ -606,15 +682,17 @@ class _AuthPageState extends State<AuthPage> {
     return OutlinedButton.icon(
       onPressed: _busy ? null : () => _quickLogin('demo', 'Demo@123456'),
       icon: const Icon(Icons.person_outline, size: 18),
-      label: Text(
+      label: const Text(
         '用户',
         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: PawmartColors.primary500,
-        side: BorderSide(color: PawmartColors.primary200),
+        side: const BorderSide(color: PawmartColors.primary200),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 12),
+        minimumSize: const Size(80, 44),
+        maximumSize: const Size(200, 44), // 核心修复
       ),
     );
   }
@@ -624,15 +702,17 @@ class _AuthPageState extends State<AuthPage> {
       onPressed:
           _busy ? null : () => _quickLogin('merchant', 'Merchant@123456'),
       icon: const Icon(Icons.storefront_outlined, size: 18),
-      label: Text(
+      label: const Text(
         '商家',
         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: PawmartColors.primary500,
-        side: BorderSide(color: PawmartColors.primary200),
+        side: const BorderSide(color: PawmartColors.primary200),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 12),
+        minimumSize: const Size(80, 44),
+        maximumSize: const Size(200, 44), // 核心修复
       ),
     );
   }
@@ -641,7 +721,7 @@ class _AuthPageState extends State<AuthPage> {
     return FilledButton.icon(
       onPressed: _busy ? null : () => _quickLogin('admin', 'Admin@123456'),
       icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-      label: Text(
+      label: const Text(
         '管理员',
         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
       ),
@@ -650,6 +730,8 @@ class _AuthPageState extends State<AuthPage> {
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 12),
+        minimumSize: const Size(80, 44),
+        maximumSize: const Size(200, 44), // 核心修复
       ),
     );
   }
@@ -663,12 +745,12 @@ class _AuthPageState extends State<AuthPage> {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, size: 18, color: PawmartColors.error),
+          const Icon(Icons.error_outline, size: 18, color: PawmartColors.error),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               msg,
-              style: TextStyle(fontSize: 13, color: PawmartColors.error),
+              style: const TextStyle(fontSize: 13, color: PawmartColors.error),
             ),
           ),
         ],
@@ -684,7 +766,10 @@ class _AuthPageState extends State<AuthPage> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             label,
-            style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 12,
+              color: PawmartColors.textSecondary,
+            ),
           ),
         ),
         const Expanded(child: Divider(color: PawmartColors.neutral200)),
@@ -746,7 +831,7 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           '为每一只爱宠',
                           style: TextStyle(
                             fontSize: 24,
@@ -787,8 +872,10 @@ class _AuthPageState extends State<AuthPage> {
           return Center(
             child: SizedBox(
               width: maxW,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: Wrap(
+                alignment: WrapAlignment.spaceEvenly,
+                spacing: 16.0,
+                runSpacing: 16.0,
                 children: [
                   _promiseItem(Icons.star, '品质保障', '严选全球优质品牌，安全放心'),
                   _promiseItem(Icons.local_shipping, '极速配送', '全国仓储网络，次日达服务'),
@@ -819,7 +906,7 @@ class _AuthPageState extends State<AuthPage> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.white,
@@ -848,7 +935,7 @@ class _AuthPageState extends State<AuthPage> {
               width: maxW,
               child: Column(
                 children: [
-                  Text(
+                  const Text(
                     '为什么选择 PawMart？',
                     style: TextStyle(
                       fontSize: 24,
@@ -857,7 +944,7 @@ class _AuthPageState extends State<AuthPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     '我们用科技与热爱，重新定义宠物消费体验',
                     style: TextStyle(
                       fontSize: 16,
@@ -865,25 +952,30 @@ class _AuthPageState extends State<AuthPage> {
                     ),
                   ),
                   const SizedBox(height: 36),
-                  const Row(
+                  // 【核心修复】：改用 Wrap，防止小屏幕 Row 挤压文字导致越界崩溃
+                  const Wrap(
+                    spacing: 20,
+                    runSpacing: 20,
+                    alignment: WrapAlignment.center,
                     children: [
-                      Expanded(
+                      SizedBox(
+                        width: 320,
                         child: _FeatureCard(
                           icon: Icons.auto_awesome,
                           title: '智能推荐',
                           desc: '基于宠物画像的 AI 智能推荐，精准匹配品种、年龄和健康状况，为你的爱宠量身定制好物清单。',
                         ),
                       ),
-                      SizedBox(width: 20),
-                      Expanded(
+                      SizedBox(
+                        width: 320,
                         child: _FeatureCard(
                           icon: Icons.pets,
                           title: '品种专属',
                           desc: '覆盖 200+ 品种的专属营养与护理方案，从拉布拉多到布偶猫，满足每一种宠物的独特需求。',
                         ),
                       ),
-                      SizedBox(width: 20),
-                      Expanded(
+                      SizedBox(
+                        width: 320,
                         child: _FeatureCard(
                           icon: Icons.people,
                           title: '社区互动',
@@ -903,7 +995,7 @@ class _AuthPageState extends State<AuthPage> {
 
   // ═══ Section 4: Categories ═══
   Widget _buildCategories(BuildContext ctx) {
-    final cats = [
+    const cats = [
       (_ossUrl2, '狗粮'),
       (_ossUrl3, '猫粮'),
       (_ossUrl4, '宠物用品'),
@@ -922,7 +1014,7 @@ class _AuthPageState extends State<AuthPage> {
               width: maxW,
               child: Column(
                 children: [
-                  Text(
+                  const Text(
                     '热门品类',
                     style: TextStyle(
                       fontSize: 24,
@@ -931,7 +1023,7 @@ class _AuthPageState extends State<AuthPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     '覆盖宠物生活全方位需求',
                     style: TextStyle(
                       fontSize: 16,
@@ -994,7 +1086,7 @@ class _AuthPageState extends State<AuthPage> {
               left: 16,
               child: Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -1015,7 +1107,7 @@ class _AuthPageState extends State<AuthPage> {
       color: PawmartColors.primary50,
       child: Column(
         children: [
-          Text(
+          const Text(
             '立即加入 PawMart',
             style: TextStyle(
               fontSize: 24,
@@ -1024,7 +1116,7 @@ class _AuthPageState extends State<AuthPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             '为你的爱宠找到最好的呵护',
             style: TextStyle(fontSize: 16, color: PawmartColors.textSecondary),
           ),
@@ -1044,8 +1136,10 @@ class _AuthPageState extends State<AuthPage> {
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 32),
+                minimumSize: const Size(100, 48),
+                maximumSize: const Size(400, 48), // 核心修复：防止无限宽崩溃
               ),
-              child: Text(
+              child: const Text(
                 '免费注册',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),
@@ -1071,7 +1165,7 @@ class _AuthPageState extends State<AuthPage> {
               width: maxW,
               child: Column(
                 children: [
-                  Text(
+                  const Text(
                     'PawMart',
                     style: TextStyle(
                       fontSize: 18,
@@ -1146,7 +1240,7 @@ class _FeatureCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: PawmartColors.textPrimary,
@@ -1155,7 +1249,7 @@ class _FeatureCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             desc,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: PawmartColors.textSecondary,
               height: 1.5,

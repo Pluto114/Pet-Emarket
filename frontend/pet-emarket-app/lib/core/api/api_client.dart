@@ -110,10 +110,12 @@ class ApiClient {
   Future<List<Product>> listProducts({
     String keyword = '',
     String type = '',
+    String status = '',
   }) async {
     final query = <String, String>{};
     if (keyword.trim().isNotEmpty) query['keyword'] = keyword.trim();
     if (type.trim().isNotEmpty) query['type'] = type.trim();
+    if (status.trim().isNotEmpty) query['status'] = status.trim();
     final data = await _request(
       'GET',
       '/api/v1/products',
@@ -122,6 +124,29 @@ class ApiClient {
     );
     return (data['items'] as List)
         .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
+  }
+
+  Future<Product> getProduct(String id) async {
+    final data = await _request(
+      'GET',
+      '/api/v1/products/$id',
+      authenticated: false,
+    );
+    return Product.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<List<ProductReview>> listProductReviews(String id) async {
+    final data = await _request(
+      'GET',
+      '/api/v1/products/$id/reviews',
+      authenticated: false,
+    );
+    return (data['items'] as List)
+        .map(
+          (item) =>
+              ProductReview.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
         .toList();
   }
 
@@ -380,6 +405,56 @@ class ApiClient {
     return MediaAsset.fromJson(_object(data, 'media'));
   }
 
+  Future<MediaAsset> uploadMedia({
+    required String title,
+    required String mediaType,
+    required String fileName,
+    required List<int> fileBytes,
+    String productId = '',
+    String description = '',
+    String fileContentType = '',
+    String coverFileName = '',
+    List<int>? coverFileBytes,
+    String coverContentType = '',
+  }) async {
+    final fields = <String, String>{
+      'title': title,
+      'mediaType': mediaType,
+      if (productId.trim().isNotEmpty) 'productId': productId.trim(),
+      if (description.trim().isNotEmpty) 'description': description.trim(),
+    };
+    final files = <TransportMultipartFile>[
+      TransportMultipartFile(
+        fieldName: 'file',
+        filename: fileName,
+        bytes: fileBytes,
+        contentType:
+            fileContentType.isNotEmpty
+                ? fileContentType
+                : _contentTypeFor(fileName),
+      ),
+    ];
+    if (coverFileBytes != null && coverFileName.trim().isNotEmpty) {
+      files.add(
+        TransportMultipartFile(
+          fieldName: 'coverFile',
+          filename: coverFileName,
+          bytes: coverFileBytes,
+          contentType:
+              coverContentType.isNotEmpty
+                  ? coverContentType
+                  : _contentTypeFor(coverFileName),
+        ),
+      );
+    }
+    final data = await _multipartRequest(
+      '/api/v1/media/upload',
+      fields: fields,
+      files: files,
+    );
+    return MediaAsset.fromJson(_object(data, 'media'));
+  }
+
   Future<MediaAsset> updateMedia(
     String id,
     Map<String, dynamic> payload,
@@ -496,15 +571,16 @@ class ApiClient {
     final body = <String, dynamic>{};
     if (addressId.trim().isNotEmpty) {
       body['addressId'] = int.tryParse(addressId.trim()) ?? addressId.trim();
-    } else {
-      body['addressSnapshot'] = {
-        'receiver': sessionStore.user?.displayName ?? 'Demo User',
-        'phone': sessionStore.user?.phone ?? '18800000000',
-        'detail': 'Pet-Emarket demo address',
-      };
     }
     final data = await _request('POST', '/api/v1/orders', body: body);
     return PetOrder.fromJson(_object(data, 'order'));
+  }
+
+  Future<PetOrder> createOrderFromCartAndPay({
+    required String addressId,
+  }) async {
+    final created = await createOrderFromCart(addressId: addressId);
+    return operateOrder(created.id, 'pay');
   }
 
   Future<List<PetOrder>> listOrders() async {
@@ -529,6 +605,25 @@ class ApiClient {
     return PetOrder.fromJson(_object(data, 'order'));
   }
 
+  Future<dynamic> _multipartRequest(
+    String path, {
+    required Map<String, String> fields,
+    required List<TransportMultipartFile> files,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final headers = <String, String>{
+      if (sessionStore.token != null)
+        'Authorization': 'Bearer ${sessionStore.token}',
+    };
+    final response = await sendMultipartRequest(
+      uri: uri,
+      headers: headers,
+      fields: fields,
+      files: files,
+    );
+    return _parseResponse(response);
+  }
+
   Future<dynamic> _request(
     String method,
     String path, {
@@ -550,6 +645,10 @@ class ApiClient {
       headers: headers,
       body: body == null ? null : jsonEncode(body),
     );
+    return _parseResponse(response);
+  }
+
+  dynamic _parseResponse(TransportResponse response) {
     final responseBody = response.body.trim();
     Map<String, dynamic> decoded = <String, dynamic>{};
     if (responseBody.isNotEmpty) {
@@ -573,6 +672,21 @@ class ApiClient {
       );
     }
     return decoded['data'];
+  }
+
+  String _contentTypeFor(String filename) {
+    final ext = filename.split('.').last.toLowerCase();
+    return switch (ext) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      'mp4' || 'm4v' => 'video/mp4',
+      'mov' => 'video/quicktime',
+      'avi' => 'video/x-msvideo',
+      'webm' => 'video/webm',
+      _ => 'application/octet-stream',
+    };
   }
 
   Map<String, dynamic> _object(dynamic data, String legacyKey) {

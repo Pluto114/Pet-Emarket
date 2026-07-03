@@ -98,6 +98,9 @@ public class OrderService {
                 throw new BusinessException("300409", "Insufficient stock for " + product.getName());
             }
             product.setStock(product.getStock() - cartItem.getQuantity());
+            if (product.getStock() <= 0) {
+                product.setStatus(ProductStatus.OFF_SALE);
+            }
             BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             total = total.add(subtotal);
             order.addItem(snapshotItem(product, cartItem.getQuantity(), subtotal));
@@ -121,9 +124,10 @@ public class OrderService {
             return request.addressSnapshot();
         }
         AddressSnapshot defaultAddress = shippingAddressService.defaultSnapshot(currentUser.getId());
-        return defaultAddress == null
-                ? new AddressSnapshot(currentUser.getDisplayName(), currentUser.getPhone(), "Pet-Emarket demo address")
-                : defaultAddress;
+        if (defaultAddress == null) {
+            throw new BusinessException("300400", "请先选择或新增真实收货地址");
+        }
+        return defaultAddress;
     }
 
     @Transactional

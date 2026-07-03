@@ -74,7 +74,12 @@ class _UserShellState extends State<UserShell> {
     super.dispose();
   }
 
-  PreferredSizeWidget _buildAppBar(ThemeData t, ColorScheme s, bool wide, double screenW) {
+  PreferredSizeWidget _buildAppBar(
+    ThemeData t,
+    ColorScheme s,
+    bool wide,
+    double screenW,
+  ) {
     final isLight = t.brightness == Brightness.light;
     final xWide = screenW > 1100;
     final navGap = xWide ? 24.0 : 12.0;
@@ -86,7 +91,10 @@ class _UserShellState extends State<UserShell> {
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: wide && xWide ? 40 : 12, vertical: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: wide && xWide ? 40 : 12,
+              vertical: 4,
+            ),
             child: Row(
               children: [
                 // Logo
@@ -100,7 +108,11 @@ class _UserShellState extends State<UserShell> {
                         color: PawmartColors.primary500,
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: const Icon(Icons.pets, color: Colors.white, size: 16),
+                      child: const Icon(
+                        Icons.pets,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -131,16 +143,31 @@ class _UserShellState extends State<UserShell> {
                             fontSize: 13,
                             color: PawmartColors.textSecondary.withAlpha(150),
                           ),
-                          prefixIcon: Icon(Icons.search_rounded, size: 20, color: PawmartColors.neutral400),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: PawmartColors.neutral400,
+                          ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(pawmartRadiusFull),
-                            borderSide: BorderSide(color: PawmartColors.neutral200),
+                            borderRadius: BorderRadius.circular(
+                              pawmartRadiusFull,
+                            ),
+                            borderSide: BorderSide(
+                              color: PawmartColors.neutral200,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(pawmartRadiusFull),
-                            borderSide: BorderSide(color: PawmartColors.primary500, width: 2),
+                            borderRadius: BorderRadius.circular(
+                              pawmartRadiusFull,
+                            ),
+                            borderSide: BorderSide(
+                              color: PawmartColors.primary500,
+                              width: 2,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 9,
+                          ),
                         ),
                       ),
                     ),
@@ -158,21 +185,33 @@ class _UserShellState extends State<UserShell> {
                         onTap: () => setState(() => _idx = i),
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 2,
+                            vertical: 2,
+                          ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 item['i'] as IconData,
                                 size: 18,
-                                color: active ? PawmartColors.primary500 : PawmartColors.textSecondary,
+                                color:
+                                    active
+                                        ? PawmartColors.primary500
+                                        : PawmartColors.textSecondary,
                               ),
                               Text(
                                 item['l'] as String,
                                 style: TextStyle(
                                   fontSize: 9,
-                                  fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                                  color: active ? PawmartColors.primary500 : PawmartColors.textSecondary,
+                                  fontWeight:
+                                      active
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
+                                  color:
+                                      active
+                                          ? PawmartColors.primary500
+                                          : PawmartColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -232,13 +271,14 @@ class _UserShellState extends State<UserShell> {
           backgroundColor: PawmartColors.surfaceBg,
           appBar: _buildAppBar(t, s, wide, w),
           body: IndexedStack(index: _idx, children: pages),
-          bottomNavigationBar: wide
-              ? null
-              : NavigationBar(
-                  selectedIndex: _idx,
-                  destinations: _tabs,
-                  onDestinationSelected: (i) => setState(() => _idx = i),
-                ),
+          bottomNavigationBar:
+              wide
+                  ? null
+                  : NavigationBar(
+                    selectedIndex: _idx,
+                    destinations: _tabs,
+                    onDestinationSelected: (i) => setState(() => _idx = i),
+                  ),
         ),
       ),
     );

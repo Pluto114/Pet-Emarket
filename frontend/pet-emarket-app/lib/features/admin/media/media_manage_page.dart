@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../core/api/api_client.dart';
 import '../../../models/media_asset.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -65,9 +66,9 @@ class _MediaManagePageState extends State<MediaManagePage> {
                 ),
               ),
               FilledButton.icon(
-                onPressed: () => _showDialog(),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Media'),
+                onPressed: _showUploadDialog,
+                icon: const Icon(Icons.cloud_upload),
+                label: const Text('Upload Media'),
               ),
             ],
           ),
@@ -177,6 +178,30 @@ class _MediaManagePageState extends State<MediaManagePage> {
     }
   }
 
+  Future<void> _showUploadDialog() async {
+    final payload = await showDialog<_MediaUploadPayload>(
+      context: context,
+      builder: (ctx) => const _MediaUploadDialog(),
+    );
+    if (payload == null) return;
+    try {
+      await widget.apiClient.uploadMedia(
+        title: payload.title,
+        mediaType: payload.mediaType,
+        productId: payload.productId,
+        description: payload.description,
+        fileName: payload.file.name,
+        fileBytes: payload.file.bytes ?? const [],
+        coverFileName: payload.coverFile?.name ?? '',
+        coverFileBytes: payload.coverFile?.bytes,
+      );
+      await load();
+      if (mounted) showSuccess(context, 'Media uploaded to OSS');
+    } catch (e) {
+      if (mounted) showError(context, e.toString());
+    }
+  }
+
   Future<void> _audit(MediaAsset asset, bool approved) async {
     try {
       await widget.apiClient.auditMedia(
@@ -212,6 +237,177 @@ class _MediaManagePageState extends State<MediaManagePage> {
     } catch (e) {
       if (mounted) showError(context, e.toString());
     }
+  }
+}
+
+class _MediaUploadPayload {
+  const _MediaUploadPayload({
+    required this.title,
+    required this.mediaType,
+    required this.file,
+    this.coverFile,
+    this.productId = '',
+    this.description = '',
+  });
+
+  final String title;
+  final String mediaType;
+  final PlatformFile file;
+  final PlatformFile? coverFile;
+  final String productId;
+  final String description;
+}
+
+class _MediaUploadDialog extends StatefulWidget {
+  const _MediaUploadDialog();
+
+  @override
+  State<_MediaUploadDialog> createState() => _MediaUploadDialogState();
+}
+
+class _MediaUploadDialogState extends State<_MediaUploadDialog> {
+  final titleCtrl = TextEditingController();
+  final productIdCtrl = TextEditingController();
+  final descCtrl = TextEditingController();
+  String mediaType = 'IMAGE';
+  PlatformFile? file;
+  PlatformFile? coverFile;
+
+  @override
+  void dispose() {
+    titleCtrl.dispose();
+    productIdCtrl.dispose();
+    descCtrl.dispose();
+    super.dispose();
+  }
+
+  List<String> get _allowedMainExtensions {
+    return mediaType == 'VIDEO'
+        ? const ['mp4', 'mov', 'avi', 'm4v', 'webm']
+        : const ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Upload Media'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DropdownButtonFormField<String>(
+                value: mediaType,
+                decoration: const InputDecoration(labelText: 'Type'),
+                items: const [
+                  DropdownMenuItem(value: 'IMAGE', child: Text('Image')),
+                  DropdownMenuItem(value: 'VIDEO', child: Text('Video')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    mediaType = value ?? mediaType;
+                    file = null;
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Title'),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: productIdCtrl,
+                decoration: const InputDecoration(labelText: 'Product ID'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: () => _pickMainFile(context),
+                icon: const Icon(Icons.attach_file),
+                label: Text(file == null ? 'Select File' : file!.name),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => _pickCoverFile(context),
+                icon: const Icon(Icons.image),
+                label: Text(
+                  coverFile == null ? 'Select Cover Image' : coverFile!.name,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed:
+              file == null || titleCtrl.text.trim().isEmpty
+                  ? null
+                  : () {
+                    Navigator.pop(
+                      context,
+                      _MediaUploadPayload(
+                        title: titleCtrl.text.trim(),
+                        mediaType: mediaType,
+                        file: file!,
+                        coverFile: coverFile,
+                        productId: productIdCtrl.text.trim(),
+                        description: descCtrl.text.trim(),
+                      ),
+                    );
+                  },
+          child: const Text('Upload'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickMainFile(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: _allowedMainExtensions,
+      withData: true,
+    );
+    final selected = result?.files.single;
+    if (selected == null) return;
+    if (selected.bytes == null || selected.bytes!.isEmpty) {
+      if (context.mounted) showError(context, 'Cannot read selected file');
+      return;
+    }
+    setState(() {
+      file = selected;
+      if (titleCtrl.text.trim().isEmpty) {
+        titleCtrl.text = selected.name.replaceFirst(RegExp(r'\.[^.]+$'), '');
+      }
+    });
+  }
+
+  Future<void> _pickCoverFile(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+      withData: true,
+    );
+    final selected = result?.files.single;
+    if (selected == null) return;
+    if (selected.bytes == null || selected.bytes!.isEmpty) {
+      if (context.mounted) showError(context, 'Cannot read selected file');
+      return;
+    }
+    setState(() => coverFile = selected);
   }
 }
 

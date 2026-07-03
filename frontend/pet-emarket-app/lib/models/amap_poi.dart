@@ -36,7 +36,10 @@ class AmapPoi {
       longitude: NumberParser.toDouble(json['longitude']),
       latitude: NumberParser.toDouble(json['latitude']),
       phone: json['phone']?.toString() ?? '',
-      distanceMeters: json['distanceMeters'] == null ? null : NumberParser.toDouble(json['distanceMeters']),
+      distanceMeters:
+          json['distanceMeters'] == null
+              ? null
+              : NumberParser.toDouble(json['distanceMeters']),
     );
   }
 }

@@ -9,9 +9,26 @@ This is the official backend implementation for the course project. The old `bac
 - Spring Web
 - Spring Security
 - Spring Data JPA
-- H2 for local development
-- MySQL connector for later database switching
+- MySQL
+- Flyway
 - Manual HMAC JWT implementation based on JDK crypto APIs
+
+## Persistence
+
+The backend connects to MySQL by default. Runtime business data must be stored in MySQL, including products, carts, users, orders, addresses, payments, points and behavior logs.
+
+Default datasource values are defined in `src/main/resources/application.yml`:
+
+```powershell
+$env:DB_HOST="localhost"
+$env:DB_PORT="3306"
+$env:DB_NAME="pet_emarket"
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="Zhaojerry331!"
+mvn spring-boot:run
+```
+
+Flyway applies schema migrations from `src/main/resources/db/migration`. `DataInitializer` only inserts missing demo accounts, stores and seed products when needed; it does not reset tables on startup.
 
 ## Run
 
@@ -26,15 +43,6 @@ Default URL:
 
 ```text
 http://localhost:8080
-```
-
-H2 console:
-
-```text
-http://localhost:8080/h2-console
-JDBC URL: jdbc:h2:mem:pet_emarket
-username: sa
-password:
 ```
 
 ## Demo Accounts

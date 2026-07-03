@@ -25,10 +25,17 @@ class RecommendationItem {
 
   factory RecommendationItem.fromJson(Map<String, dynamic> json) {
     return RecommendationItem(
-      product: Product.fromJson(Map<String, dynamic>.from(json['product'] as Map)),
+      product: Product.fromJson(
+        Map<String, dynamic>.from(json['product'] as Map),
+      ),
       score: NumberParser.toDouble(json['score']),
       strategy: json['strategy']?.toString() ?? '',
-      reasons: (json['reasons'] is List) ? (json['reasons'] as List).map((item) => item.toString()).toList() : const [],
+      reasons:
+          (json['reasons'] is List)
+              ? (json['reasons'] as List)
+                  .map((item) => item.toString())
+                  .toList()
+              : const [],
       itemCfScore: NumberParser.toDouble(json['itemCfScore']),
       markovScore: NumberParser.toDouble(json['markovScore']),
       hotScore: NumberParser.toDouble(json['hotScore']),

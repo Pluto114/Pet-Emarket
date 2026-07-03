@@ -9,6 +9,7 @@ public class PetEmarketProperties {
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
     private AiService aiService = new AiService();
+    private Oss oss = new Oss();
     private Amap amap = new Amap();
     private Mail mail = new Mail();
 
@@ -34,6 +35,14 @@ public class PetEmarketProperties {
 
     public void setAiService(AiService aiService) {
         this.aiService = aiService;
+    }
+
+    public Oss getOss() {
+        return oss;
+    }
+
+    public void setOss(Oss oss) {
+        this.oss = oss;
     }
 
     public Amap getAmap() {
@@ -86,9 +95,11 @@ public class PetEmarketProperties {
     }
 
     public static class AiService {
-        private boolean enabled = false;
+        private boolean enabled = true;
+        private boolean autoStart = true;
         private String baseUrl = "http://localhost:8001";
-        private long timeoutSeconds = 2;
+        private long timeoutSeconds = 60;
+        private long startupTimeoutSeconds = 25;
 
         public boolean isEnabled() {
             return enabled;
@@ -96,6 +107,14 @@ public class PetEmarketProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public boolean isAutoStart() {
+            return autoStart;
+        }
+
+        public void setAutoStart(boolean autoStart) {
+            this.autoStart = autoStart;
         }
 
         public String getBaseUrl() {
@@ -112,6 +131,80 @@ public class PetEmarketProperties {
 
         public void setTimeoutSeconds(long timeoutSeconds) {
             this.timeoutSeconds = timeoutSeconds;
+        }
+
+        public long getStartupTimeoutSeconds() {
+            return startupTimeoutSeconds;
+        }
+
+        public void setStartupTimeoutSeconds(long startupTimeoutSeconds) {
+            this.startupTimeoutSeconds = startupTimeoutSeconds;
+        }
+    }
+
+    public static class Oss {
+        private boolean enabled = false;
+        private String endpoint = "";
+        private String bucket = "";
+        private String accessKeyId = "";
+        private String accessKeySecret = "";
+        private String publicBaseUrl = "";
+        private String objectPrefix = "pet-emarket";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getEndpoint() {
+            return endpoint;
+        }
+
+        public void setEndpoint(String endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        public String getBucket() {
+            return bucket;
+        }
+
+        public void setBucket(String bucket) {
+            this.bucket = bucket;
+        }
+
+        public String getAccessKeyId() {
+            return accessKeyId;
+        }
+
+        public void setAccessKeyId(String accessKeyId) {
+            this.accessKeyId = accessKeyId;
+        }
+
+        public String getAccessKeySecret() {
+            return accessKeySecret;
+        }
+
+        public void setAccessKeySecret(String accessKeySecret) {
+            this.accessKeySecret = accessKeySecret;
+        }
+
+        public String getPublicBaseUrl() {
+            return publicBaseUrl;
+        }
+
+        public void setPublicBaseUrl(String publicBaseUrl) {
+            this.publicBaseUrl = publicBaseUrl;
+        }
+
+        public String getObjectPrefix() {
+            return objectPrefix;
+        }
+
+        public void setObjectPrefix(String objectPrefix) {
+            this.objectPrefix = objectPrefix;
         }
     }
 

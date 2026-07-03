@@ -14,8 +14,18 @@ class AiChatAnswer {
   factory AiChatAnswer.fromJson(Map<String, dynamic> json) {
     return AiChatAnswer(
       answer: json['answer']?.toString() ?? '',
-      knowledgeTags: (json['knowledgeTags'] is List) ? (json['knowledgeTags'] as List).map((item) => item.toString()).toList() : const [],
-      recommendedActions: (json['recommendedActions'] is List) ? (json['recommendedActions'] as List).map((item) => item.toString()).toList() : const [],
+      knowledgeTags:
+          (json['knowledgeTags'] is List)
+              ? (json['knowledgeTags'] as List)
+                  .map((item) => item.toString())
+                  .toList()
+              : const [],
+      recommendedActions:
+          (json['recommendedActions'] is List)
+              ? (json['recommendedActions'] as List)
+                  .map((item) => item.toString())
+                  .toList()
+              : const [],
       healthWarning: json['healthWarning'] == true,
     );
   }

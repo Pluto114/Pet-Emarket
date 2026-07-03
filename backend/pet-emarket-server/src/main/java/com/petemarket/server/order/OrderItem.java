@@ -24,8 +24,14 @@ public class OrderItem {
 
     private Long productId;
     private Long storeId;
+
+    @Column(length = 128)
     private String productName;
+
+    @Column(length = 20)
     private String productType;
+
+    @Column(length = 64)
     private String category;
 
     @Column(precision = 10, scale = 2)

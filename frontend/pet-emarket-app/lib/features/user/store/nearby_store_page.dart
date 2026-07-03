@@ -35,7 +35,8 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
     try {
       final loaded = await widget.apiClient.nearbyStores();
       stores = loaded;
-      selectedIndex = stores.isEmpty ? 0 : math.min(selectedIndex, stores.length - 1);
+      selectedIndex =
+          stores.isEmpty ? 0 : math.min(selectedIndex, stores.length - 1);
       try {
         amapPois = await widget.apiClient.nearbyAmapPetStores();
         amapErrorText = null;
@@ -57,76 +58,89 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
       appBar: AppBar(title: const Text('附近宠物商店')),
       body: RefreshIndicator(
         onRefresh: loadData,
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : errorText != null
+        child:
+            loading
+                ? const Center(child: CircularProgressIndicator())
+                : errorText != null
                 ? _ErrorState(errorText: errorText!, onRetry: loadData)
                 : stores.isEmpty
-                    ? _EmptyState(theme: theme)
-                    : ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          _StoreMapPanel(
-                            stores: stores,
-                            selectedIndex: selectedIndex,
-                            onSelect: (index) => setState(() => selectedIndex = index),
-                          ),
-                          const SizedBox(height: 14),
-                          _SelectedStoreCard(store: stores[selectedIndex]),
-                          const SizedBox(height: 18),
-                          _AmapPoiSection(pois: amapPois, errorText: amapErrorText),
-                          const SizedBox(height: 18),
-                          Text(
-                            '附近门店 ${stores.length}',
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          ...stores.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final store = entry.value;
-                            final selected = index == selectedIndex;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _StoreListTile(
-                                store: store,
-                                index: index,
-                                selected: selected,
-                                onTap: () => setState(() => selectedIndex = index),
-                                onOpen: () => _openDetail(context, store),
-                              ),
-                            );
-                          }),
-                        ],
+                ? _EmptyState(theme: theme)
+                : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _StoreMapPanel(
+                      stores: stores,
+                      selectedIndex: selectedIndex,
+                      onSelect:
+                          (index) => setState(() => selectedIndex = index),
+                    ),
+                    const SizedBox(height: 14),
+                    _SelectedStoreCard(store: stores[selectedIndex]),
+                    const SizedBox(height: 18),
+                    _AmapPoiSection(pois: amapPois, errorText: amapErrorText),
+                    const SizedBox(height: 18),
+                    Text(
+                      '附近门店 ${stores.length}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...stores.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final store = entry.value;
+                      final selected = index == selectedIndex;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _StoreListTile(
+                          store: store,
+                          index: index,
+                          selected: selected,
+                          onTap: () => setState(() => selectedIndex = index),
+                          onOpen: () => _openDetail(context, store),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
       ),
     );
   }
 
   void _openDetail(BuildContext context, PetStore store) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => Scaffold(
-        appBar: AppBar(title: Text(store.name)),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(store.address),
-              const SizedBox(height: 12),
-              Text('城市: ${store.city}  |  区域: ${store.district}'),
-              const SizedBox(height: 8),
-              Text('营业: ${store.businessHours.isEmpty ? '-' : store.businessHours}'),
-              const SizedBox(height: 8),
-              Text('电话: ${store.phone.isEmpty ? '-' : store.phone}'),
-              const SizedBox(height: 8),
-              Text('特色: ${store.featureTags.isEmpty ? '-' : store.featureTags}'),
-              const SizedBox(height: 8),
-              Text('坐标: ${store.longitude.toStringAsFixed(4)}, ${store.latitude.toStringAsFixed(4)}'),
-            ],
-          ),
-        ),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(title: Text(store.name)),
+              body: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(store.address),
+                    const SizedBox(height: 12),
+                    Text('城市: ${store.city}  |  区域: ${store.district}'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '营业: ${store.businessHours.isEmpty ? '-' : store.businessHours}',
+                    ),
+                    const SizedBox(height: 8),
+                    Text('电话: ${store.phone.isEmpty ? '-' : store.phone}'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '特色: ${store.featureTags.isEmpty ? '-' : store.featureTags}',
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '坐标: ${store.longitude.toStringAsFixed(4)}, ${store.latitude.toStringAsFixed(4)}',
+                    ),
+                  ],
+                ),
+              ),
+            ),
       ),
-    ));
+    );
   }
 }
 
@@ -152,7 +166,9 @@ class _AmapPoiSection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '高德真实附近宠物店',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 Text('${pois.length} 家', style: theme.textTheme.bodySmall),
@@ -165,13 +181,24 @@ class _AmapPoiSection extends StatelessWidget {
               Text('暂无高德 POI 结果', style: theme.textTheme.bodySmall)
             else
               ...pois.take(5).map((poi) {
-                final distance = poi.distanceMeters == null ? '' : '  |  ${poi.distanceMeters!.toStringAsFixed(0)}m';
+                final distance =
+                    poi.distanceMeters == null
+                        ? ''
+                        : '  |  ${poi.distanceMeters!.toStringAsFixed(0)}m';
                 return ListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.pets_outlined),
-                  title: Text(poi.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('${poi.district}  |  ${poi.address}$distance', maxLines: 2, overflow: TextOverflow.ellipsis),
+                  title: Text(
+                    poi.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${poi.district}  |  ${poi.address}$distance',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 );
               }),
           ],
@@ -241,7 +268,9 @@ class _StoreMapPanel extends StatelessWidget {
   }
 
   List<Offset> _markerOffsets(Size size) {
-    return stores.map((store) => _project(store.longitude, store.latitude, size)).toList();
+    return stores
+        .map((store) => _project(store.longitude, store.latitude, size))
+        .toList();
   }
 
   Offset _project(double longitude, double latitude, Size size) {
@@ -288,17 +317,19 @@ class _StoreMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final bg = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [colorScheme.primaryContainer, colorScheme.surface],
-      ).createShader(rect);
+    final bg =
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [colorScheme.primaryContainer, colorScheme.surface],
+          ).createShader(rect);
     canvas.drawRect(rect, bg);
 
-    final gridPaint = Paint()
-      ..color = colorScheme.outlineVariant.withAlpha(120)
-      ..strokeWidth = 1;
+    final gridPaint =
+        Paint()
+          ..color = colorScheme.outlineVariant.withAlpha(120)
+          ..strokeWidth = 1;
     for (double x = 28; x < size.width; x += 42) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
@@ -306,18 +337,24 @@ class _StoreMapPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    final radiusPaint = Paint()
-      ..color = colorScheme.primary.withAlpha(28)
-      ..style = PaintingStyle.fill;
+    final radiusPaint =
+        Paint()
+          ..color = colorScheme.primary.withAlpha(28)
+          ..style = PaintingStyle.fill;
     canvas.drawCircle(user, 88, radiusPaint);
-    canvas.drawCircle(user, 48, radiusPaint..color = colorScheme.primary.withAlpha(42));
+    canvas.drawCircle(
+      user,
+      48,
+      radiusPaint..color = colorScheme.primary.withAlpha(42),
+    );
 
     if (selectedIndex >= 0 && selectedIndex < markers.length) {
       final selected = markers[selectedIndex];
-      final routePaint = Paint()
-        ..color = colorScheme.primary.withAlpha(180)
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round;
+      final routePaint =
+          Paint()
+            ..color = colorScheme.primary.withAlpha(180)
+            ..strokeWidth = 3
+            ..strokeCap = StrokeCap.round;
       canvas.drawLine(user, selected, routePaint);
     }
 
@@ -349,7 +386,11 @@ class _StoreMapPainter extends CustomPainter {
       Paint()..color = selected ? colorScheme.onSecondary : colorScheme.primary,
     );
     if (selected) {
-      _drawSmallLabel(canvas, offset + const Offset(18, -28), stores[index].name);
+      _drawSmallLabel(
+        canvas,
+        offset + const Offset(18, -28),
+        stores[index].name,
+      );
     }
   }
 
@@ -357,11 +398,20 @@ class _StoreMapPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(color: colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final box = Rect.fromLTWH(offset.dx - 8, offset.dy - 6, painter.width + 16, painter.height + 12);
+    final box = Rect.fromLTWH(
+      offset.dx - 8,
+      offset.dy - 6,
+      painter.width + 16,
+      painter.height + 12,
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(box, const Radius.circular(10)),
       Paint()..color = colorScheme.surface.withAlpha(220),
@@ -373,12 +423,21 @@ class _StoreMapPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(color: colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       maxLines: 1,
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: 140);
-    final box = Rect.fromLTWH(offset.dx - 6, offset.dy - 4, painter.width + 12, painter.height + 8);
+    final box = Rect.fromLTWH(
+      offset.dx - 6,
+      offset.dy - 4,
+      painter.width + 12,
+      painter.height + 8,
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(box, const Radius.circular(8)),
       Paint()..color = colorScheme.surface.withAlpha(230),
@@ -413,7 +472,12 @@ class _SelectedStoreCard extends StatelessWidget {
                 Icon(Icons.place_outlined, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(store.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  child: Text(
+                    store.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
                 Text('${store.rating.toStringAsFixed(1)} 分'),
               ],
@@ -456,10 +520,18 @@ class _StoreListTile extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: selected ? theme.colorScheme.primary : theme.colorScheme.primaryContainer,
+          backgroundColor:
+              selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.primaryContainer,
           child: Text(
             '${index + 1}',
-            style: TextStyle(color: selected ? theme.colorScheme.onPrimary : theme.colorScheme.primary),
+            style: TextStyle(
+              color:
+                  selected
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.primary,
+            ),
           ),
         ),
         title: Text(store.name),
@@ -512,7 +584,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.store_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant),
+          Icon(
+            Icons.store_outlined,
+            size: 64,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 12),
           const Text('附近暂无商店'),
           const SizedBox(height: 8),

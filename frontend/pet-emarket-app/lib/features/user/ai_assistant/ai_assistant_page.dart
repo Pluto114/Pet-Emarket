@@ -48,9 +48,13 @@ class _AS extends State<AiAssistantPage> {
           _b = false;
         });
     } catch (e) {
+      var message = '抱歉，AI 暂时不可用';
+      if (e is ApiException) {
+        message = '抱歉，AI 暂时不可用\n${e.code}: ${e.message}';
+      }
       if (mounted)
         setState(() {
-          _list.add(_M(false, '抱歉，AI 暂时不可用'));
+          _list.add(_M(false, message));
           _b = false;
         });
     }

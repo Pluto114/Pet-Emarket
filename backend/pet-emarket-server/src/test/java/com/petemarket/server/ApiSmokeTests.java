@@ -69,9 +69,8 @@ class ApiSmokeTests {
                 null
         );
 
-        assertThat(chat.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(body(chat).at("/data/healthWarning").asBoolean()).isTrue();
-        assertThat(body(chat).at("/data/answer").asText()).contains("执业兽医");
+        assertThat(chat.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(body(chat).at("/code").asText()).isEqualTo("AI_DISABLED");
     }
 
     @Test
@@ -535,6 +534,113 @@ class ApiSmokeTests {
 
         assertThat(deletedProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(deletedUser.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void merchantPublishedProductAppearsInCatalogAndCustomerCanPay() {
+        String adminToken = login("admin", "Admin@123456");
+        String merchantToken = login("merchant", "Merchant@123456");
+        String suffix = String.valueOf(System.nanoTime());
+
+        Map<String, Object> customerPayload = new LinkedHashMap<>();
+        customerPayload.put("username", "qa_catalog_customer_" + suffix);
+        customerPayload.put("password", "Qa@123456");
+        customerPayload.put("displayName", "QA Catalog Customer");
+        customerPayload.put("phone", "18812345678");
+        customerPayload.put("email", "qa_catalog_customer_" + suffix + "@pet-emarket.local");
+        customerPayload.put("role", "CUSTOMER");
+        customerPayload.put("memberLevel", "NORMAL");
+        customerPayload.put("status", "ACTIVE");
+
+        ResponseEntity<JsonNode> createdUser = exchange(HttpMethod.POST, "/api/v1/users", customerPayload, adminToken);
+        long userId = body(createdUser).at("/data/id").asLong();
+        String customerToken = login("qa_catalog_customer_" + suffix, "Qa@123456");
+
+        Map<String, Object> productPayload = new LinkedHashMap<>();
+        productPayload.put("name", "QA Merchant Catalog Goods " + suffix);
+        productPayload.put("type", "GOODS");
+        productPayload.put("category", "QA-Real-Catalog");
+        productPayload.put("price", new BigDecimal("66.00"));
+        productPayload.put("stock", 1);
+        productPayload.put("status", "ON_SALE");
+        productPayload.put("description", "Merchant published product visible in public catalog");
+        productPayload.put("coverUrl", "https://example.com/qa-catalog-" + suffix + ".jpg");
+
+        ResponseEntity<JsonNode> createdProduct = exchange(HttpMethod.POST, "/api/v1/products", productPayload, merchantToken);
+        long productId = body(createdProduct).at("/data/id").asLong();
+
+        assertThat(createdProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdProduct).at("/data/status").asText()).isEqualTo("ON_SALE");
+
+        ResponseEntity<JsonNode> publicCatalog = restTemplate.getForEntity(
+                "/api/v1/products?keyword=QA-Real-Catalog",
+                JsonNode.class
+        );
+
+        assertThat(publicCatalog.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(publicCatalog).at("/data/items").size()).isGreaterThanOrEqualTo(1);
+        assertThat(body(publicCatalog).at("/data/items").toString()).contains("\"id\":" + productId);
+
+        Map<String, Object> addressPayload = new LinkedHashMap<>();
+        addressPayload.put("receiver", "QA Catalog Receiver");
+        addressPayload.put("phone", "18812345678");
+        addressPayload.put("province", "Zhejiang");
+        addressPayload.put("city", "Hangzhou");
+        addressPayload.put("district", "Xihu");
+        addressPayload.put("detail", "QA Catalog Address 1");
+        addressPayload.put("defaultAddress", true);
+
+        ResponseEntity<JsonNode> createdAddress = exchange(HttpMethod.POST, "/api/v1/addresses", addressPayload, customerToken);
+        long addressId = body(createdAddress).at("/data/id").asLong();
+
+        ResponseEntity<JsonNode> cartItem = exchange(
+                HttpMethod.POST,
+                "/api/v1/cart/items",
+                Map.of("productId", productId, "quantity", 1),
+                customerToken
+        );
+        assertThat(cartItem.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(cartItem).at("/data/subtotal").decimalValue()).isEqualByComparingTo(new BigDecimal("66.00"));
+
+        ResponseEntity<JsonNode> createdOrder = exchange(
+                HttpMethod.POST,
+                "/api/v1/orders",
+                Map.of("addressId", addressId),
+                customerToken
+        );
+        long orderId = body(createdOrder).at("/data/id").asLong();
+
+        assertThat(createdOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(createdOrder).at("/data/status").asInt()).isEqualTo(0);
+        assertThat(body(createdOrder).at("/data/items/0/productId").asLong()).isEqualTo(productId);
+        assertThat(stockOf(productId)).isEqualTo(0);
+
+        ResponseEntity<JsonNode> soldOutProduct = restTemplate.getForEntity("/api/v1/products/" + productId, JsonNode.class);
+        assertThat(soldOutProduct.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(soldOutProduct).at("/data/status").asText()).isEqualTo("OFF_SALE");
+
+        ResponseEntity<JsonNode> publicCatalogAfterSoldOut = restTemplate.getForEntity(
+                "/api/v1/products?keyword=QA-Real-Catalog",
+                JsonNode.class
+        );
+        assertThat(body(publicCatalogAfterSoldOut).at("/data/items").toString()).doesNotContain("\"id\":" + productId);
+
+        ResponseEntity<JsonNode> paidOrder = exchange(HttpMethod.PUT, "/api/v1/orders/" + orderId + "/pay", null, customerToken);
+
+        assertThat(paidOrder.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(paidOrder).at("/data/status").asInt()).isEqualTo(1);
+        assertThat(body(paidOrder).at("/data/paymentNo").asText()).startsWith("PAY");
+
+        ResponseEntity<JsonNode> payments = exchange(HttpMethod.GET, "/api/v1/payments", null, customerToken);
+        ResponseEntity<JsonNode> merchantOrders = exchange(HttpMethod.GET, "/api/v1/orders", null, merchantToken);
+
+        assertThat(payments.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(payments).at("/data/items/0/orderId").asLong()).isEqualTo(orderId);
+        assertThat(merchantOrders.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(merchantOrders).at("/data/items").toString()).contains("QA Merchant Catalog Goods");
+
+        assertThat(exchange(HttpMethod.DELETE, "/api/v1/products/" + productId, null, merchantToken).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(exchange(HttpMethod.DELETE, "/api/v1/users/" + userId, null, adminToken).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test

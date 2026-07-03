@@ -44,3 +44,51 @@ Future<TransportResponse> sendHttpRequest({
   }
   return completer.future;
 }
+
+Future<TransportResponse> sendMultipartRequest({
+  required Uri uri,
+  required Map<String, String> headers,
+  required Map<String, String> fields,
+  required List<TransportMultipartFile> files,
+}) async {
+  final completer = Completer<TransportResponse>();
+  final request = html.HttpRequest();
+  final formData = html.FormData();
+  fields.forEach(formData.append);
+  for (final file in files) {
+    formData.appendBlob(
+      file.fieldName,
+      html.Blob([file.bytes], file.contentType),
+      file.filename,
+    );
+  }
+
+  request.open('POST', uri.toString());
+  request.timeout = 30000;
+  headers.forEach(request.setRequestHeader);
+  request.onLoad.listen((_) {
+    if (completer.isCompleted) return;
+    completer.complete(
+      TransportResponse(
+        statusCode: request.status ?? 500,
+        body: request.responseText ?? '',
+      ),
+    );
+  });
+  request.onError.listen((_) {
+    if (completer.isCompleted) return;
+    completer.complete(TransportResponse(statusCode: 500, body: ''));
+  });
+  request.onTimeout.listen((_) {
+    if (completer.isCompleted) return;
+    completer.complete(
+      TransportResponse(
+        statusCode: 504,
+        body:
+            '{"success":false,"code":"CLIENT_TIMEOUT","message":"上传超时，请检查文件大小或网络"}',
+      ),
+    );
+  });
+  request.send(formData);
+  return completer.future;
+}

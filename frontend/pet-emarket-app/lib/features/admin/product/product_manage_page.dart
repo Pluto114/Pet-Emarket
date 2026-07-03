@@ -49,7 +49,9 @@ class _ProductManagePageState extends State<ProductManagePage> {
               ? await widget.apiClient.listManagedProducts(
                 keyword: keywordCtrl.text,
               )
-              : await widget.apiClient.listProducts(keyword: keywordCtrl.text);
+              : await widget.apiClient.listManagedProducts(
+                keyword: keywordCtrl.text,
+              );
     } catch (e) {
       errorText = e.toString();
     }
@@ -208,6 +210,9 @@ class _ProductDialogState extends State<_ProductDialog> {
   late final descCtrl = TextEditingController(
     text: widget.product?.description ?? '',
   );
+  late final coverUrlCtrl = TextEditingController(
+    text: widget.product?.coverUrl ?? '',
+  );
   late final petCodeCtrl = TextEditingController(
     text: widget.product?.livePet?['petCode']?.toString() ?? '',
   );
@@ -228,6 +233,21 @@ class _ProductDialogState extends State<_ProductDialog> {
     super.initState();
     type = widget.product?.type ?? 'GOODS';
     status = widget.product?.status ?? 'ON_SALE';
+  }
+
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    catCtrl.dispose();
+    priceCtrl.dispose();
+    stockCtrl.dispose();
+    descCtrl.dispose();
+    coverUrlCtrl.dispose();
+    petCodeCtrl.dispose();
+    healthCtrl.dispose();
+    vaccineCtrl.dispose();
+    quarantineCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -307,6 +327,11 @@ class _ProductDialogState extends State<_ProductDialog> {
                 decoration: const InputDecoration(labelText: '描述'),
                 maxLines: 2,
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: coverUrlCtrl,
+                decoration: const InputDecoration(labelText: '封面图片 URL'),
+              ),
               if (type == 'PET_LIVE') ...[
                 const Divider(height: 24),
                 const Text(
@@ -354,6 +379,7 @@ class _ProductDialogState extends State<_ProductDialog> {
               'stock': int.tryParse(stockCtrl.text) ?? 0,
               'status': status,
               'description': descCtrl.text.trim(),
+              'coverUrl': coverUrlCtrl.text.trim(),
               if (type == 'PET_LIVE') 'petCode': petCodeCtrl.text.trim(),
               if (type == 'PET_LIVE') 'healthStatus': healthCtrl.text.trim(),
               if (type == 'PET_LIVE') 'vaccineCertNo': vaccineCtrl.text.trim(),

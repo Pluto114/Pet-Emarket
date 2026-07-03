@@ -111,8 +111,8 @@ ThemeData buildLightTheme() {
     colorScheme: s,
     scaffoldBackgroundColor: PawmartColors.surfaceBg,
     textTheme: textTheme,
-    // primaryTextTheme: using default from colorScheme
 
+    // primaryTextTheme: using default from colorScheme
     appBarTheme: AppBarTheme(
       centerTitle: false,
       backgroundColor: PawmartColors.surfaceCard,
@@ -140,14 +140,8 @@ ThemeData buildLightTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: PawmartColors.neutral50,
-      hintStyle: TextStyle(
-        fontSize: 14,
-        color: PawmartColors.textSecondary,
-      ),
-      labelStyle: TextStyle(
-        fontSize: 14,
-        color: PawmartColors.textSecondary,
-      ),
+      hintStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
+      labelStyle: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(pawmartRadiusFull),
         borderSide: BorderSide(color: PawmartColors.neutral200),
@@ -174,10 +168,7 @@ ThemeData buildLightTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(pawmartRadiusFull),
         ),
-        textStyle: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
-        ),
+        textStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
     ),
@@ -189,10 +180,7 @@ ThemeData buildLightTheme() {
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
         ),
         side: BorderSide(color: PawmartColors.neutral200),
-        textStyle: TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
+        textStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       ),
     ),
@@ -202,10 +190,7 @@ ThemeData buildLightTheme() {
         borderRadius: BorderRadius.circular(pawmartRadiusFull),
       ),
       backgroundColor: PawmartColors.neutral100,
-      labelStyle: TextStyle(
-        fontSize: 13,
-        color: PawmartColors.textPrimary,
-      ),
+      labelStyle: TextStyle(fontSize: 13, color: PawmartColors.textPrimary),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     ),
 
@@ -313,14 +298,8 @@ ThemeData buildDarkTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color(0xFF322E28),
-      hintStyle: TextStyle(
-        fontSize: 14,
-        color: const Color(0xFFB0A894),
-      ),
-      labelStyle: TextStyle(
-        fontSize: 14,
-        color: const Color(0xFFB0A894),
-      ),
+      hintStyle: TextStyle(fontSize: 14, color: const Color(0xFFB0A894)),
+      labelStyle: TextStyle(fontSize: 14, color: const Color(0xFFB0A894)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(pawmartRadiusFull),
         borderSide: BorderSide(color: const Color(0xFF4A443E)),
@@ -343,10 +322,7 @@ ThemeData buildDarkTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(pawmartRadiusFull),
         ),
-        textStyle: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
-        ),
+        textStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
     ),
@@ -358,10 +334,7 @@ ThemeData buildDarkTheme() {
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
         ),
         side: BorderSide(color: const Color(0xFF4A443E)),
-        textStyle: TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
+        textStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       ),
     ),
@@ -371,10 +344,7 @@ ThemeData buildDarkTheme() {
         borderRadius: BorderRadius.circular(pawmartRadiusFull),
       ),
       backgroundColor: const Color(0xFF3C3730),
-      labelStyle: TextStyle(
-        fontSize: 13,
-        color: const Color(0xFFF2F0EA),
-      ),
+      labelStyle: TextStyle(fontSize: 13, color: const Color(0xFFF2F0EA)),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     ),
 
@@ -414,7 +384,11 @@ BoxDecoration pawmartCardDecoration({
 }
 
 /// Section title row used on home & product pages
-Widget pawmartSectionHeader(String title, {String? actionLabel, VoidCallback? onAction}) {
+Widget pawmartSectionHeader(
+  String title, {
+  String? actionLabel,
+  VoidCallback? onAction,
+}) {
   return Row(
     children: [
       Container(

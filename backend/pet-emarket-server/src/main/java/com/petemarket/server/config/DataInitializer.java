@@ -5,10 +5,6 @@ import com.petemarket.server.product.ProductAuditStatus;
 import com.petemarket.server.product.ProductRepository;
 import com.petemarket.server.product.ProductStatus;
 import com.petemarket.server.product.ProductType;
-import com.petemarket.server.media.MediaAsset;
-import com.petemarket.server.media.MediaAssetRepository;
-import com.petemarket.server.media.MediaStatus;
-import com.petemarket.server.media.MediaType;
 import com.petemarket.server.store.PetStore;
 import com.petemarket.server.store.PetStoreRepository;
 import com.petemarket.server.store.StoreStatus;
@@ -30,7 +26,6 @@ public class DataInitializer {
     CommandLineRunner seedData(UserRepository userRepository,
                                ProductRepository productRepository,
                                PetStoreRepository storeRepository,
-                               MediaAssetRepository mediaAssetRepository,
                                PasswordEncoder passwordEncoder) {
         return args -> {
             if (!userRepository.existsByUsername("admin")) {
@@ -115,17 +110,15 @@ public class DataInitializer {
                 productRepository.save(toy);
             }
 
-            if (mediaAssetRepository.count() == 0) {
-                MediaAsset guide = media("New Kitten Care Guide", MediaType.VIDEO, "https://example.com/media/new-kitten-care.mp4");
-                guide.setDescription("Demo video for live pet onboarding and health care tips.");
-                guide.setStatus(MediaStatus.APPROVED);
-                mediaAssetRepository.save(guide);
-
-                MediaAsset banner = media("Pet-Emarket Home Banner", MediaType.IMAGE, "https://example.com/media/home-banner.png");
-                banner.setDescription("Demo marketing image for the home page and media management.");
-                banner.setStatus(MediaStatus.APPROVED);
-                mediaAssetRepository.save(banner);
+            List<Product> zeroStockOnSaleProducts = productRepository.findAll().stream()
+                    .filter(product -> product.getStock() != null && product.getStock() <= 0)
+                    .filter(product -> product.getStatus() == ProductStatus.ON_SALE)
+                    .toList();
+            if (!zeroStockOnSaleProducts.isEmpty()) {
+                zeroStockOnSaleProducts.forEach(product -> product.setStatus(ProductStatus.OFF_SALE));
+                productRepository.saveAll(zeroStockOnSaleProducts);
             }
+
         };
     }
 
@@ -186,14 +179,4 @@ public class DataInitializer {
         return product;
     }
 
-    private MediaAsset media(String title, MediaType mediaType, String url) {
-        MediaAsset media = new MediaAsset();
-        media.setTitle(title);
-        media.setMediaType(mediaType);
-        media.setUrl(url);
-        media.setCoverUrl("");
-        media.setDescription("");
-        media.setAuditRemark("Seed media approved");
-        return media;
-    }
 }

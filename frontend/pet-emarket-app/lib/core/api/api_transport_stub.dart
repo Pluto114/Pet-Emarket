@@ -8,3 +8,12 @@ Future<TransportResponse> sendHttpRequest({
 }) async {
   throw UnsupportedError('Unsupported platform');
 }
+
+Future<TransportResponse> sendMultipartRequest({
+  required Uri uri,
+  required Map<String, String> headers,
+  required Map<String, String> fields,
+  required List<TransportMultipartFile> files,
+}) async {
+  throw UnsupportedError('Unsupported platform');
+}

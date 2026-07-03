@@ -5,14 +5,14 @@ spring:
   application:
     name: pet-emarket-server
   datasource:
-    url: jdbc:h2:file:../../../database/data/pet_emarket;MODE=MySQL;DATABASE_TO_LOWER=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    url: "${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pet_emarket}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Zhaojerry331!}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
   jpa:
     hibernate:
       ddl-auto: validate
@@ -35,9 +35,19 @@ pet-emarket:
       - "http://localhost:8080"
       - "http://localhost:5000"
   ai-service:
-    enabled: ${AI_SERVICE_ENABLED:false}
+    enabled: ${AI_SERVICE_ENABLED:true}
+    auto-start: ${AI_SERVICE_AUTO_START:true}
     base-url: ${AI_SERVICE_BASE_URL:http://localhost:8001}
-    timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:2}
+    timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:60}
+    startup-timeout-seconds: ${AI_SERVICE_STARTUP_TIMEOUT_SECONDS:25}
+  oss:
+    enabled: ${OSS_ENABLED:false}
+    endpoint: ${ALIYUN_OSS_ENDPOINT:}
+    bucket: ${ALIYUN_OSS_BUCKET:}
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+    public-base-url: ${ALIYUN_OSS_PUBLIC_BASE_URL:}
+    object-prefix: ${ALIYUN_OSS_OBJECT_PREFIX:pet-emarket}
   amap:
     api-key: ${AMAP_API_KEY:}
     base-url: ${AMAP_BASE_URL:https://restapi.amap.com}

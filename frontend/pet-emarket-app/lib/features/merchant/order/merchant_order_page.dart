@@ -58,7 +58,9 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
               Expanded(
                 child: Text(
                   '订单管理',
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               IconButton.filledTonal(
@@ -86,7 +88,14 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                     children: [
                       Icon(Icons.error_outline, color: theme.colorScheme.error),
                       const SizedBox(width: 12),
-                      Expanded(child: Text(errorText!, style: TextStyle(color: theme.colorScheme.onErrorContainer))),
+                      Expanded(
+                        child: Text(
+                          errorText!,
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
                       TextButton(onPressed: load, child: const Text('重试')),
                     ],
                   ),
@@ -99,11 +108,25 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.receipt_long, size: 48, color: theme.colorScheme.onSurfaceVariant.withAlpha(100)),
+                    Icon(
+                      Icons.receipt_long,
+                      size: 48,
+                      color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+                    ),
                     const SizedBox(height: 12),
-                    Text('暂无订单', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      '暂无订单',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('顾客下单后会显示在这里', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      '顾客下单后会显示在这里',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -124,11 +147,17 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                           ),
                         ),
                         Chip(
-                          label: Text(order.statusName, style: const TextStyle(fontSize: 12)),
-                          backgroundColor: _statusColor(order.status).withAlpha(25),
+                          label: Text(
+                            order.statusName,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          backgroundColor: _statusColor(
+                            order.status,
+                          ).withAlpha(25),
                           side: BorderSide.none,
                           padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         ),
                       ],
                     ),
@@ -140,15 +169,30 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                         child: Row(
                           children: [
                             Icon(
-                              item.productType == 'PET_LIVE' ? Icons.pets : Icons.shopping_bag,
+                              item.productType == 'PET_LIVE'
+                                  ? Icons.pets
+                                  : Icons.shopping_bag,
                               size: 14,
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 6),
-                            Expanded(child: Text(item.productName, style: theme.textTheme.bodySmall)),
-                            Text('×${item.quantity}', style: theme.textTheme.bodySmall),
+                            Expanded(
+                              child: Text(
+                                item.productName,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                            Text(
+                              '×${item.quantity}',
+                              style: theme.textTheme.bodySmall,
+                            ),
                             const SizedBox(width: 8),
-                            Text('¥${item.subtotal.toStringAsFixed(2)}', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                            Text(
+                              '¥${item.subtotal.toStringAsFixed(2)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -156,12 +200,27 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                     const Divider(height: 16),
                     Row(
                       children: [
-                        Text('合计：', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                        Text('¥${order.payAmount.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary)),
+                        Text(
+                          '合计：',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          '¥${order.payAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
                         if (order.discountAmount > 0) ...[
                           const SizedBox(width: 8),
-                          Text('(优惠 ¥${order.discountAmount.toStringAsFixed(2)})',
-                              style: theme.textTheme.bodySmall?.copyWith(color: Colors.red)),
+                          Text(
+                            '(优惠 ¥${order.discountAmount.toStringAsFixed(2)})',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.red,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -169,12 +228,18 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               '${order.receiver} ${order.phone} · ${order.addressDetail}',
-                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -183,7 +248,12 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                     ],
                     if (order.paymentNo.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text('支付号: ${order.paymentNo}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        '支付号: ${order.paymentNo}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                     if (order.refundReason.isNotEmpty) ...[
                       const SizedBox(height: 8),
@@ -197,9 +267,21 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('退款原因: ${order.refundReason}', style: const TextStyle(fontSize: 12, color: Colors.orange)),
+                            Text(
+                              '退款原因: ${order.refundReason}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange,
+                              ),
+                            ),
                             if (order.refundAuditStatus.isNotEmpty)
-                              Text('退款审核: ${order.refundAuditStatus}', style: const TextStyle(fontSize: 12, color: Colors.orange)),
+                              Text(
+                                '退款审核: ${order.refundAuditStatus}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -210,16 +292,18 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
                       runSpacing: 8,
                       children: [
                         FilledButton.icon(
-                          onPressed: order.status == 1
-                              ? () => _operate(order, 'ship')
-                              : null,
+                          onPressed:
+                              order.status == 1
+                                  ? () => _operate(order, 'ship')
+                                  : null,
                           icon: const Icon(Icons.local_shipping, size: 18),
                           label: const Text('发货'),
                         ),
                         OutlinedButton.icon(
-                          onPressed: [0, 1].contains(order.status)
-                              ? () => _cancelOrder(order)
-                              : null,
+                          onPressed:
+                              [0, 1].contains(order.status)
+                                  ? () => _cancelOrder(order)
+                                  : null,
                           icon: const Icon(Icons.cancel, size: 18),
                           label: const Text('取消订单'),
                         ),
@@ -235,7 +319,11 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
     );
   }
 
-  Future<void> _operate(PetOrder order, String action, {String reason = ''}) async {
+  Future<void> _operate(
+    PetOrder order,
+    String action, {
+    String reason = '',
+  }) async {
     try {
       await widget.apiClient.operateOrder(
         order.id,
@@ -266,21 +354,34 @@ class _MerchantOrderPageState extends State<MerchantOrderPage> {
     final reasonCtrl = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('取消原因'),
-        content: TextField(
-          controller: reasonCtrl,
-          decoration: const InputDecoration(labelText: '请输入取消原因', hintText: '如：缺货、顾客要求等'),
-          maxLines: 2,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('返回')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, reasonCtrl.text.trim().isEmpty ? '商家取消订单' : reasonCtrl.text.trim()),
-            child: const Text('确认取消'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('取消原因'),
+            content: TextField(
+              controller: reasonCtrl,
+              decoration: const InputDecoration(
+                labelText: '请输入取消原因',
+                hintText: '如：缺货、顾客要求等',
+              ),
+              maxLines: 2,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('返回'),
+              ),
+              FilledButton(
+                onPressed:
+                    () => Navigator.pop(
+                      ctx,
+                      reasonCtrl.text.trim().isEmpty
+                          ? '商家取消订单'
+                          : reasonCtrl.text.trim(),
+                    ),
+                child: const Text('确认取消'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     reasonCtrl.dispose();
     if (reason == null) return;

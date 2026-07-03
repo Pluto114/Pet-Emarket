@@ -44,10 +44,13 @@ class _CartPageState extends State<CartPage> {
             TextButton(
               onPressed: canCreateOrder ? createOrder : null,
               child: Text(
-                '生成订单',
+                '提交并支付',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: canCreateOrder ? PawmartColors.primary500 : PawmartColors.textSecondary,
+                  color:
+                      canCreateOrder
+                          ? PawmartColors.primary500
+                          : PawmartColors.textSecondary,
                 ),
               ),
             ),
@@ -68,14 +71,18 @@ class _CartPageState extends State<CartPage> {
             if (errorText != null)
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(errorText!, style: TextStyle(color: PawmartColors.error, fontSize: 13)),
+                child: Text(
+                  errorText!,
+                  style: TextStyle(color: PawmartColors.error, fontSize: 13),
+                ),
               ),
             if (!loading) ...[
               // Address Section
               _AddressSection(
                 addresses: addresses,
                 selectedAddress: selectedAddress,
-                onSelected: (address) => setState(() => selectedAddress = address),
+                onSelected:
+                    (address) => setState(() => selectedAddress = address),
                 onAdd: () => showAddressDialog(),
                 onEdit: (address) => showAddressDialog(address: address),
                 onDefault: setDefaultAddress,
@@ -95,30 +102,47 @@ class _CartPageState extends State<CartPage> {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.shopping_cart_outlined, size: 48, color: PawmartColors.neutral300),
+                        Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 48,
+                          color: PawmartColors.neutral300,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           '购物车为空',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: PawmartColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: PawmartColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '先去逛逛，添加喜欢的商品吧',
-                          style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: PawmartColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ...items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _CartItemCard(
-                  item: item,
-                  onIncrease: () => updateQuantity(item, item.quantity + 1),
-                  onDecrease: () => item.quantity > 1 ? updateQuantity(item, item.quantity - 1) : null,
-                  onDelete: () => deleteItem(item),
+              ...items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _CartItemCard(
+                    item: item,
+                    onIncrease: () => updateQuantity(item, item.quantity + 1),
+                    onDecrease:
+                        () =>
+                            item.quantity > 1
+                                ? updateQuantity(item, item.quantity - 1)
+                                : null,
+                    onDelete: () => deleteItem(item),
+                  ),
                 ),
-              )),
+              ),
               if (items.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 // Total Section
@@ -133,7 +157,11 @@ class _CartPageState extends State<CartPage> {
                     children: [
                       Text(
                         '合计',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: PawmartColors.textPrimary,
+                        ),
                       ),
                       const Spacer(),
                       Text(
@@ -161,64 +189,77 @@ class _CartPageState extends State<CartPage> {
         ),
       ),
       // Sticky bottom bar when has items
-      bottomNavigationBar: items.isNotEmpty
-          ? Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              decoration: BoxDecoration(
-                color: PawmartColors.surfaceCard,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF36322E).withAlpha(15),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '合计',
-                            style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
-                          ),
-                          Text(
-                            '¥${total.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: PawmartColors.primary500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      height: 48,
-                      child: FilledButton(
-                        onPressed: canCreateOrder ? createOrder : null,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: canCreateOrder ? PawmartColors.accent400 : PawmartColors.neutral200,
-                          foregroundColor: canCreateOrder ? PawmartColors.textOnAccent : PawmartColors.neutral400,
-                          padding: const EdgeInsets.symmetric(horizontal: 28),
-                        ),
-                        child: Text(
-                          '生成订单',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                        ),
-                      ),
+      bottomNavigationBar:
+          items.isNotEmpty
+              ? Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                decoration: BoxDecoration(
+                  color: PawmartColors.surfaceCard,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF36322E).withAlpha(15),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
                     ),
                   ],
                 ),
-              ),
-            )
-          : null,
+                child: SafeArea(
+                  top: false,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '合计',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: PawmartColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '¥${total.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: PawmartColors.primary500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: canCreateOrder ? createOrder : null,
+                          style: FilledButton.styleFrom(
+                            backgroundColor:
+                                canCreateOrder
+                                    ? PawmartColors.accent400
+                                    : PawmartColors.neutral200,
+                            foregroundColor:
+                                canCreateOrder
+                                    ? PawmartColors.textOnAccent
+                                    : PawmartColors.neutral400,
+                            padding: const EdgeInsets.symmetric(horizontal: 28),
+                          ),
+                          child: Text(
+                            '提交并支付',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              : null,
     );
   }
 
@@ -230,12 +271,19 @@ class _CartPageState extends State<CartPage> {
     try {
       final nextItems = await widget.apiClient.listCartItems();
       final nextAddresses = await widget.apiClient.listAddresses();
-      final defaultAddress = nextAddresses.isNotEmpty && nextAddresses[0].defaultAddress ? nextAddresses[0] : null;
+      final defaultAddress =
+          nextAddresses.isNotEmpty && nextAddresses[0].defaultAddress
+              ? nextAddresses[0]
+              : null;
       final previousSelectedId = selectedAddress?.id;
-      final previousSelected = nextAddresses.where((a) => a.id == previousSelectedId).firstOrNull;
+      final previousSelected =
+          nextAddresses.where((a) => a.id == previousSelectedId).firstOrNull;
       items = nextItems;
       addresses = nextAddresses;
-      selectedAddress = previousSelected ?? defaultAddress ?? (nextAddresses.isEmpty ? null : nextAddresses.first);
+      selectedAddress =
+          previousSelected ??
+          defaultAddress ??
+          (nextAddresses.isEmpty ? null : nextAddresses.first);
     } catch (error) {
       errorText = error.toString();
     } finally {
@@ -272,7 +320,10 @@ class _CartPageState extends State<CartPage> {
         final created = await widget.apiClient.createAddress(payload);
         selectedAddress = created;
       } else {
-        selectedAddress = await widget.apiClient.updateAddress(address.id, payload);
+        selectedAddress = await widget.apiClient.updateAddress(
+          address.id,
+          payload,
+        );
       }
       await load();
     } catch (error) {
@@ -306,12 +357,14 @@ class _CartPageState extends State<CartPage> {
       return;
     }
     try {
-      final order = await widget.apiClient.createOrderFromCart(addressId: address.id);
+      final order = await widget.apiClient.createOrderFromCartAndPay(
+        addressId: address.id,
+      );
       await load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('订单 ${order.orderNo} 已创建')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('订单 ${order.orderNo} 已支付')));
       }
     } catch (error) {
       if (mounted) showError(error);
@@ -319,9 +372,9 @@ class _CartPageState extends State<CartPage> {
   }
 
   void showError(Object error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error.toString())),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(error.toString())));
   }
 }
 
@@ -374,17 +427,28 @@ class _CartItemCard extends StatelessWidget {
               children: [
                 Text(
                   product.name,
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: PawmartColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '¥${product.price.toStringAsFixed(2)} x ${item.quantity}',
-                  style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: PawmartColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '小计：¥${item.subtotal.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.primary500),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: PawmartColors.primary500,
+                  ),
                 ),
               ],
             ),
@@ -402,17 +466,27 @@ class _CartItemCard extends StatelessWidget {
                   icon: const Icon(Icons.remove, size: 16),
                   onPressed: onDecrease,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
                 Text(
                   '${item.quantity}',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: PawmartColors.textPrimary,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add, size: 16),
                   onPressed: onIncrease,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
               ],
             ),
@@ -468,17 +542,28 @@ class _AddressSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, size: 18, color: PawmartColors.primary500),
+              const Icon(
+                Icons.location_on_outlined,
+                size: 18,
+                color: PawmartColors.primary500,
+              ),
               const SizedBox(width: 6),
               Text(
                 '收货地址',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: PawmartColors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: PawmartColors.textPrimary,
+                ),
               ),
               const Spacer(),
               TextButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_location_alt_outlined, size: 16),
-                label: Text('新增', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  '新增',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
@@ -487,47 +572,66 @@ class _AddressSection extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 '暂无收货地址，请新增后再下单。',
-                style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: PawmartColors.textSecondary,
+                ),
               ),
             )
           else
-            ...addresses.map((address) => ListTile(
-              selected: selectedAddress?.id == address.id,
-              selectedTileColor: PawmartColors.primary50,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(pawmartRadiusSm)),
-              dense: true,
-              onTap: () => onSelected(address),
-              leading: Icon(
-                selectedAddress?.id == address.id
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                size: 20,
-                color: selectedAddress?.id == address.id
-                    ? PawmartColors.primary500
-                    : PawmartColors.neutral400,
+            ...addresses.map(
+              (address) => ListTile(
+                selected: selectedAddress?.id == address.id,
+                selectedTileColor: PawmartColors.primary50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(pawmartRadiusSm),
+                ),
+                dense: true,
+                onTap: () => onSelected(address),
+                leading: Icon(
+                  selectedAddress?.id == address.id
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 20,
+                  color:
+                      selectedAddress?.id == address.id
+                          ? PawmartColors.primary500
+                          : PawmartColors.neutral400,
+                ),
+                title: Text(
+                  '${address.receiver}  ${address.phone}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: PawmartColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  address.fullAddress,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: PawmartColors.textSecondary,
+                  ),
+                ),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') onEdit(address);
+                    if (value == 'default') onDefault(address);
+                    if (value == 'delete') onDelete(address);
+                  },
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                        if (!address.defaultAddress)
+                          const PopupMenuItem(
+                            value: 'default',
+                            child: Text('设为默认'),
+                          ),
+                        const PopupMenuItem(value: 'delete', child: Text('删除')),
+                      ],
+                ),
               ),
-              title: Text(
-                '${address.receiver}  ${address.phone}',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: PawmartColors.textPrimary),
-              ),
-              subtitle: Text(
-                address.fullAddress,
-                style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
-              ),
-              trailing: PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') onEdit(address);
-                  if (value == 'default') onDefault(address);
-                  if (value == 'delete') onDelete(address);
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                  if (!address.defaultAddress)
-                    const PopupMenuItem(value: 'default', child: Text('设为默认')),
-                  const PopupMenuItem(value: 'delete', child: Text('删除')),
-                ],
-              ),
-            )),
+            ),
         ],
       ),
     );
@@ -546,12 +650,22 @@ class _AddressDialog extends StatefulWidget {
 }
 
 class _AddressDialogState extends State<_AddressDialog> {
-  late final receiverCtrl = TextEditingController(text: widget.address?.receiver ?? '');
-  late final phoneCtrl = TextEditingController(text: widget.address?.phone ?? '');
-  late final provinceCtrl = TextEditingController(text: widget.address?.province ?? '');
+  late final receiverCtrl = TextEditingController(
+    text: widget.address?.receiver ?? '',
+  );
+  late final phoneCtrl = TextEditingController(
+    text: widget.address?.phone ?? '',
+  );
+  late final provinceCtrl = TextEditingController(
+    text: widget.address?.province ?? '',
+  );
   late final cityCtrl = TextEditingController(text: widget.address?.city ?? '');
-  late final districtCtrl = TextEditingController(text: widget.address?.district ?? '');
-  late final detailCtrl = TextEditingController(text: widget.address?.detail ?? '');
+  late final districtCtrl = TextEditingController(
+    text: widget.address?.district ?? '',
+  );
+  late final detailCtrl = TextEditingController(
+    text: widget.address?.detail ?? '',
+  );
   late bool defaultAddress = widget.address?.defaultAddress ?? true;
 
   @override

@@ -21,7 +21,9 @@ class CartItem {
       productId: json['productId']?.toString() ?? '',
       quantity: NumberParser.toInt(json['quantity']),
       subtotal: NumberParser.toDouble(json['subtotal']),
-      product: Product.fromJson(Map<String, dynamic>.from(json['product'] as Map)),
+      product: Product.fromJson(
+        Map<String, dynamic>.from(json['product'] as Map),
+      ),
     );
   }
 }

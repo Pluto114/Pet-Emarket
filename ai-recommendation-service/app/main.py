@@ -30,7 +30,12 @@ from app.content_generation.copywriting import generate as generate_copy
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用启动/关闭时执行"""
-    app.state.mongo_client = AsyncIOMotorClient(settings.mongodb_uri)
+    app.state.mongo_client = AsyncIOMotorClient(
+        settings.mongodb_uri,
+        serverSelectionTimeoutMS=3000,
+        connectTimeoutMS=3000,
+        socketTimeoutMS=5000,
+    )
     app.state.db = app.state.mongo_client[settings.MONGODB_DB]
     app.state.llm_client = AsyncOpenAI(
         api_key=settings.LLM_API_KEY,
@@ -74,6 +79,7 @@ async def health_check():
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "mongodb": mongo_status,
+        "llm": "configured" if settings.LLM_API_KEY.strip() else "missing_api_key",
     })
 
 
@@ -149,6 +155,12 @@ async def chat(req: ChatRequest):
         system_prompt = GENERAL_SYSTEM_PROMPT
         answer_source = "ai_model"
 
+    if not settings.LLM_API_KEY.strip():
+        return error(
+            "LLM_API_KEY_MISSING",
+            "AI 模型 API Key 未配置，请在 ai-recommendation-service/.env 或项目根 .env 中设置 LLM_API_KEY",
+        )
+
     try:
         llm_response = await app.state.llm_client.chat.completions.create(
             model=settings.LLM_MODEL,
@@ -160,11 +172,8 @@ async def chat(req: ChatRequest):
             max_tokens=500,
         )
         raw_answer = llm_response.choices[0].message.content.strip()
-    except Exception:
-        if has_knowledge:
-            raw_answer = _get_fallback_answer(req.question, docs)
-        else:
-            raw_answer = "抱歉，AI 服务暂时不可用，请稍后重试。"
+    except Exception as exc:
+        return error("LLM_UNAVAILABLE", f"AI 模型服务暂时不可用：{exc}")
 
     # Step 5: 给回答加上来源标识
     if answer_source == "knowledge_base":
@@ -201,22 +210,11 @@ def _get_business_answer(question: str) -> str:
     return BUSINESS_RESPONSES["default"]
 
 
-def _get_fallback_answer(question: str, docs: list) -> str:
-    """LLM 不可用时的回退回答"""
-    if not docs:
-        return "抱歉，我目前没有找到与您问题相关的资料。请尝试换一种方式提问，或联系平台客服获取帮助。"
-
-    parts = [f"根据资料库，关于「{question}」的相关信息如下：\n"]
-    for doc in docs:
-        parts.append(f"• {doc['title']}：{doc['content']}")
-    return "\n".join(parts)
-
-
 # ---- /recommend — 混合推荐 ----
 
 @app.post("/api/v1/recommend")
 async def recommend(req: RecommendRequest):
-    """混合推荐接口 — Item-CF + 马尔可夫链 + 热门兜底"""
+    """混合推荐接口 — Item-CF + 马尔可夫链 + 真实商品冷启动"""
     items = []
 
     # Step 1: Item-CF 协同过滤
@@ -239,18 +237,88 @@ async def recommend(req: RecommendRequest):
     except Exception:
         pass
 
-    # Step 3: 热门兜底（无结果时返回 mock 热门）
+    # Step 3: 用真实商品补全名称；无算法结果时从 MongoDB 商品集合冷启动
+    items = await _hydrate_recommendation_products(app.state.db, items)
     if not items:
-        items = [
-            RecommendItem(productId="prod_001", productName="英短蓝猫幼崽（3个月）", score=0.92, reasons=["热门活体宠物 Top 10"]),
-            RecommendItem(productId="prod_002", productName="皇家幼猫粮 2kg", score=0.85, reasons=["养宠必备好物"]),
-            RecommendItem(productId="prod_004", productName="金毛幼犬（2个月）", score=0.80, reasons=["热门活体推荐"]),
-            RecommendItem(productId="prod_003", productName="猫抓板 大号", score=0.75, reasons=["养猫必备用品"]),
-            RecommendItem(productId="prod_005", productName="狗狗磨牙棒 套装", score=0.70, reasons=["铲屎官都在买"]),
-        ]
+        items = await _popular_products_from_db(app.state.db, req.limit)
 
     items.sort(key=lambda x: x.score, reverse=True)
     return success(RecommendResponse(recommendations=items[:req.limit]).model_dump())
+
+
+async def _hydrate_recommendation_products(db, items: list[RecommendItem]) -> list[RecommendItem]:
+    if not items:
+        return []
+    ids = [item.productId for item in items if item.productId]
+    if not ids:
+        return items
+    try:
+        docs = await db["products"].find({
+            "$or": [
+                {"_id": {"$in": ids}},
+                {"id": {"$in": ids}},
+                {"productId": {"$in": ids}},
+            ]
+        }).to_list(length=len(ids))
+    except Exception:
+        return items
+
+    products = {}
+    for doc in docs:
+        pid = _product_id(doc)
+        if pid:
+            products[pid] = doc
+    for item in items:
+        doc = products.get(item.productId)
+        if doc and not item.productName:
+            item.productName = _product_name(doc)
+    return items
+
+
+async def _popular_products_from_db(db, limit: int) -> list[RecommendItem]:
+    try:
+        docs = await db["products"].aggregate([
+            {"$match": {
+                "$or": [
+                    {"status": {"$exists": False}},
+                    {"status": {"$in": ["ON_SALE", "APPROVED", "ACTIVE"]}},
+                ]
+            }},
+            {"$addFields": {
+                "rankScore": {
+                    "$add": [
+                        {"$ifNull": ["$sales", 0]},
+                        {"$ifNull": ["$viewCount", 0]},
+                        {"$ifNull": ["$stock", 0]},
+                    ]
+                }
+            }},
+            {"$sort": {"rankScore": -1, "createdAt": -1}},
+            {"$limit": limit},
+        ]).to_list(length=limit)
+    except Exception:
+        return []
+
+    recommendations = []
+    for index, doc in enumerate(docs):
+        pid = _product_id(doc)
+        if not pid:
+            continue
+        recommendations.append(RecommendItem(
+            productId=pid,
+            productName=_product_name(doc),
+            score=round(max(0.1, 0.8 - index * 0.04), 3),
+            reasons=["真实商品冷启动：按销量、浏览量和库存排序"],
+        ))
+    return recommendations
+
+
+def _product_id(doc: dict) -> str:
+    return str(doc.get("productId") or doc.get("id") or doc.get("_id") or "")
+
+
+def _product_name(doc: dict) -> str:
+    return str(doc.get("productName") or doc.get("name") or doc.get("title") or "")
 
 
 # ---- /stores/nearby — LBS 附近商店 ----

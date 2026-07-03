@@ -1,6 +1,7 @@
 package com.petemarket.server.product;
 
 import com.petemarket.server.common.BusinessException;
+import com.petemarket.server.order.OrderRepository;
 import com.petemarket.server.store.StoreService;
 import com.petemarket.server.user.UserAccount;
 import com.petemarket.server.user.UserRole;
@@ -15,10 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
     private final ProductRepository productRepository;
     private final StoreService storeService;
+    private final OrderRepository orderRepository;
 
-    public ProductService(ProductRepository productRepository, StoreService storeService) {
+    public ProductService(ProductRepository productRepository,
+                          StoreService storeService,
+                          OrderRepository orderRepository) {
         this.productRepository = productRepository;
         this.storeService = storeService;
+        this.orderRepository = orderRepository;
     }
 
     @Transactional(readOnly = true)
@@ -33,9 +38,11 @@ public class ProductService {
                     keyword
             );
         }
+        ProductStatus effectiveStatus = status == null ? ProductStatus.ON_SALE : status;
         return products.stream()
                 .filter(product -> type == null || product.getType() == type)
-                .filter(product -> status == null || product.getStatus() == status)
+                .filter(product -> product.getStatus() == effectiveStatus)
+                .filter(product -> product.getStock() != null && product.getStock() > 0)
                 .map(ProductResponse::from)
                 .toList();
     }
@@ -62,6 +69,14 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductResponse get(Long id) {
         return ProductResponse.from(find(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductReviewResponse> reviews(Long id) {
+        Product product = find(id);
+        return orderRepository.findReviewedOrdersByProductId(product.getId()).stream()
+                .map(ProductReviewResponse::from)
+                .toList();
     }
 
     @Transactional
@@ -98,7 +113,9 @@ public class ProductService {
             throw new BusinessException("200400", "Only live pet products require audit");
         }
         product.setAuditStatus(approved ? ProductAuditStatus.APPROVED : ProductAuditStatus.REJECTED);
-        product.setStatus(approved ? ProductStatus.ON_SALE : ProductStatus.OFF_SALE);
+        product.setStatus(approved && product.getStock() != null && product.getStock() > 0
+                ? ProductStatus.ON_SALE
+                : ProductStatus.OFF_SALE);
         product.setAuditRemark(defaultText(remark, approved ? "Audit approved" : "Audit rejected"));
         product.setAuditedBy(auditorId);
         product.setAuditedAt(Instant.now());
@@ -142,6 +159,14 @@ public class ProductService {
             product.setStock(1);
         }
         applyAuditDefaults(product);
+        enforceStockStatus(product);
+    }
+
+    private void enforceStockStatus(Product product) {
+        if (product.getStock() == null || product.getStock() <= 0) {
+            product.setStock(0);
+            product.setStatus(ProductStatus.OFF_SALE);
+        }
     }
 
     private void applyAuditDefaults(Product product) {

@@ -29,22 +29,4 @@ class SessionStore extends ChangeNotifier {
     _user = null;
     notifyListeners();
   }
-
-  /// Local preview fallback only. Prefer real quick-login buttons in AuthPage.
-  void devBypass({String role = 'CUSTOMER'}) {
-    final normalizedRole =
-        role == 'ADMIN' || role == 'MERCHANT' ? role : 'CUSTOMER';
-    _token = 'dev-token-${DateTime.now().millisecondsSinceEpoch}';
-    _user = AppUser(
-      id: 'dev-${normalizedRole.toLowerCase()}-001',
-      username: normalizedRole.toLowerCase(),
-      displayName: 'Dev $normalizedRole',
-      role: normalizedRole,
-      memberLevel: normalizedRole == 'CUSTOMER' ? 'NORMAL' : 'VIP',
-      status: 'ACTIVE',
-      phone: '18800000000',
-      email: '${normalizedRole.toLowerCase()}@petemarket.dev',
-    );
-    notifyListeners();
-  }
 }

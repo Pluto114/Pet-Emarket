@@ -29,13 +29,13 @@ public class EmailVerificationService {
     public EmailCodeResponse sendRegisterCode(SendEmailCodeRequest request) {
         String email = normalizeEmail(request.email());
         if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new BusinessException("100005", "Email already exists");
+            throw new BusinessException("100005", "该邮箱已注册，请直接登录或更换邮箱");
         }
 
         Instant now = Instant.now();
         VerificationCode existing = codes.get(email);
         if (existing != null && existing.sentAt().plus(SEND_COOLDOWN).isAfter(now)) {
-            throw new BusinessException("100006", "Please wait before requesting another email code");
+            throw new BusinessException("100006", "验证码请求过于频繁，请稍后再试");
         }
 
         String code = "%06d".formatted(secureRandom.nextInt(1_000_000));
@@ -55,20 +55,20 @@ public class EmailVerificationService {
         Instant now = Instant.now();
 
         if (slot == null) {
-            throw new BusinessException("100007", "Email code is required");
+            throw new BusinessException("100007", "请先获取邮箱验证码");
         }
         if (slot.expiresAt().isBefore(now)) {
             codes.remove(email);
-            throw new BusinessException("100008", "Email code expired");
+            throw new BusinessException("100008", "邮箱验证码已过期，请重新获取");
         }
         if (!slot.code().equals(code)) {
             int attempts = slot.attempts() + 1;
             if (attempts >= MAX_ATTEMPTS) {
                 codes.remove(email);
-                throw new BusinessException("100009", "Email code attempts exceeded");
+                throw new BusinessException("100009", "验证码错误次数过多，请重新获取");
             }
             codes.put(email, new VerificationCode(slot.code(), slot.expiresAt(), slot.sentAt(), attempts));
-            throw new BusinessException("100010", "Invalid email code");
+            throw new BusinessException("100010", "邮箱验证码不正确");
         }
 
         codes.remove(email);

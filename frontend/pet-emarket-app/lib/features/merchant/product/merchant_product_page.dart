@@ -59,22 +59,72 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  '商品管理',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              Text(
+                '商品管理',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              FilledButton.icon(
-                onPressed: () => _showDialog(),
-                icon: const Icon(Icons.add),
-                label: const Text('添加商品'),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.icon(
+                  onPressed: () => _showDialog(),
+                  icon: const Icon(Icons.publish),
+                  label: const Text('发布商品'),
+                ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        child: Icon(
+                          Icons.storefront,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '发布后会进入真实商品库',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '填写封面图片 URL、简介、价格和库存；选择“在售”后会展示在用户首页。库存为 0 会自动下架。',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.icon(
+                      onPressed: () => _showDialog(),
+                      icon: const Icon(Icons.add_business),
+                      label: const Text('发布新商品'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -147,7 +197,7 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '点击上方按钮添加您的第一个商品',
+                      '点击“发布商品”填写封面、简介、库存并选择上架状态。',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -157,54 +207,140 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
               ),
             ),
           if (!loading && errorText == null)
-            ...products.map(
-              (p) => Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        p.isLivePet
-                            ? const Color(0xFF7C4DFF).withAlpha(25)
-                            : theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      p.isLivePet ? Icons.pets : Icons.shopping_bag,
-                      color:
-                          p.isLivePet
-                              ? const Color(0xFF7C4DFF)
-                              : theme.colorScheme.primary,
-                      size: 20,
+            ...products.map((p) => _productManageCard(p, theme)),
+        ],
+      ),
+    );
+  }
+
+  Widget _productManageCard(Product product, ThemeData theme) {
+    final soldOut = product.stock <= 0;
+    final onSale = product.status == 'ON_SALE' && !soldOut;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _productThumb(product, theme),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      _statusChip(soldOut ? 'SOLD_OUT' : product.status),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${product.type == 'PET_LIVE' ? '活体宠物' : '周边商品'} | ${product.category} | ¥${product.price.toStringAsFixed(2)} | 库存 ${product.stock}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  title: Text(
-                    p.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${p.type == 'PET_LIVE' ? '活体宠物' : '周边商品'} | ${p.category} | ¥${p.price.toStringAsFixed(2)} | 库存 ${p.stock}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _statusChip(p.status),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 20),
-                        onPressed: () => _showDialog(product: p),
+                  if (product.description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      product.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                  if (soldOut) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '库存为 0，系统已按下架处理；补充库存后可重新上架。',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w600,
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          size: 20,
-                          color: Colors.red,
-                        ),
-                        onPressed: () => _delete(p),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed:
+                            !onSale && !soldOut
+                                ? () => _changeStatus(product, 'ON_SALE')
+                                : null,
+                        icon: const Icon(Icons.arrow_upward, size: 16),
+                        label: const Text('上架到首页'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed:
+                            product.status != 'OFF_SALE'
+                                ? () => _changeStatus(product, 'OFF_SALE')
+                                : null,
+                        icon: const Icon(Icons.arrow_downward, size: 16),
+                        label: const Text('下架'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => _showDialog(product: product),
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        label: const Text('编辑图片/简介/库存'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _delete(product),
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        label: const Text('删除'),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _productThumb(Product product, ThemeData theme) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 96,
+        height: 96,
+        color:
+            product.isLivePet
+                ? const Color(0xFF7C4DFF).withAlpha(18)
+                : theme.colorScheme.primaryContainer,
+        child:
+            product.coverUrl.isNotEmpty
+                ? Image.network(
+                  product.coverUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (_, __, ___) => _productFallbackIcon(product, theme),
+                )
+                : _productFallbackIcon(product, theme),
+      ),
+    );
+  }
+
+  Widget _productFallbackIcon(Product product, ThemeData theme) {
+    return Icon(
+      product.isLivePet ? Icons.pets : Icons.shopping_bag,
+      color:
+          product.isLivePet
+              ? const Color(0xFF7C4DFF)
+              : theme.colorScheme.primary,
+      size: 30,
     );
   }
 
@@ -228,6 +364,11 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
         bg = Colors.orange.withAlpha(25);
         fg = Colors.orange;
         label = '下架';
+        break;
+      case 'SOLD_OUT':
+        bg = Colors.red.withAlpha(25);
+        fg = Colors.red;
+        label = '售罄下架';
         break;
       default:
         bg = theme.colorScheme.surfaceContainerHighest;
@@ -256,7 +397,7 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
     try {
       if (product == null) {
         await widget.apiClient.createProduct(result);
-        if (mounted) showSuccess(context, '商品创建成功');
+        if (mounted) showSuccess(context, '商品已发布');
       } else {
         await widget.apiClient.updateProduct(product.id, result);
         if (mounted) showSuccess(context, '商品更新成功');
@@ -265,6 +406,56 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
     } catch (e) {
       if (mounted) showError(context, e.toString());
     }
+  }
+
+  Future<void> _changeStatus(Product product, String status) async {
+    if (status == 'ON_SALE' && product.stock <= 0) {
+      showError(context, '库存为 0，补充库存后才能上架');
+      return;
+    }
+    try {
+      await widget.apiClient.updateProduct(
+        product.id,
+        _productPayload(product, status),
+      );
+      await load();
+      if (mounted) {
+        showSuccess(
+          context,
+          status == 'ON_SALE'
+              ? '${product.name} 已上架到首页'
+              : '${product.name} 已下架',
+        );
+      }
+    } catch (e) {
+      if (mounted) showError(context, e.toString());
+    }
+  }
+
+  Map<String, dynamic> _productPayload(Product product, String status) {
+    return {
+      'name': product.name,
+      'type': product.type,
+      'category': product.category,
+      'price': product.price,
+      'stock': product.stock,
+      'status': status,
+      'description': product.description,
+      'coverUrl': product.coverUrl,
+      if (product.isLivePet)
+        'petCode': product.livePet?['petCode']?.toString() ?? '',
+      if (product.isLivePet)
+        'breed': product.livePet?['breed']?.toString() ?? '',
+      if (product.isLivePet)
+        'healthStatus': product.livePet?['healthStatus']?.toString() ?? '',
+      if (product.isLivePet)
+        'vaccineCertNo': product.livePet?['vaccineCertNo']?.toString() ?? '',
+      if (product.isLivePet)
+        'quarantineCertNo':
+            product.livePet?['quarantineCertNo']?.toString() ?? '',
+      if (product.isLivePet)
+        'traceSource': product.livePet?['traceSource']?.toString() ?? '',
+    };
   }
 
   Future<void> _delete(Product p) async {
@@ -307,6 +498,9 @@ class _ProductDialogState extends State<_ProductDialog> {
   late final descCtrl = TextEditingController(
     text: widget.product?.description ?? '',
   );
+  late final coverUrlCtrl = TextEditingController(
+    text: widget.product?.coverUrl ?? '',
+  );
   late final petCodeCtrl = TextEditingController(
     text: widget.product?.livePet?['petCode']?.toString() ?? '',
   );
@@ -336,6 +530,7 @@ class _ProductDialogState extends State<_ProductDialog> {
     priceCtrl.dispose();
     stockCtrl.dispose();
     descCtrl.dispose();
+    coverUrlCtrl.dispose();
     petCodeCtrl.dispose();
     healthCtrl.dispose();
     vaccineCtrl.dispose();
@@ -346,7 +541,7 @@ class _ProductDialogState extends State<_ProductDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.product == null ? '添加商品' : '编辑商品'),
+      title: Text(widget.product == null ? '发布商品' : '编辑商品'),
       content: SizedBox(
         width: 500,
         child: SingleChildScrollView(
@@ -380,9 +575,12 @@ class _ProductDialogState extends State<_ProductDialog> {
                       initialValue: status,
                       decoration: const InputDecoration(labelText: '状态'),
                       items: const [
-                        DropdownMenuItem(value: 'DRAFT', child: Text('草稿')),
-                        DropdownMenuItem(value: 'ON_SALE', child: Text('在售')),
-                        DropdownMenuItem(value: 'OFF_SALE', child: Text('下架')),
+                        DropdownMenuItem(value: 'ON_SALE', child: Text('立即上架')),
+                        DropdownMenuItem(value: 'DRAFT', child: Text('保存草稿')),
+                        DropdownMenuItem(
+                          value: 'OFF_SALE',
+                          child: Text('下架隐藏'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => status = v ?? status),
                     ),
@@ -419,6 +617,19 @@ class _ProductDialogState extends State<_ProductDialog> {
                 controller: descCtrl,
                 decoration: const InputDecoration(labelText: '描述'),
                 maxLines: 2,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: coverUrlCtrl,
+                decoration: const InputDecoration(labelText: '封面图片 URL'),
+              ),
+              const SizedBox(height: 8),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '提示：库存为 0 时系统会自动下架，补库存后再选择“立即上架”。',
+                  style: TextStyle(fontSize: 12, color: Colors.orange),
+                ),
               ),
               if (type == 'PET_LIVE') ...[
                 const Divider(height: 24),
@@ -467,6 +678,7 @@ class _ProductDialogState extends State<_ProductDialog> {
               'stock': int.tryParse(stockCtrl.text) ?? 0,
               'status': status,
               'description': descCtrl.text.trim(),
+              'coverUrl': coverUrlCtrl.text.trim(),
               if (type == 'PET_LIVE') 'petCode': petCodeCtrl.text.trim(),
               if (type == 'PET_LIVE') 'healthStatus': healthCtrl.text.trim(),
               if (type == 'PET_LIVE') 'vaccineCertNo': vaccineCtrl.text.trim(),
@@ -475,7 +687,7 @@ class _ProductDialogState extends State<_ProductDialog> {
             };
             Navigator.pop(context, payload);
           },
-          child: const Text('保存'),
+          child: Text(widget.product == null ? '发布商品' : '保存修改'),
         ),
       ],
     );

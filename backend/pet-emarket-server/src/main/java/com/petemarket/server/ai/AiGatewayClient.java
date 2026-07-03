@@ -1,13 +1,15 @@
 package com.petemarket.server.ai;
 
+import com.petemarket.server.common.BusinessException;
 import com.petemarket.server.config.PetEmarketProperties;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,10 +23,10 @@ public class AiGatewayClient {
         this.restTemplateBuilder = restTemplateBuilder;
     }
 
-    public Optional<AiChatResponse> chat(AiChatRequest request) {
+    public AiChatResponse chat(AiChatRequest request) {
         PetEmarketProperties.AiService config = properties.getAiService();
         if (!config.isEnabled()) {
-            return Optional.empty();
+            throw new BusinessException("AI_DISABLED", "AI gateway is disabled", HttpStatus.SERVICE_UNAVAILABLE);
         }
         try {
             RestTemplate restTemplate = restTemplateBuilder
@@ -39,23 +41,36 @@ public class AiGatewayClient {
             );
             Map<?, ?> response = restTemplate.postForObject("/api/v1/chat", payload, Map.class);
             return parseResponse(response);
+        } catch (HttpStatusCodeException exception) {
+            throw new BusinessException(
+                    "AI_GATEWAY_HTTP_ERROR",
+                    "AI gateway returned HTTP " + exception.getStatusCode().value() + ": " + exception.getResponseBodyAsString(),
+                    HttpStatus.BAD_GATEWAY);
         } catch (RestClientException | ClassCastException exception) {
-            return Optional.empty();
+            throw new BusinessException("AI_GATEWAY_UNAVAILABLE", "AI gateway unavailable: " + exception.getMessage(), HttpStatus.BAD_GATEWAY);
         }
     }
 
-    private Optional<AiChatResponse> parseResponse(Map<?, ?> response) {
-        if (response == null || Boolean.FALSE.equals(response.get("success"))) {
-            return Optional.empty();
+    private AiChatResponse parseResponse(Map<?, ?> response) {
+        if (response == null) {
+            throw new BusinessException("AI_GATEWAY_INVALID_RESPONSE", "AI gateway returned an error", HttpStatus.BAD_GATEWAY);
+        }
+        if (Boolean.FALSE.equals(response.get("success"))) {
+            String code = text(response.get("code"));
+            String message = text(response.get("message"));
+            throw new BusinessException(
+                    code.isBlank() ? "AI_GATEWAY_ERROR" : code,
+                    message.isBlank() ? "AI gateway returned an error" : message,
+                    HttpStatus.BAD_GATEWAY);
         }
         Object dataValue = response.get("data");
         if (!(dataValue instanceof Map<?, ?> data)) {
-            return Optional.empty();
+            throw new BusinessException("AI_GATEWAY_INVALID_RESPONSE", "AI gateway returned invalid data", HttpStatus.BAD_GATEWAY);
         }
         String answer = text(data.get("answer"));
         String disclaimer = text(data.get("disclaimer"));
         if (answer.isBlank()) {
-            return Optional.empty();
+            throw new BusinessException("AI_GATEWAY_EMPTY_ANSWER", "AI gateway returned empty answer", HttpStatus.BAD_GATEWAY);
         }
         if (!disclaimer.isBlank() && !answer.contains(disclaimer)) {
             answer = answer + "\n\n" + disclaimer;
@@ -64,7 +79,7 @@ public class AiGatewayClient {
         List<String> knowledgeTags = knowledgeTags(data.get("sources"), answerSource);
         List<String> recommendedActions = recommendedActions(data.get("relatedProducts"), answerSource);
         boolean healthWarning = !disclaimer.isBlank() || answer.contains("兽医");
-        return Optional.of(new AiChatResponse(answer, knowledgeTags, recommendedActions, healthWarning));
+        return new AiChatResponse(answer, knowledgeTags, recommendedActions, healthWarning);
     }
 
     private List<String> knowledgeTags(Object sourcesValue, String answerSource) {

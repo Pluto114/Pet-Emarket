@@ -43,27 +43,54 @@ class AdminDashboard {
       productCount: NumberParser.toInt(json['productCount']),
       onSaleProductCount: NumberParser.toInt(json['onSaleProductCount']),
       livePetCount: NumberParser.toInt(json['livePetCount']),
-      pendingLivePetAuditCount: NumberParser.toInt(json['pendingLivePetAuditCount']),
+      pendingLivePetAuditCount: NumberParser.toInt(
+        json['pendingLivePetAuditCount'],
+      ),
       storeCount: NumberParser.toInt(json['storeCount']),
       openStoreCount: NumberParser.toInt(json['openStoreCount']),
       orderCount: NumberParser.toInt(json['orderCount']),
       refundPendingCount: NumberParser.toInt(json['refundPendingCount']),
       totalPayAmount: NumberParser.toDouble(json['totalPayAmount']),
-      orderStatusDistribution: (json['orderStatusDistribution'] is List)
-          ? (json['orderStatusDistribution'] as List).map((item) => OrderStatusCount.fromJson(Map<String, dynamic>.from(item as Map))).toList()
-          : const [],
-      topProducts: (json['topProducts'] is List)
-          ? (json['topProducts'] as List).map((item) => TopProduct.fromJson(Map<String, dynamic>.from(item as Map))).toList()
-          : const [],
-      recentOrders: (json['recentOrders'] is List)
-          ? (json['recentOrders'] as List).map((item) => DashboardOrder.fromJson(Map<String, dynamic>.from(item as Map))).toList()
-          : const [],
+      orderStatusDistribution:
+          (json['orderStatusDistribution'] is List)
+              ? (json['orderStatusDistribution'] as List)
+                  .map(
+                    (item) => OrderStatusCount.fromJson(
+                      Map<String, dynamic>.from(item as Map),
+                    ),
+                  )
+                  .toList()
+              : const [],
+      topProducts:
+          (json['topProducts'] is List)
+              ? (json['topProducts'] as List)
+                  .map(
+                    (item) => TopProduct.fromJson(
+                      Map<String, dynamic>.from(item as Map),
+                    ),
+                  )
+                  .toList()
+              : const [],
+      recentOrders:
+          (json['recentOrders'] is List)
+              ? (json['recentOrders'] as List)
+                  .map(
+                    (item) => DashboardOrder.fromJson(
+                      Map<String, dynamic>.from(item as Map),
+                    ),
+                  )
+                  .toList()
+              : const [],
     );
   }
 }
 
 class OrderStatusCount {
-  const OrderStatusCount({required this.status, required this.statusName, required this.count});
+  const OrderStatusCount({
+    required this.status,
+    required this.statusName,
+    required this.count,
+  });
 
   final int status;
   final String statusName;
@@ -79,7 +106,13 @@ class OrderStatusCount {
 }
 
 class TopProduct {
-  const TopProduct({required this.productId, required this.productName, required this.category, required this.quantity, required this.amount});
+  const TopProduct({
+    required this.productId,
+    required this.productName,
+    required this.category,
+    required this.quantity,
+    required this.amount,
+  });
 
   final String productId;
   final String productName;

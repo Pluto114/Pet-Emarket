@@ -55,6 +55,11 @@ public class ProductController {
         return ApiResponse.ok(productService.get(id));
     }
 
+    @GetMapping("/{id}/reviews")
+    public ApiResponse<PageData<ProductReviewResponse>> reviews(@PathVariable Long id) {
+        return ApiResponse.ok(PageData.of(productService.reviews(id)));
+    }
+
     @PostMapping
     public ApiResponse<ProductResponse> create(@AuthenticationPrincipal UserAccount currentUser,
                                                @Valid @RequestBody UpsertProductRequest request) {

@@ -293,10 +293,16 @@ class _ProductsPageState extends State<ProductsPage> {
       errorText = null;
     });
     try {
-      products = await widget.apiClient.listProducts(
-        keyword: keywordController.text,
-        type: widget.filterType,
-      );
+      products =
+          canManage
+              ? await widget.apiClient.listManagedProducts(
+                keyword: keywordController.text,
+                type: widget.filterType,
+              )
+              : await widget.apiClient.listProducts(
+                keyword: keywordController.text,
+                type: widget.filterType,
+              );
     } catch (error) {
       errorText = error.toString();
     } finally {
@@ -368,6 +374,7 @@ class _ProductDialogState extends State<_ProductDialog> {
   late final TextEditingController price;
   late final TextEditingController stock;
   late final TextEditingController description;
+  late final TextEditingController coverUrl;
   late final TextEditingController petCode;
   late final TextEditingController healthStatus;
   late final TextEditingController vaccineCertNo;
@@ -384,6 +391,7 @@ class _ProductDialogState extends State<_ProductDialog> {
     price = TextEditingController(text: p?.price.toString() ?? '');
     stock = TextEditingController(text: p?.stock.toString() ?? '');
     description = TextEditingController(text: p?.description ?? '');
+    coverUrl = TextEditingController(text: p?.coverUrl ?? '');
     petCode = TextEditingController(
       text: p?.livePet?['petCode']?.toString() ?? '',
     );
@@ -398,6 +406,21 @@ class _ProductDialogState extends State<_ProductDialog> {
     );
     type = p?.type ?? 'GOODS';
     status = p?.status ?? 'ON_SALE';
+  }
+
+  @override
+  void dispose() {
+    name.dispose();
+    category.dispose();
+    price.dispose();
+    stock.dispose();
+    description.dispose();
+    coverUrl.dispose();
+    petCode.dispose();
+    healthStatus.dispose();
+    vaccineCertNo.dispose();
+    quarantineCertNo.dispose();
+    super.dispose();
   }
 
   @override
@@ -486,6 +509,11 @@ class _ProductDialogState extends State<_ProductDialog> {
                 decoration: const InputDecoration(labelText: '描述'),
                 maxLines: 3,
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: coverUrl,
+                decoration: const InputDecoration(labelText: '封面图片 URL'),
+              ),
               if (type == 'PET_LIVE') ...[
                 const SizedBox(height: 14),
                 TextField(
@@ -530,6 +558,7 @@ class _ProductDialogState extends State<_ProductDialog> {
               'stock': int.tryParse(stock.text) ?? 0,
               'status': status,
               'description': description.text.trim(),
+              'coverUrl': coverUrl.text.trim(),
               if (type == 'PET_LIVE') 'petCode': petCode.text.trim(),
               if (type == 'PET_LIVE') 'healthStatus': healthStatus.text.trim(),
               if (type == 'PET_LIVE')
@@ -563,11 +592,16 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
+  late Product product;
+  List<ProductReview> reviews = [];
+  String? reviewError;
   int _qty = 1;
 
   @override
   void initState() {
     super.initState();
+    product = widget.product;
+    _loadProductDetail();
     widget.apiClient
         .trackBehavior(
           productId: widget.product.id,
@@ -577,9 +611,29 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         .catchError((_) {});
   }
 
+  Future<void> _loadProductDetail() async {
+    try {
+      final nextProduct = await widget.apiClient.getProduct(widget.product.id);
+      final nextReviews = await widget.apiClient.listProductReviews(
+        widget.product.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        product = nextProduct;
+        reviews = nextReviews;
+        reviewError = null;
+        if (_qty > product.stock) {
+          _qty = product.stock <= 0 ? 1 : product.stock;
+        }
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => reviewError = error.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
     final w = MediaQuery.of(context).size.width;
     final wide = w > 800;
 
@@ -608,13 +662,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               color: PawmartColors.primary50,
               borderRadius: BorderRadius.circular(pawmartRadiusLg),
             ),
-            child: Center(
-              child: Icon(
-                product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined,
-                size: wide ? 100 : 72,
-                color: PawmartColors.primary300,
-              ),
-            ),
+            child:
+                product.coverUrl.isNotEmpty
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(pawmartRadiusLg),
+                      child: Image.network(
+                        product.coverUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder:
+                            (_, __, ___) => _detailIcon(product, wide),
+                      ),
+                    )
+                    : _detailIcon(product, wide),
           ),
           const SizedBox(height: 20),
 
@@ -827,7 +888,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.add, size: 18),
-                      onPressed: () => setState(() => _qty++),
+                      onPressed:
+                          _qty < product.stock
+                              ? () => setState(() => _qty++)
+                              : null,
                     ),
                   ],
                 ),
@@ -845,7 +909,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           const SizedBox(height: 20),
 
           // ——— Reviews Section ———
-          pawmartSectionHeader('商品评价 (12)', actionLabel: '查看全部'),
+          pawmartSectionHeader('商品评价 (${reviews.length})'),
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
@@ -857,53 +921,35 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: PawmartColors.primary100,
-                      child: const Icon(
-                        Icons.person,
-                        size: 16,
-                        color: PawmartColors.primary500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '宠物爱好者',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: PawmartColors.textPrimary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(
-                        5,
-                        (i) => Icon(
-                          i < 5
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          size: 16,
-                          color: PawmartColors.accent400,
+              children:
+                  reviewError != null
+                      ? [
+                        Text(
+                          reviewError!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: PawmartColors.error,
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '质量很好，物流很快，毛孩子非常喜欢！推荐购买。',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: PawmartColors.textSecondary,
-                    height: 1.5,
-                  ),
-                ),
-              ],
+                      ]
+                      : reviews.isEmpty
+                      ? [
+                        Text(
+                          '暂无真实评价',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: PawmartColors.textSecondary,
+                          ),
+                        ),
+                      ]
+                      : reviews
+                          .map(
+                            (review) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _reviewItem(review),
+                            ),
+                          )
+                          .toList(),
             ),
           ),
         ],
@@ -991,6 +1037,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
+  Widget _detailIcon(Product product, bool wide) {
+    return Center(
+      child: Icon(
+        product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined,
+        size: wide ? 100 : 72,
+        color: PawmartColors.primary300,
+      ),
+    );
+  }
+
   Widget _infoRow(String label, String value) {
     return Row(
       children: [
@@ -1009,6 +1065,58 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               fontWeight: FontWeight.w600,
               color: PawmartColors.textPrimary,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _reviewItem(ProductReview review) {
+    final rating = review.rating.clamp(0, 5);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: PawmartColors.primary100,
+              child: const Icon(
+                Icons.person,
+                size: 16,
+                color: PawmartColors.primary500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '用户 ${review.userId}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: PawmartColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(
+                5,
+                (i) => Icon(
+                  i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  size: 16,
+                  color: PawmartColors.accent400,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          review.content.isEmpty ? '用户未填写文字评价' : review.content,
+          style: TextStyle(
+            fontSize: 13,
+            color: PawmartColors.textSecondary,
+            height: 1.5,
           ),
         ),
       ],
