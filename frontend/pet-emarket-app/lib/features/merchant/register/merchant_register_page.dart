@@ -23,9 +23,11 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  String _city = '杭州';
+  String _province = '浙江省';
+  String _city = '杭州市';
   String _district = '西湖区';
-  List<String> _districts = CityData.districtsOf('杭州');
+  List<String> _cities = CityData.citiesOf('浙江省');
+  List<String> _districts = CityData.districtsOf('浙江省', '杭州市');
   final _addressCtrl = TextEditingController();
   final _longitudeCtrl = TextEditingController(text: '120.1551');
   final _latitudeCtrl = TextEditingController(text: '30.2741');
@@ -48,9 +50,17 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   }
 
   Future<void> _openMapPicker() async {
-    final coord = CityData.cityCoord(_city);
+    double lng = CityData.cityCoord(_province, _city)[0];
+    double lat = CityData.cityCoord(_province, _city)[1];
+    // 尝试通过高德正地理编码获取更精确坐标
+    try {
+      final addr = CityData.addressForGeocode(_province, _city, _district);
+      final geo = await widget.apiClient.geocode(addr);
+      lng = geo.longitude;
+      lat = geo.latitude;
+    } catch (_) {}
     final result = await Navigator.push<MapPickerResult>(context, MaterialPageRoute(
-      builder: (_) => MapPickerPage(apiClient: widget.apiClient, lng: coord[0], lat: coord[1]),
+      builder: (_) => MapPickerPage(apiClient: widget.apiClient, lng: lng, lat: lat),
     ));
     if (result == null) return;
     _longitudeCtrl.text = result.longitude.toString();
@@ -65,6 +75,7 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
       final user = widget.sessionStore.user;
       await widget.apiClient.submitMerchantApplication({
         'storeName': _nameCtrl.text.trim(),
+        'province': _province,
         'city': _city,
         'district': _district,
         'address': _addressCtrl.text.trim(),
@@ -176,17 +187,24 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                   ),
                   const SizedBox(height: 14),
                   Row(children: [
-                    Expanded(child: DropdownButtonFormField<String>(
-                      value: _city,
-                      decoration: const InputDecoration(labelText: '城市 *', prefixIcon: Icon(Icons.location_city)),
-                      items: CityData.cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) { setState(() { _city = v!; _districts = CityData.districtsOf(_city); _district = _districts.first; }); },
+                    Expanded(flex: 3, child: DropdownButtonFormField<String>(
+                      value: _province,
+                      decoration: const InputDecoration(labelText: '省', prefixIcon: Icon(Icons.public), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+                      items: CityData.provinces.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+                      onChanged: (v) { setState(() { _province = v!; _cities = CityData.citiesOf(_province); _city = _cities.first; _districts = CityData.districtsOf(_province, _city); _district = _districts.first; }); },
                     )),
-                    const SizedBox(width: 14),
-                    Expanded(child: DropdownButtonFormField<String>(
+                    const SizedBox(width: 8),
+                    Expanded(flex: 3, child: DropdownButtonFormField<String>(
+                      value: _city,
+                      decoration: const InputDecoration(labelText: '市', prefixIcon: Icon(Icons.location_city), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+                      items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
+                      onChanged: (v) { setState(() { _city = v!; _districts = CityData.districtsOf(_province, _city); _district = _districts.first; }); },
+                    )),
+                    const SizedBox(width: 8),
+                    Expanded(flex: 3, child: DropdownButtonFormField<String>(
                       value: _district,
-                      decoration: const InputDecoration(labelText: '区域 *', prefixIcon: Icon(Icons.map)),
-                      items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                      decoration: const InputDecoration(labelText: '区', prefixIcon: Icon(Icons.map), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+                      items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 13)))).toList(),
                       onChanged: (v) => setState(() => _district = v!),
                     )),
                   ]),

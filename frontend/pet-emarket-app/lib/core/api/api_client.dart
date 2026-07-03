@@ -288,6 +288,14 @@ class ApiClient {
     return AmapGeocode.fromJson(Map<String, dynamic>.from(data));
   }
 
+  /// 正地理编码：地址 → 经纬度
+  Future<AmapGeocode> geocode(String address) async {
+    final data = await _request('GET', '/api/v1/geo/amap/geocode', query: {
+      'address': address,
+    }, authenticated: false);
+    return AmapGeocode.fromJson(Map<String, dynamic>.from(data));
+  }
+
   Future<PetStore> createStore(Map<String, dynamic> payload) async {
     final data = await _request('POST', '/api/v1/stores', body: payload);
     return PetStore.fromJson(_object(data, 'store'));
