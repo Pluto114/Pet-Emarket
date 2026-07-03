@@ -44,7 +44,7 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
         'audit-refund',
         body: {
           'approved': approved,
-          'auditRemark': approved ? 'Approved by admin' : 'Rejected by admin',
+          'auditRemark': approved ? '管理员审核通过' : '管理员驳回',
           if (!approved && order.refundRollbackStatus != null)
             'rollbackStatus': order.refundRollbackStatus,
         },
@@ -71,7 +71,7 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
             children: [
               Expanded(
                 child: Text(
-                  'Refund Audit',
+                  '退款审核',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -97,7 +97,7 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
-                child: Text('No pending refunds'),
+                child: Text('暂无待处理退款'),
               ),
             ),
           ...refundOrders.map(
@@ -116,7 +116,7 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
                           ),
                         ),
                         const Chip(
-                          label: Text('Refund Requested'),
+                          label: Text('已申请退单'),
                           backgroundColor: Colors.red,
                         ),
                       ],
@@ -128,7 +128,7 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Reason: ${order.refundReason.isEmpty ? 'No reason' : order.refundReason}',
+                      'Reason: ${order.refundReason.isEmpty ? '无原因' : order.refundReason}',
                     ),
                     Text(
                       'Reject rollback status: ${order.refundRollbackStatus ?? 2}',
@@ -143,14 +143,14 @@ class _RefundAuditPageState extends State<RefundAuditPage> {
                       children: [
                         FilledButton(
                           onPressed: () => _audit(order, true),
-                          child: const Text('Approve Refund'),
+                          child: const Text('通过退单'),
                         ),
                         OutlinedButton(
                           onPressed: () => _audit(order, false),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
                           ),
-                          child: const Text('Reject Refund'),
+                          child: const Text('驳回退单'),
                         ),
                       ],
                     ),

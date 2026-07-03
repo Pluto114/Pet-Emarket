@@ -55,7 +55,7 @@ class _OrderManagePageState extends State<OrderManagePage> {
             children: [
               Expanded(
                 child: Text(
-                  'Order Management',
+                  '订单管理',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -81,7 +81,7 @@ class _OrderManagePageState extends State<OrderManagePage> {
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
-                child: Text('No orders'),
+                child: Text('暂无订单'),
               ),
             ),
           ...orders.map(

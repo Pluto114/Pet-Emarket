@@ -4,16 +4,17 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/cart_item.dart';
 import '../../../models/shipping_address.dart';
+import 'checkout_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({required this.apiClient, super.key});
   final ApiClient apiClient;
 
   @override
-  State<CartPage> createState() => _CartPageState();
+  State<CartPage> createState() => CartPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class CartPageState extends State<CartPage> {
   bool loading = true;
   String? errorText;
   List<CartItem> items = [];
@@ -22,7 +23,7 @@ class _CartPageState extends State<CartPage> {
 
   double get total => items.fold(0, (sum, item) => sum + item.subtotal);
 
-  bool get canCreateOrder => items.isNotEmpty && selectedAddress != null;
+  bool get canCheckout => items.isNotEmpty;
 
   @override
   void initState() {
@@ -42,13 +43,13 @@ class _CartPageState extends State<CartPage> {
         actions: [
           if (items.isNotEmpty)
             TextButton(
-              onPressed: canCreateOrder ? createOrder : null,
+              onPressed: canCheckout ? goToCheckout : null,
               child: Text(
-                '提交并支付',
+                '去结算',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color:
-                      canCreateOrder
+                      canCheckout
                           ? PawmartColors.primary500
                           : PawmartColors.textSecondary,
                 ),
@@ -233,21 +234,22 @@ class _CartPageState extends State<CartPage> {
                       const SizedBox(width: 12),
                       SizedBox(
                         height: 48,
+                        width: 140,
                         child: FilledButton(
-                          onPressed: canCreateOrder ? createOrder : null,
+                          onPressed: canCheckout ? goToCheckout : null,
                           style: FilledButton.styleFrom(
                             backgroundColor:
-                                canCreateOrder
+                                canCheckout
                                     ? PawmartColors.accent400
                                     : PawmartColors.neutral200,
                             foregroundColor:
-                                canCreateOrder
+                                canCheckout
                                     ? PawmartColors.textOnAccent
                                     : PawmartColors.neutral400,
-                            padding: const EdgeInsets.symmetric(horizontal: 28),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                           ),
                           child: Text(
-                            '提交并支付',
+                            '去结算',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
@@ -350,24 +352,20 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  Future<void> createOrder() async {
-    final address = selectedAddress;
-    if (address == null) {
-      showError('请先选择收货地址');
-      return;
-    }
-    try {
-      final order = await widget.apiClient.createOrderFromCartAndPay(
-        addressId: address.id,
-      );
+  Future<void> goToCheckout() async {
+    if (items.isEmpty) return;
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CheckoutPage(
+          apiClient: widget.apiClient,
+          sessionStore: widget.apiClient.sessionStore,
+          items: items,
+        ),
+      ),
+    );
+    if (created == true) {
       await load();
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('订单 ${order.orderNo} 已支付')));
-      }
-    } catch (error) {
-      if (mounted) showError(error);
     }
   }
 

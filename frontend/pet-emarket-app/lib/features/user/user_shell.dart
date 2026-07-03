@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
-import 'cart/cart_page.dart';
+import 'cart/cart_page.dart' show CartPage, CartPageState;
 import 'home/home_page.dart';
-import 'order/order_page.dart';
+import 'order/order_page.dart' show OrderPage, OrderPageState;
 import 'profile/profile_tab.dart';
 import 'store/nearby_store_page.dart';
 
@@ -39,6 +39,15 @@ class UserShell extends StatefulWidget {
 class _UserShellState extends State<UserShell> {
   int _idx = 0;
   final _searchCtrl = TextEditingController();
+  final _cartKey = GlobalKey<CartPageState>();
+  final _orderKey = GlobalKey<OrderPageState>();
+
+  void _onTabChanged(int i) {
+    setState(() => _idx = i);
+    // 切换 tab 时自动刷新对应页面数据
+    if (i == 2) _cartKey.currentState?.load();
+    if (i == 3) _orderKey.currentState?.load();
+  }
 
   static const _tabs = [
     NavigationDestination(
@@ -182,7 +191,7 @@ class _UserShellState extends State<UserShell> {
                     return Padding(
                       padding: EdgeInsets.only(left: i == 0 ? 0 : navGap),
                       child: InkWell(
-                        onTap: () => setState(() => _idx = i),
+                        onTap: () => _onTabChanged(i),
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -232,6 +241,16 @@ class _UserShellState extends State<UserShell> {
                   ),
                   onPressed: widget.onThemeToggle,
                 ),
+                // Logout button
+                IconButton(
+                  tooltip: '退出登录',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    Icons.logout,
+                    color: PawmartColors.textSecondary,
+                  ),
+                  onPressed: widget.onLogout,
+                ),
               ],
             ),
           ),
@@ -254,8 +273,8 @@ class _UserShellState extends State<UserShell> {
         onGoToMerchant: widget.onGoToMerchant,
       ),
       NearbyStorePage(apiClient: widget.apiClient),
-      CartPage(apiClient: widget.apiClient),
-      OrderPage(apiClient: widget.apiClient, sessionStore: widget.sessionStore),
+      CartPage(key: _cartKey, apiClient: widget.apiClient),
+      OrderPage(key: _orderKey, apiClient: widget.apiClient, sessionStore: widget.sessionStore),
       ProfileTab(
         apiClient: widget.apiClient,
         sessionStore: widget.sessionStore,
@@ -277,7 +296,7 @@ class _UserShellState extends State<UserShell> {
                   : NavigationBar(
                     selectedIndex: _idx,
                     destinations: _tabs,
-                    onDestinationSelected: (i) => setState(() => _idx = i),
+                    onDestinationSelected: (i) => _onTabChanged(i),
                   ),
         ),
       ),

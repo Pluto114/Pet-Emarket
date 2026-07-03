@@ -36,6 +36,30 @@ public class StoreService {
     }
 
     @Transactional(readOnly = true)
+    public List<StoreResponse> listFiltered(UserAccount currentUser, String keyword, String city, String status) {
+        List<PetStore> stores;
+        if (currentUser != null && (currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.MERCHANT)) {
+            stores = (currentUser.getRole() == UserRole.ADMIN) ? storeRepository.findAll() : storeRepository.findByOwnerUserIdOrderByRatingDesc(currentUser.getId());
+        } else {
+            String statusFilter = (status == null || status.isBlank()) ? null : status.trim().toUpperCase(Locale.ROOT);
+            if (statusFilter != null && statusFilter.equals("OPEN")) {
+                stores = storeRepository.findByStatusOrderByRatingDesc(StoreStatus.OPEN);
+            } else {
+                stores = storeRepository.findAll();
+            }
+        }
+
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim().toLowerCase(Locale.ROOT);
+        String ct = (city == null || city.isBlank()) ? null : city.trim().toLowerCase(Locale.ROOT);
+
+        return stores.stream()
+                .filter(store -> kw == null || matchesKeyword(store, kw))
+                .filter(store -> ct == null || store.getCity().toLowerCase(Locale.ROOT).contains(ct))
+                .map(store -> StoreResponse.from(store, null))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<StoreResponse> listManagedStores(UserAccount user) {
         if (user.getRole() == UserRole.ADMIN) {
             return listAllStores();

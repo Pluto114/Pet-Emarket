@@ -183,6 +183,16 @@ class ApiClient {
     await _request('DELETE', '/api/v1/products/$id');
   }
 
+  Future<List<Product>> listStoreProducts(String storeId) async {
+    final data = await _request(
+      'GET',
+      '/api/v1/stores/$storeId/products',
+    );
+    return (data['items'] as List)
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
+  }
+
   Future<AdminDashboard> adminDashboard() async {
     final data = await _request('GET', '/api/v1/admin/dashboard');
     return AdminDashboard.fromJson(Map<String, dynamic>.from(data as Map));

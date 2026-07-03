@@ -59,7 +59,7 @@ class _MediaManagePageState extends State<MediaManagePage> {
             children: [
               Expanded(
                 child: Text(
-                  'Media Management',
+                  '媒体管理',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -68,7 +68,7 @@ class _MediaManagePageState extends State<MediaManagePage> {
               FilledButton.icon(
                 onPressed: _showUploadDialog,
                 icon: const Icon(Icons.cloud_upload),
-                label: const Text('Upload Media'),
+                label: const Text('上传媒体'),
               ),
             ],
           ),
@@ -79,7 +79,7 @@ class _MediaManagePageState extends State<MediaManagePage> {
                 child: TextField(
                   controller: keywordCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Search media',
+                    labelText: '搜索媒体',
                     prefixIcon: Icon(Icons.search),
                     isDense: true,
                   ),
@@ -104,7 +104,7 @@ class _MediaManagePageState extends State<MediaManagePage> {
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
-                child: Text('No media assets yet'),
+                child: Text('暂无媒体资源'),
               ),
             ),
           if (!loading && errorText == null)
@@ -130,13 +130,13 @@ class _MediaManagePageState extends State<MediaManagePage> {
                     children: [
                       if (asset.status == 'PENDING')
                         IconButton(
-                          tooltip: 'Approve',
+                          tooltip: '审核通过',
                           icon: const Icon(Icons.verified, color: Colors.green),
                           onPressed: () => _audit(asset, true),
                         ),
                       if (asset.status == 'PENDING')
                         IconButton(
-                          tooltip: 'Reject',
+                          tooltip: '驳回',
                           icon: const Icon(Icons.block, color: Colors.orange),
                           onPressed: () => _audit(asset, false),
                         ),
@@ -167,10 +167,10 @@ class _MediaManagePageState extends State<MediaManagePage> {
     try {
       if (asset == null) {
         await widget.apiClient.createMedia(payload);
-        if (mounted) showSuccess(context, 'Media created');
+        if (mounted) showSuccess(context, '媒体已创建');
       } else {
         await widget.apiClient.updateMedia(asset.id, payload);
-        if (mounted) showSuccess(context, 'Media updated');
+        if (mounted) showSuccess(context, '媒体已更新');
       }
       await load();
     } catch (e) {
@@ -196,7 +196,7 @@ class _MediaManagePageState extends State<MediaManagePage> {
         coverFileBytes: payload.coverFile?.bytes,
       );
       await load();
-      if (mounted) showSuccess(context, 'Media uploaded to OSS');
+      if (mounted) showSuccess(context, '已上传至OSS');
     } catch (e) {
       if (mounted) showError(context, e.toString());
     }
@@ -209,12 +209,12 @@ class _MediaManagePageState extends State<MediaManagePage> {
         approved: approved,
         remark:
             approved
-                ? 'Approved from admin panel'
-                : 'Rejected from admin panel',
+                ? '管理员审核通过'
+                : '管理员驳回',
       );
       await load();
       if (mounted) {
-        showSuccess(context, approved ? 'Media approved' : 'Media rejected');
+        showSuccess(context, approved ? '审核通过' : '已驳回');
       }
     } catch (e) {
       if (mounted) showError(context, e.toString());
@@ -224,16 +224,16 @@ class _MediaManagePageState extends State<MediaManagePage> {
   Future<void> _delete(MediaAsset asset) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Delete Media',
-      message: 'Are you sure you want to delete "${asset.title}"?',
-      confirmLabel: 'Delete',
+      title: '删除媒体',
+      message: '确定要删除 "${asset.title}"？',
+      confirmLabel: '删除',
       destructive: true,
     );
     if (!confirmed) return;
     try {
       await widget.apiClient.deleteMedia(asset.id);
       await load();
-      if (mounted) showSuccess(context, 'Media deleted');
+      if (mounted) showSuccess(context, '媒体已删除');
     } catch (e) {
       if (mounted) showError(context, e.toString());
     }
@@ -290,7 +290,7 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Upload Media'),
+      title: const Text('上传媒体'),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
@@ -300,10 +300,10 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
             children: [
               DropdownButtonFormField<String>(
                 value: mediaType,
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: const InputDecoration(labelText: '类型'),
                 items: const [
-                  DropdownMenuItem(value: 'IMAGE', child: Text('Image')),
-                  DropdownMenuItem(value: 'VIDEO', child: Text('Video')),
+                  DropdownMenuItem(value: 'IMAGE', child: Text('图片')),
+                  DropdownMenuItem(value: 'VIDEO', child: Text('视频')),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -315,32 +315,32 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
               const SizedBox(height: 10),
               TextField(
                 controller: titleCtrl,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: const InputDecoration(labelText: '标题'),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: productIdCtrl,
-                decoration: const InputDecoration(labelText: 'Product ID'),
+                decoration: const InputDecoration(labelText: '商品ID'),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(labelText: '描述'),
                 maxLines: 3,
               ),
               const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: () => _pickMainFile(context),
                 icon: const Icon(Icons.attach_file),
-                label: Text(file == null ? 'Select File' : file!.name),
+                label: Text(file == null ? '选择文件' : file!.name),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () => _pickCoverFile(context),
                 icon: const Icon(Icons.image),
                 label: Text(
-                  coverFile == null ? 'Select Cover Image' : coverFile!.name,
+                  coverFile == null ? '选择封面图' : coverFile!.name,
                 ),
               ),
             ],
@@ -350,7 +350,7 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('取消'),
         ),
         FilledButton(
           onPressed:
@@ -369,7 +369,7 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
                       ),
                     );
                   },
-          child: const Text('Upload'),
+          child: const Text('上传'),
         ),
       ],
     );
@@ -384,7 +384,7 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
     final selected = result?.files.single;
     if (selected == null) return;
     if (selected.bytes == null || selected.bytes!.isEmpty) {
-      if (context.mounted) showError(context, 'Cannot read selected file');
+      if (context.mounted) showError(context, '无法读取文件');
       return;
     }
     setState(() {
@@ -404,7 +404,7 @@ class _MediaUploadDialogState extends State<_MediaUploadDialog> {
     final selected = result?.files.single;
     if (selected == null) return;
     if (selected.bytes == null || selected.bytes!.isEmpty) {
-      if (context.mounted) showError(context, 'Cannot read selected file');
+      if (context.mounted) showError(context, '无法读取文件');
       return;
     }
     setState(() => coverFile = selected);
@@ -454,7 +454,7 @@ class _MediaDialogState extends State<_MediaDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.asset == null ? 'Add Media' : 'Edit Media'),
+      title: Text(widget.asset == null ? '添加媒体' : '编辑媒体'),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
@@ -463,7 +463,7 @@ class _MediaDialogState extends State<_MediaDialog> {
             children: [
               TextField(
                 controller: titleCtrl,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: const InputDecoration(labelText: '标题'),
               ),
               const SizedBox(height: 10),
               Row(
@@ -471,10 +471,10 @@ class _MediaDialogState extends State<_MediaDialog> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: mediaType,
-                      decoration: const InputDecoration(labelText: 'Type'),
+                      decoration: const InputDecoration(labelText: '类型'),
                       items: const [
-                        DropdownMenuItem(value: 'IMAGE', child: Text('Image')),
-                        DropdownMenuItem(value: 'VIDEO', child: Text('Video')),
+                        DropdownMenuItem(value: 'IMAGE', child: Text('图片')),
+                        DropdownMenuItem(value: 'VIDEO', child: Text('视频')),
                       ],
                       onChanged:
                           (value) =>
@@ -485,23 +485,23 @@ class _MediaDialogState extends State<_MediaDialog> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: status,
-                      decoration: const InputDecoration(labelText: 'Status'),
+                      decoration: const InputDecoration(labelText: '状态'),
                       items: const [
                         DropdownMenuItem(
                           value: 'PENDING',
-                          child: Text('Pending'),
+                          child: Text('待审核'),
                         ),
                         DropdownMenuItem(
                           value: 'APPROVED',
-                          child: Text('Approved'),
+                          child: Text('审核通过'),
                         ),
                         DropdownMenuItem(
                           value: 'REJECTED',
-                          child: Text('Rejected'),
+                          child: Text('已驳回'),
                         ),
                         DropdownMenuItem(
                           value: 'ARCHIVED',
-                          child: Text('Archived'),
+                          child: Text('已归档'),
                         ),
                       ],
                       onChanged:
@@ -513,22 +513,22 @@ class _MediaDialogState extends State<_MediaDialog> {
               const SizedBox(height: 10),
               TextField(
                 controller: urlCtrl,
-                decoration: const InputDecoration(labelText: 'Media URL'),
+                decoration: const InputDecoration(labelText: '媒体链接'),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: coverCtrl,
-                decoration: const InputDecoration(labelText: 'Cover URL'),
+                decoration: const InputDecoration(labelText: '封面地址'),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: productIdCtrl,
-                decoration: const InputDecoration(labelText: 'Product ID'),
+                decoration: const InputDecoration(labelText: '商品ID'),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(labelText: '描述'),
                 maxLines: 3,
               ),
             ],
@@ -538,7 +538,7 @@ class _MediaDialogState extends State<_MediaDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('取消'),
         ),
         FilledButton(
           onPressed: () {
@@ -554,7 +554,7 @@ class _MediaDialogState extends State<_MediaDialog> {
             };
             Navigator.pop(context, payload);
           },
-          child: const Text('Save'),
+          child: const Text('保存'),
         ),
       ],
     );

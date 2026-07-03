@@ -3,6 +3,8 @@ package com.petemarket.server.store;
 import com.petemarket.server.common.ApiResponse;
 import com.petemarket.server.common.BusinessException;
 import com.petemarket.server.common.PageData;
+import com.petemarket.server.product.ProductResponse;
+import com.petemarket.server.product.ProductService;
 import com.petemarket.server.user.UserAccount;
 import com.petemarket.server.user.UserRole;
 import jakarta.validation.Valid;
@@ -22,21 +24,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/stores")
 public class StoreController {
     private final StoreService storeService;
+    private final ProductService productService;
 
-    public StoreController(StoreService storeService) {
+    public StoreController(StoreService storeService, ProductService productService) {
         this.storeService = storeService;
+        this.productService = productService;
     }
 
     @GetMapping
-    public ApiResponse<PageData<StoreResponse>> list(@AuthenticationPrincipal UserAccount currentUser) {
-        return ApiResponse.ok(PageData.of(isStoreManager(currentUser)
-                ? storeService.listManagedStores(currentUser)
-                : storeService.listOpenStores()));
+    public ApiResponse<PageData<StoreResponse>> list(@AuthenticationPrincipal UserAccount currentUser,
+                                                      @RequestParam(required = false) String keyword,
+                                                      @RequestParam(required = false) String city,
+                                                      @RequestParam(required = false) String status) {
+        return ApiResponse.ok(PageData.of(storeService.listFiltered(isStoreManager(currentUser) ? currentUser : null, keyword, city, status)));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<StoreResponse> get(@PathVariable Long id) {
         return ApiResponse.ok(storeService.get(id));
+    }
+
+    @GetMapping("/{id}/products")
+    public ApiResponse<PageData<ProductResponse>> storeProducts(@PathVariable Long id) {
+        return ApiResponse.ok(PageData.of(productService.listByStore(id)));
     }
 
     @GetMapping("/nearby")

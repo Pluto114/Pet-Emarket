@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
 import '../../../models/amap_poi.dart';
 import '../../../models/store.dart';
+import 'store_detail_page.dart';
 
 class NearbyStorePage extends StatefulWidget {
   const NearbyStorePage({required this.apiClient, super.key});
@@ -110,35 +111,7 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
   void _openDetail(BuildContext context, PetStore store) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder:
-            (_) => Scaffold(
-              appBar: AppBar(title: Text(store.name)),
-              body: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(store.address),
-                    const SizedBox(height: 12),
-                    Text('城市: ${store.city}  |  区域: ${store.district}'),
-                    const SizedBox(height: 8),
-                    Text(
-                      '营业: ${store.businessHours.isEmpty ? '-' : store.businessHours}',
-                    ),
-                    const SizedBox(height: 8),
-                    Text('电话: ${store.phone.isEmpty ? '-' : store.phone}'),
-                    const SizedBox(height: 8),
-                    Text(
-                      '特色: ${store.featureTags.isEmpty ? '-' : store.featureTags}',
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '坐标: ${store.longitude.toStringAsFixed(4)}, ${store.latitude.toStringAsFixed(4)}',
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        builder: (_) => StoreDetailPage(apiClient: widget.apiClient, store: store),
       ),
     );
   }

@@ -72,6 +72,13 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public List<ProductResponse> listByStore(Long storeId) {
+        return productRepository.findByStoreId(storeId).stream()
+                .filter(product -> product.getStatus() == ProductStatus.ON_SALE)
+                .map(ProductResponse::from)
+                .toList();
+    }
+
     public List<ProductReviewResponse> reviews(Long id) {
         Product product = find(id);
         return orderRepository.findReviewedOrdersByProductId(product.getId()).stream()

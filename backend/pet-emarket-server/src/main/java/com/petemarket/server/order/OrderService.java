@@ -174,14 +174,33 @@ public class OrderService {
                     throw new BusinessException("300409", "Only refund requests can be audited");
                 }
                 boolean approved = Boolean.TRUE.equals(request.approved());
-                int target = approved ? -3 : resolveRefundRollbackStatus(order, request.rollbackStatus());
-                transition(order, currentUser, List.of(-2), target, approved ? "退单审核通过" : "退单审核不通过");
-                order.setRefundAuditStatus(approved ? "APPROVED" : "REJECTED");
-                order.setAuditRemark(defaultText(request.auditRemark(), ""));
-                if (approved) {
-                    restoreInventory(order);
-                    refundPaymentAndReversePoints(order, defaultText(request.auditRemark(), "退单审核通过"));
+                // 商家驳回 → 升级交给管理员最终裁定
+                if (!approved && currentUser.getRole() == UserRole.MERCHANT) {
+                    transition(order, currentUser, List.of(-2), -2, "商家驳回退单，升级至管理员裁定");
+                    order.setRefundAuditStatus("ESCALATED_TO_ADMIN");
+                    order.setAuditRemark(defaultText(request.auditRemark(), "商家驳回，升级管理员"));
+                } else {
+                    int target = approved ? -3 : resolveRefundRollbackStatus(order, request.rollbackStatus());
+                    transition(order, currentUser, List.of(-2), target, approved ? "退单审核通过" : "退单审核不通过");
+                    order.setRefundAuditStatus(approved ? "APPROVED" : "REJECTED");
+                    order.setAuditRemark(defaultText(request.auditRemark(), ""));
+                    if (approved) {
+                        restoreInventory(order);
+                        refundPaymentAndReversePoints(order, defaultText(request.auditRemark(), "退单审核通过"));
+                    }
                 }
+            }
+            case "escalate-refund" -> {
+                // 商家主动升级给管理员
+                if (currentUser.getRole() != UserRole.MERCHANT) {
+                    throw new BusinessException("100403", "Only merchants can escalate refund", HttpStatus.FORBIDDEN);
+                }
+                if (order.getStatus() != -2) {
+                    throw new BusinessException("300409", "Only pending refund requests can be escalated");
+                }
+                transition(order, currentUser, List.of(-2), -2, "商家升级退单至管理员裁定");
+                order.setRefundAuditStatus("ESCALATED_TO_ADMIN");
+                order.setAuditRemark(defaultText(request.auditRemark(), "商家主动升级"));
             }
             case "admin-refund" -> {
                 requireAdminOrMerchant(currentUser);

@@ -20,8 +20,7 @@ class MerchantStorePage extends StatefulWidget {
 class _MerchantStorePageState extends State<MerchantStorePage> {
   bool loading = true;
   String? errorText;
-  PetStore? store;
-  bool editing = false;
+  List<PetStore> stores = [];
 
   @override
   void initState() {
@@ -35,10 +34,7 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
       errorText = null;
     });
     try {
-      final stores = await widget.apiClient.listStores(authenticated: true);
-      if (stores.isNotEmpty) {
-        store = stores.first;
-      }
+      stores = await widget.apiClient.listStores(authenticated: true);
     } catch (e) {
       errorText = e.toString();
     }
@@ -56,6 +52,7 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // Page title
           Row(
             children: [
               Expanded(
@@ -66,15 +63,17 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
                   ),
                 ),
               ),
-              if (store != null)
-                FilledButton.tonalIcon(
-                  onPressed: () => _showEditDialog(),
-                  icon: Icon(editing ? Icons.close : Icons.edit),
-                  label: Text(editing ? '取消编辑' : '编辑店铺'),
+              if (stores.isNotEmpty)
+                Text(
+                  '共 ${stores.length} 家',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
             ],
           ),
           const SizedBox(height: 20),
+          // Error card
           if (errorText != null) ...[
             Card(
               color: theme.colorScheme.errorContainer,
@@ -98,7 +97,8 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
               ),
             ),
           ],
-          if (store == null && errorText == null) ...[
+          // Empty state
+          if (stores.isEmpty && errorText == null) ...[
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -134,107 +134,114 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
               ),
             ),
           ],
-          if (store != null) ...[
-            // Store header card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Icon(
-                        Icons.store,
-                        size: 36,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      store!.name,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildStatusBadge(store!.status),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.star, size: 16),
-                        const SizedBox(width: 2),
-                        Text(
-                          store!.rating.toStringAsFixed(1),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Store details
-            _buildInfoSection(theme, '基本信息', [
-              _InfoRow(icon: Icons.badge, label: '店铺名称', value: store!.name),
-              _InfoRow(
-                icon: Icons.phone,
-                label: '联系电话',
-                value: store!.phone.isNotEmpty ? store!.phone : '未设置',
-              ),
-              _InfoRow(
-                icon: Icons.access_time,
-                label: '营业时间',
-                value:
-                    store!.businessHours.isNotEmpty
-                        ? store!.businessHours
-                        : '未设置',
-              ),
-              _InfoRow(
-                icon: Icons.tag,
-                label: '特色标签',
-                value:
-                    store!.featureTags.isNotEmpty ? store!.featureTags : '未设置',
-              ),
-            ]),
-            const SizedBox(height: 16),
-            _buildInfoSection(theme, '位置信息', [
-              _InfoRow(
-                icon: Icons.location_city,
-                label: '城市',
-                value: store!.city,
-              ),
-              _InfoRow(icon: Icons.map, label: '区域', value: store!.district),
-              _InfoRow(
-                icon: Icons.location_on,
-                label: '详细地址',
-                value: store!.address,
-              ),
-              _InfoRow(
-                icon: Icons.pin_drop,
-                label: '经纬度',
-                value:
-                    '${store!.longitude.toStringAsFixed(4)}, ${store!.latitude.toStringAsFixed(4)}',
-              ),
-            ]),
-            const SizedBox(height: 16),
-            _buildInfoSection(theme, '评分信息', [
-              _InfoRow(
-                icon: Icons.star,
-                label: '评分',
-                value: '${store!.rating.toStringAsFixed(1)} / 5.0',
-              ),
-              _InfoRow(
-                icon: Icons.toggle_on,
-                label: '营业状态',
-                value: store!.status == 'OPEN' ? '营业中' : '已关闭',
-              ),
-            ]),
+          // Store cards
+          for (var i = 0; i < stores.length; i++) ...[
+            if (i > 0) const SizedBox(height: 16),
+            _buildStoreCard(theme, stores[i]),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoreCard(ThemeData theme, PetStore store) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Card header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.store,
+                    size: 22,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        store.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          _buildStatusBadge(store.status),
+                          const SizedBox(width: 8),
+                          Icon(Icons.star, size: 14, color: Colors.amber[700]),
+                          const SizedBox(width: 2),
+                          Text(
+                            store.rating.toStringAsFixed(1),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: '编辑店铺',
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _showEditDialog(store),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          // Basic info
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _InfoRow(
+                  icon: Icons.phone,
+                  label: '联系电话',
+                  value: store.phone.isNotEmpty ? store.phone : '未设置',
+                ),
+                _InfoRow(
+                  icon: Icons.access_time,
+                  label: '营业时间',
+                  value: store.businessHours.isNotEmpty
+                      ? store.businessHours
+                      : '未设置',
+                ),
+                _InfoRow(
+                  icon: Icons.tag,
+                  label: '特色标签',
+                  value: store.featureTags.isNotEmpty
+                      ? store.featureTags
+                      : '未设置',
+                ),
+                const SizedBox(height: 8),
+                _InfoRow(
+                  icon: Icons.location_on,
+                  label: '地址',
+                  value: '${store.city} ${store.district} ${store.address}',
+                ),
+                _InfoRow(
+                  icon: Icons.pin_drop,
+                  label: '经纬度',
+                  value:
+                      '${store.longitude.toStringAsFixed(4)}, ${store.latitude.toStringAsFixed(4)}',
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -259,39 +266,14 @@ class _MerchantStorePageState extends State<MerchantStorePage> {
     );
   }
 
-  Widget _buildInfoSection(
-    ThemeData theme,
-    String title,
-    List<Widget> children,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Divider(height: 20),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showEditDialog() async {
+  Future<void> _showEditDialog(PetStore store) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => _StoreEditDialog(store: store!),
+      builder: (ctx) => _StoreEditDialog(store: store),
     );
     if (result == null) return;
     try {
-      await widget.apiClient.updateStore(store!.id, result);
+      await widget.apiClient.updateStore(store.id, result);
       if (mounted) showSuccess(context, '店铺信息更新成功');
       await load();
     } catch (e) {
@@ -463,7 +445,7 @@ class _StoreEditDialogState extends State<_StoreEditDialog> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                initialValue: status,
+                value: status,
                 decoration: const InputDecoration(labelText: '营业状态'),
                 items: const [
                   DropdownMenuItem(value: 'OPEN', child: Text('营业中')),
