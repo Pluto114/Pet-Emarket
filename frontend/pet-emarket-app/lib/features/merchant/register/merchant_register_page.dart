@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/map_picker_page.dart';
+import '../../../shared/widgets/city_data.dart';
 
 class MerchantRegisterPage extends StatefulWidget {
   const MerchantRegisterPage({
@@ -21,8 +23,9 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController();
-  final _districtCtrl = TextEditingController();
+  String _city = '杭州';
+  String _district = '西湖区';
+  List<String> _districts = CityData.districtsOf('杭州');
   final _addressCtrl = TextEditingController();
   final _longitudeCtrl = TextEditingController(text: '120.1551');
   final _latitudeCtrl = TextEditingController(text: '30.2741');
@@ -35,8 +38,6 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
-    _cityCtrl.dispose();
-    _districtCtrl.dispose();
     _addressCtrl.dispose();
     _longitudeCtrl.dispose();
     _latitudeCtrl.dispose();
@@ -44,6 +45,16 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
     _licenseCtrl.dispose();
     _reasonCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _openMapPicker() async {
+    final coord = CityData.cityCoord(_city);
+    final result = await Navigator.push<MapPickerResult>(context, MaterialPageRoute(
+      builder: (_) => MapPickerPage(apiClient: widget.apiClient, lng: coord[0], lat: coord[1]),
+    ));
+    if (result == null) return;
+    _longitudeCtrl.text = result.longitude.toString();
+    _latitudeCtrl.text = result.latitude.toString();
   }
 
   Future<void> _submit() async {
@@ -54,8 +65,8 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
       final user = widget.sessionStore.user;
       await widget.apiClient.submitMerchantApplication({
         'storeName': _nameCtrl.text.trim(),
-        'city': _cityCtrl.text.trim(),
-        'district': _districtCtrl.text.trim(),
+        'city': _city,
+        'district': _district,
         'address': _addressCtrl.text.trim(),
         'longitude': double.tryParse(_longitudeCtrl.text.trim()) ?? 120.1551,
         'latitude': double.tryParse(_latitudeCtrl.text.trim()) ?? 30.2741,
@@ -164,27 +175,21 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildField(
-                          '城市 *',
-                          _cityCtrl,
-                          Icons.location_city,
-                          (v) => (v ?? '').trim().isEmpty ? '请输入城市' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _buildField(
-                          '区域 *',
-                          _districtCtrl,
-                          Icons.map,
-                          (v) => (v ?? '').trim().isEmpty ? '请输入区域' : null,
-                        ),
-                      ),
-                    ],
-                  ),
+                  Row(children: [
+                    Expanded(child: DropdownButtonFormField<String>(
+                      value: _city,
+                      decoration: const InputDecoration(labelText: '城市 *', prefixIcon: Icon(Icons.location_city)),
+                      items: CityData.cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      onChanged: (v) { setState(() { _city = v!; _districts = CityData.districtsOf(_city); _district = _districts.first; }); },
+                    )),
+                    const SizedBox(width: 14),
+                    Expanded(child: DropdownButtonFormField<String>(
+                      value: _district,
+                      decoration: const InputDecoration(labelText: '区域 *', prefixIcon: Icon(Icons.map)),
+                      items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                      onChanged: (v) => setState(() => _district = v!),
+                    )),
+                  ]),
                   const SizedBox(height: 14),
                   _buildField(
                     '详细地址 *',
@@ -193,34 +198,16 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
                     (v) => (v ?? '').trim().isEmpty ? '请输入详细地址' : null,
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildField(
-                          '经度 *',
-                          _longitudeCtrl,
-                          Icons.explore,
-                          (v) =>
-                              double.tryParse((v ?? '').trim()) == null
-                                  ? '请输入有效经度'
-                                  : null,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _buildField(
-                          '纬度 *',
-                          _latitudeCtrl,
-                          Icons.explore_outlined,
-                          (v) =>
-                              double.tryParse((v ?? '').trim()) == null
-                                  ? '请输入有效纬度'
-                                  : null,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
+                  Row(children: [
+                    Expanded(child: _buildField('经度 *', _longitudeCtrl, Icons.explore, (v) => double.tryParse((v ?? '').trim()) == null ? '请输入有效经度' : null, keyboardType: TextInputType.number)),
+                    const SizedBox(width: 14),
+                    Expanded(child: _buildField('纬度 *', _latitudeCtrl, Icons.explore_outlined, (v) => double.tryParse((v ?? '').trim()) == null ? '请输入有效纬度' : null, keyboardType: TextInputType.number)),
+                  ]),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _openMapPicker,
+                    icon: const Icon(Icons.map, size: 18),
+                    label: const Text('在地图上选点'),
                   ),
                   const SizedBox(height: 14),
                   _buildField(

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../models/app_user.dart';
 import '../../models/admin_dashboard.dart';
 import '../../models/amap_poi.dart';
+import '../../models/amap_geocode.dart';
 import '../../models/ai_chat.dart';
 import '../../models/cart_item.dart';
 import '../../models/media_asset.dart';
@@ -277,6 +278,14 @@ class ApiClient {
     return (data['items'] as List)
         .map((item) => AmapPoi.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
+  }
+
+  Future<AmapGeocode> reverseGeocode(double longitude, double latitude) async {
+    final data = await _request('GET', '/api/v1/geo/amap/regeo', query: {
+      'longitude': longitude.toString(),
+      'latitude': latitude.toString(),
+    }, authenticated: false);
+    return AmapGeocode.fromJson(Map<String, dynamic>.from(data));
   }
 
   Future<PetStore> createStore(Map<String, dynamic> payload) async {
