@@ -5,7 +5,8 @@ spring:
   application:
     name: pet-emarket-server
   datasource:
-    url: "${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pet_emarket}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true}"
+    # 只需要修改下面这行 url
+    url: "${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pet_emarket}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=true&enabledTLSProtocols=TLSv1.2,TLSv1.3&createDatabaseIfNotExist=true}"
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:Zhaojerry331!}
@@ -15,7 +16,7 @@ spring:
     baseline-on-migrate: true
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     open-in-view: false
     properties:
       hibernate:
@@ -34,6 +35,7 @@ pet-emarket:
       - "http://localhost:5173"
       - "http://localhost:8080"
       - "http://localhost:5000"
+      - "http://localhost:55555"
   ai-service:
     enabled: ${AI_SERVICE_ENABLED:true}
     auto-start: ${AI_SERVICE_AUTO_START:true}
@@ -49,7 +51,7 @@ pet-emarket:
     public-base-url: ${ALIYUN_OSS_PUBLIC_BASE_URL:}
     object-prefix: ${ALIYUN_OSS_OBJECT_PREFIX:pet-emarket}
   amap:
-    api-key: ${AMAP_API_KEY:}
+    api-key: ${AMAP_API_KEY:9b99bc38a7b163537e1b3d74976d62ff}
     base-url: ${AMAP_BASE_URL:https://restapi.amap.com}
     timeout-seconds: ${AMAP_TIMEOUT_SECONDS:3}
   mail:
@@ -62,3 +64,12 @@ pet-emarket:
     ssl-enabled: ${SMTP_SSL_ENABLED:true}
     starttls-enabled: ${SMTP_STARTTLS_ENABLED:false}
     dev-code-in-response: ${MAIL_DEV_CODE_IN_RESPONSE:false}
+
+  management:
+    endpoint:
+      health:
+        show-details: always # 总是显示详细信息（包括数据库、磁盘等）
+    endpoints:
+      web:
+        exposure:
+          include: 'health' # 确保 health 接口在 web 端可见（默认就是可见的）

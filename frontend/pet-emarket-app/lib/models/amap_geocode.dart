@@ -5,8 +5,8 @@ class AmapGeocode {
     this.formattedAddress = '', this.province = '', this.city = '', this.district = ''});
 
   factory AmapGeocode.fromJson(Map<String, dynamic> json) => AmapGeocode(
-    longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
-    latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+    longitude: double.tryParse(json['longitude']?.toString() ?? '') ?? 0,
+    latitude: double.tryParse(json['latitude']?.toString() ?? '') ?? 0,
     formattedAddress: json['formattedAddress'] as String? ?? '',
     province: json['province'] as String? ?? '',
     city: json['city'] as String? ?? '',
