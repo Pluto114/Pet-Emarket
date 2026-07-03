@@ -96,7 +96,7 @@ ALIYUN_OSS_OBJECT_PREFIX=pet-emarket
 
 ## RAG 向量知识库搭建（Docker + MongoDB）
 
-AI 智能问答依赖 MongoDB 存储知识库文档（46 篇宠物百科）。
+AI 智能问答依赖 MongoDB 存储知识库文档（153 篇宠物百科）。
 
 ### 1. 创建 MongoDB 容器
 
@@ -112,8 +112,8 @@ docker run -d --name mongodb-local -p 27017:27017 \
 ```bash
 cd Pet-Emarket/ai-recommendation-service
 
-# 一键创建数据库、集合、索引 + 导入 46 篇知识库 + 3 家测试商店
-docker exec -i mongodb-local mongosh -u admin -p 123456 --authenticationDatabase admin < scripts/seed_knowledge_v2.js
+# 一键创建数据库、集合、索引 + 导入 153 篇知识库 + 3 家测试商店
+docker exec -i mongodb-local mongosh -u admin -p 123456 --authenticationDatabase admin < scripts/seed_knowledge_full.js
 ```
 
 ### 3. 验证
@@ -124,14 +124,14 @@ docker exec -it mongodb-local mongosh -u admin -p 123456 --authenticationDatabas
 > show collections
 # 预期: chat_history, knowledge_base, recommendation_cache, stores, user_behaviors
 > db.knowledge_base.countDocuments()
-# 预期: 46
+# 预期: 153
 ```
 
 ### 集合说明
 
 | 集合 | 用途 |
 |------|------|
-| `knowledge_base` | RAG 知识库（46 篇宠物百科） |
+| `knowledge_base` | RAG 知识库（153 篇宠物百科） |
 | `stores` | 商店信息（含 2dsphere 地理索引） |
 | `user_behaviors` | 用户行为日志 |
 | `chat_history` | 问答历史 |
@@ -179,7 +179,7 @@ flutter pub get && flutter run -d chrome
 ```
 前端/Postman → Java /api/v1/ai/chat → Python /api/v1/chat
                                           ├─ Prompt Guard
-                                          ├─ 知识库检索 (46篇)
+                                          ├─ 知识库检索 (153篇)
                                           └─ 百炼 qwen-plus
 ```
 
