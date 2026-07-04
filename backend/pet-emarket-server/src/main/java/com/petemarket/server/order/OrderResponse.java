@@ -15,6 +15,7 @@ public record OrderResponse(
         BigDecimal payAmount,
         String paymentNo,
         Instant paidAt,
+        Instant paymentDeadline,
         Integer rewardPoints,
         Boolean pointsReversed,
         String receiver,
@@ -32,7 +33,13 @@ public record OrderResponse(
         List<OrderItemResponse> items,
         List<OrderStatusLogResponse> statusLogs
 ) {
+    private static final long PAYMENT_TIMEOUT_SECONDS = 30 * 60;
+
     public static OrderResponse from(PetOrder order) {
+        Instant deadline = null;
+        if (order.getStatus() != null && order.getStatus() == 0 && order.getCreatedAt() != null) {
+            deadline = order.getCreatedAt().plusSeconds(PAYMENT_TIMEOUT_SECONDS);
+        }
         return new OrderResponse(
                 order.getId(),
                 order.getOrderNo(),
@@ -44,6 +51,7 @@ public record OrderResponse(
                 order.getPayAmount(),
                 order.getPaymentNo(),
                 order.getPaidAt(),
+                deadline,
                 order.getRewardPoints(),
                 order.getPointsReversed(),
                 order.getReceiver(),

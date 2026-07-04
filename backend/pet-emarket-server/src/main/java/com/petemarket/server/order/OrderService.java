@@ -16,16 +16,25 @@ import com.petemarket.server.product.ProductType;
 import com.petemarket.server.store.StoreService;
 import com.petemarket.server.user.UserAccount;
 import com.petemarket.server.user.UserRole;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+    private static final long PAYMENT_TIMEOUT_MINUTES = 30;
+
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
@@ -34,6 +43,8 @@ public class OrderService {
     private final UserBehaviorService userBehaviorService;
     private final ShippingAddressService shippingAddressService;
     private final StoreService storeService;
+    private ScheduledExecutorService scheduler;
+    private final Map<Long, ScheduledFuture<?>> paymentTimeouts = new ConcurrentHashMap<>();
 
     public OrderService(OrderRepository orderRepository,
                         CartItemRepository cartItemRepository,
@@ -51,6 +62,20 @@ public class OrderService {
         this.userBehaviorService = userBehaviorService;
         this.shippingAddressService = shippingAddressService;
         this.storeService = storeService;
+    }
+
+    @PostConstruct
+    public void init() {
+        scheduler = Executors.newScheduledThreadPool(1, r -> {
+            Thread t = new Thread(r, "order-payment-timeout");
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (scheduler != null) scheduler.shutdownNow();
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +138,36 @@ public class OrderService {
         orderRepository.save(order);
         userBehaviorService.recordOrderItems(order, UserBehaviorType.PURCHASE, "ORDER_CREATE");
         cartItemRepository.deleteAll(cartItems);
+        schedulePaymentTimeout(order);
         return OrderResponse.from(order);
+    }
+
+    private void schedulePaymentTimeout(PetOrder order) {
+        ScheduledFuture<?> future = scheduler.schedule(() -> {
+            try {
+                cancelUnpaidOrder(order.getId());
+            } catch (Exception e) {
+                log.error("Failed to auto-cancel unpaid order {}", order.getId(), e);
+            }
+        }, PAYMENT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+        paymentTimeouts.put(order.getId(), future);
+        log.info("Order {} payment timeout scheduled in {} minutes", order.getOrderNo(), PAYMENT_TIMEOUT_MINUTES);
+    }
+
+    @Transactional
+    public void cancelUnpaidOrder(Long orderId) {
+        PetOrder order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) return;
+        if (order.getStatus() != OrderStatus.WAIT_PAY.code()) {
+            paymentTimeouts.remove(orderId);
+            return;
+        }
+        log.info("Auto-cancelling unpaid order {} (timeout)", order.getOrderNo());
+        order.setStatus(OrderStatus.CANCELED.code());
+        appendLog(order, OrderStatus.WAIT_PAY.code(), OrderStatus.CANCELED.code(), null, "超时未支付，系统自动取消");
+        restoreInventory(order);
+        orderRepository.save(order);
+        paymentTimeouts.remove(orderId);
     }
 
     private AddressSnapshot resolveAddress(UserAccount currentUser, CreateOrderRequest request) {
@@ -140,6 +194,7 @@ public class OrderService {
                 order.setPaymentNo(payment.getPaymentNo());
                 order.setPaidAt(payment.getPaidAt());
                 loyaltyService.awardOrderPoints(order);
+                cancelPaymentTimeout(order.getId());
             }
             case "ship" -> {
                 requireAdminOrMerchant(currentUser);
@@ -156,6 +211,7 @@ public class OrderService {
             case "cancel" -> {
                 boolean paidCancel = order.getStatus() == OrderStatus.WAIT_SHIP.code();
                 transition(order, currentUser, List.of(0, 1), -1, defaultText(request.reason(), "取消订单"));
+                cancelPaymentTimeout(order.getId());
                 restoreInventory(order);
                 if (paidCancel) {
                     refundPaymentAndReversePoints(order, defaultText(request.reason(), "取消订单退款"));
@@ -247,9 +303,14 @@ public class OrderService {
         OrderStatusLog log = new OrderStatusLog();
         log.setFromStatus(from);
         log.setToStatus(to);
-        log.setOperatorRole(actor.getRole().name());
+        log.setOperatorRole(actor != null ? actor.getRole().name() : "SYSTEM");
         log.setReason(reason);
         order.addStatusLog(log);
+    }
+
+    private void cancelPaymentTimeout(Long orderId) {
+        ScheduledFuture<?> future = paymentTimeouts.remove(orderId);
+        if (future != null) future.cancel(false);
     }
 
     private void restoreInventory(PetOrder order) {

@@ -8,13 +8,29 @@ import '../../../models/product.dart';
 import '../../../shared/widgets/toast.dart';
 import '../ai_assistant/ai_assistant_page.dart';
 import '../product/product_detail_page.dart';
+import '../product/product_list_page.dart';
 import '../recommendation/recommendation_page.dart';
 import '../../merchant/register/merchant_register_page.dart';
 
 const _banners = [
-  {'title': '萌宠领养节', 'sub': '新品活体上线，限时领券', 'emoji': '🐶'},
-  {'title': '医疗体检季', 'sub': '到店即享免费基础体检', 'emoji': '💊'},
-  {'title': '口粮狂欢', 'sub': '满199减30，会员折上折', 'emoji': '🦴'},
+  {
+    'title': 'PawMart',
+    'sub': '为你的爱宠精选每一份好物',
+    'color1': Color(0xFF7A8B3C),
+    'color2': Color(0xFF3A441E),
+  },
+  {
+    'title': '萌宠领养节',
+    'sub': '新品活体上线，限时领券',
+    'color1': Color(0xFF4C5A26),
+    'color2': Color(0xFF2A3018),
+  },
+  {
+    'title': '口粮狂欢',
+    'sub': '满199减30，会员折上折',
+    'color1': Color(0xFF93AE4E),
+    'color2': Color(0xFF647430),
+  },
 ];
 
 class HomePage extends StatefulWidget {
@@ -57,11 +73,11 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     loadProducts();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _bannerTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (_pageCtrl.hasClients && mounted) {
         _pageCtrl.animateToPage(
           (_bi + 1) % _banners.length,
-          duration: const Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOut,
         );
       }
@@ -88,12 +104,76 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _applyCategoryFilter() {
-    products =
+    var list =
         selectedCategory == '全部'
             ? List<Product>.from(allProducts)
             : allProducts
                 .where((product) => product.category == selectedCategory)
                 .toList();
+    // Sort newest first (by ID descending as proxy for creation time)
+    list.sort((a, b) => b.id.compareTo(a.id));
+    products = list;
+  }
+
+  void _showCategorySearch(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        String filterText = '';
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('搜索分类'),
+            content: SizedBox(
+              width: 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: '输入分类名称…',
+                      prefixIcon: Icon(Icons.search_rounded, size: 18, color: PawmartColors.neutral400),
+                    ),
+                    onChanged: (v) => setDialogState(() => filterText = v),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 200,
+                    child: ListView(
+                      children: categories
+                          .where((c) => filterText.isEmpty || c.contains(filterText))
+                          .map((c) => ListTile(
+                                dense: true,
+                                title: Text(c),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  setState(() {
+                                    selectedCategory = c;
+                                    _applyCategoryFilter();
+                                  });
+                                },
+                              ))
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String get _sectionTitle {
+    if (selectedCategory == '全部') return '新品上市';
+    if (selectedCategory.length > 6) return '${selectedCategory.substring(0, 6)}… · 新品';
+    return '$selectedCategory · 新品';
   }
 
   @override
@@ -113,158 +193,211 @@ class _HomePageState extends State<HomePage> {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ——— Category Chips ———
+          // ════════ Hero Banner (Full Width) ════════
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: wide ? 300 : 220,
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    controller: _pageCtrl,
+                    onPageChanged: (i) => setState(() => _bi = i),
+                    itemCount: _banners.length,
+                    itemBuilder: (_, i) {
+                      final b = _banners[i];
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              b['color1'] as Color,
+                              b['color2'] as Color,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -40,
+                              top: -40,
+                              child: Opacity(
+                                opacity: 0.12,
+                                child: Icon(
+                                  Icons.pets,
+                                  size: 240,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                wide ? 40 : 20,
+                                20,
+                                wide ? 40 : 20,
+                                20,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    b['title'] as String,
+                                    style: TextStyle(
+                                      fontSize: wide ? 36 : 28,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    b['sub'] as String,
+                                    style: TextStyle(
+                                      fontSize: wide ? 17 : 15,
+                                      color: Colors.white.withAlpha(230),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  SizedBox(
+                                    height: 42,
+                                    child: FilledButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          ctx,
+                                          MaterialPageRoute(
+                                            builder: (_) => ProductListPage(
+                                              apiClient: widget.apiClient,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: PawmartColors.accent400,
+                                        foregroundColor: PawmartColors.textOnAccent,
+                                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(pawmartRadiusFull),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '立即选购',
+                                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  Positioned(
+                    right: 20,
+                    bottom: 20,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(_banners.length, (i) {
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: _bi == i ? 24 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: _bi == i ? Colors.white : Colors.white.withAlpha(90),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ════════ Category Chips + Search ════════
           SliverToBoxAdapter(
             child: Container(
-              color: PawmartColors.neutral50,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: wide ? 40 : 16),
-                child: Row(
-                  children: [
-                    for (final label in categories)
-                      _categoryChip(label, selectedCategory == label),
-                  ],
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+              decoration: BoxDecoration(
+                color: PawmartColors.neutral50,
+                border: Border(
+                  bottom: BorderSide(color: PawmartColors.neutral200),
                 ),
               ),
-            ),
-          ),
-
-          // ——— Banner Carousel ———
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                wide ? 40 : 16,
-                16,
-                wide ? 40 : 16,
-                8,
-              ),
-              child: SizedBox(
-                height: 180,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(pawmartRadiusLg),
-                  child: Stack(
-                    children: [
-                      PageView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        controller: _pageCtrl,
-                        onPageChanged: (i) => setState(() => _bi = i),
-                        itemCount: _banners.length,
-                        itemBuilder: (_, i) {
-                          final b = _banners[i];
-                          final colors = [
-                            [
-                              PawmartColors.primary400,
-                              PawmartColors.primary600,
-                            ],
-                            [PawmartColors.accent300, PawmartColors.accent500],
-                            [
-                              PawmartColors.primary300,
-                              PawmartColors.primary700,
-                            ],
-                          ];
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: colors[i],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  right: 20,
-                                  top: -10,
-                                  child: Text(
-                                    b['emoji'] as String,
-                                    style: const TextStyle(fontSize: 80),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        b['title'] as String,
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        b['sub'] as String,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white.withAlpha(200),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+              child: Row(
+                children: [
+                  // Category chips (scrollable)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.only(left: wide ? 40 : 16),
+                      child: Row(
+                        children: [
+                          for (final label in categories)
+                            _categoryChip(label, selectedCategory == label),
+                        ],
                       ),
-                      Positioned(
-                        right: 12,
-                        bottom: 12,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(_banners.length, (i) {
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              width: _bi == i ? 16 : 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(3),
-                                color:
-                                    _bi == i
-                                        ? Colors.white
-                                        : Colors.white.withAlpha(100),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  // Compact search
+                  Container(
+                    width: 36,
+                    height: 36,
+                    margin: EdgeInsets.only(right: wide ? 40 : 12, left: 8),
+                    decoration: BoxDecoration(
+                      color: PawmartColors.surfaceCard,
+                      borderRadius: BorderRadius.circular(pawmartRadiusFull),
+                      border: Border.all(color: PawmartColors.neutral200),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.search_rounded, size: 18),
+                      color: PawmartColors.textSecondary,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _showCategorySearch(ctx),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
-          // ——— Merchant Center Entry ———
+          // ════════ Merchant Center Entry ════════
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 wide ? 40 : 16,
-                12,
+                18,
                 wide ? 40 : 16,
-                4,
+                0,
               ),
               child: _buildMerchantCenterCard(ctx),
             ),
           ),
 
-          // ——— New Arrivals Section ———
+          // ════════ New Arrivals Section ════════
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 wide ? 40 : 16,
-                16,
+                24,
                 wide ? 40 : 16,
-                4,
+                8,
               ),
-              child: pawmartSectionHeader('新品上市', actionLabel: '查看全部'),
+              child: pawmartSectionHeader(
+                _sectionTitle,
+                actionLabel: '查看全部',
+                onAction: () => Navigator.push(
+                  ctx,
+                  MaterialPageRoute(
+                    builder: (_) => ProductListPage(apiClient: widget.apiClient),
+                  ),
+                ),
+              ),
             ),
           ),
 
@@ -281,7 +414,10 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.symmetric(horizontal: wide ? 40 : 16),
                 child: Card(
                   child: ListTile(
-                    leading: const Icon(Icons.error_outline),
+                    leading: Icon(
+                      Icons.error_outline,
+                      color: PawmartColors.error,
+                    ),
                     title: Text(productError!),
                     trailing: TextButton(
                       onPressed: loadProducts,
@@ -295,10 +431,31 @@ class _HomePageState extends State<HomePage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: wide ? 40 : 16),
-                child: const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('暂无商品，请稍后再来。'),
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: PawmartColors.surfaceCard,
+                    borderRadius: BorderRadius.circular(pawmartRadiusMd),
+                    boxShadow: pawmartShadow1,
+                  ),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 48,
+                          color: PawmartColors.neutral300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '暂无商品，请稍后再来',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: PawmartColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -309,65 +466,106 @@ class _HomePageState extends State<HomePage> {
               sliver: SliverLayoutBuilder(
                 builder: (_, cstr) {
                   final cw = cstr.crossAxisExtent;
-                  final cols = cw >= 600 ? 4 : (cw >= 400 ? 3 : 2);
+                  final cols = cw >= 800 ? 4 : (cw >= 500 ? 3 : 2);
+                  final displayProducts = products.take(12).toList();
                   return SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: cols,
-                      childAspectRatio: 0.62,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.80,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (_, i) => _productCard(products[i]),
-                      childCount: products.length,
+                      (_, i) => _productCardMini(displayProducts[i]),
+                      childCount: displayProducts.length,
                     ),
                   );
                 },
               ),
             ),
 
-          // ——— AI Recommendation Section ———
+          // ════════ AI Recommendation Section ════════
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.only(top: 24),
+              margin: const EdgeInsets.only(top: 28),
               padding: EdgeInsets.fromLTRB(
                 wide ? 40 : 16,
-                28,
+                36,
                 wide ? 40 : 16,
-                24,
+                28,
               ),
               color: PawmartColors.neutral50,
               child: Column(
                 children: [
-                  pawmartSectionHeader('AI 为你推荐'),
-                  const SizedBox(height: 16),
+                  const Text(
+                    '为你的爱宠智能推荐',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: PawmartColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     '根据宠物品种和年龄，为你精选最适合的商品',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: PawmartColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  // 3 feature cards
-                  Row(
-                    children: [
-                      _featureCard(Icons.pets, '按品种推荐', '金毛、柯基、布偶…不同品种有不同营养需求'),
-                      const SizedBox(width: 12),
-                      _featureCard(
-                        Icons.schedule,
-                        '按年龄推荐',
-                        '幼犬、成犬、老年犬，智能匹配生长周期',
-                      ),
-                      const SizedBox(width: 12),
-                      _featureCard(
-                        Icons.favorite_outline,
-                        '按健康需求',
-                        '肠胃敏感、关节养护、毛发亮泽专属方案',
-                      ),
-                    ],
+                  const SizedBox(height: 28),
+                  LayoutBuilder(
+                    builder: (_, constraints) {
+                      final isCompact = constraints.maxWidth < 600;
+                      if (isCompact) {
+                        return Column(
+                          children: [
+                            _featureCard(
+                              Icons.pets,
+                              '按品种推荐',
+                              '金毛、柯基、布偶猫…不同品种有不同的营养需求，我们为你精准匹配',
+                            ),
+                            const SizedBox(height: 12),
+                            _featureCard(
+                              Icons.schedule,
+                              '按年龄推荐',
+                              '幼犬、成犬、老年犬，每个阶段需要不同配方，智能匹配生长周期',
+                            ),
+                            const SizedBox(height: 12),
+                            _featureCard(
+                              Icons.favorite_outline,
+                              '按健康需求',
+                              '肠胃敏感、关节养护、毛发亮泽，针对健康问题推荐专属护理方案',
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          _featureCard(
+                            Icons.pets,
+                            '按品种推荐',
+                            '金毛、柯基、布偶猫…不同品种有不同的营养需求，我们为你精准匹配',
+                          ),
+                          const SizedBox(width: 12),
+                          _featureCard(
+                            Icons.schedule,
+                            '按年龄推荐',
+                            '幼犬、成犬、老年犬，每个阶段需要不同配方，智能匹配生长周期',
+                          ),
+                          const SizedBox(width: 12),
+                          _featureCard(
+                            Icons.favorite_outline,
+                            '按健康需求',
+                            '肠胃敏感、关节养护、毛发亮泽，针对健康问题推荐专属护理方案',
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   SizedBox(
                     height: 46,
                     child: FilledButton(
@@ -384,7 +582,10 @@ class _HomePageState extends State<HomePage> {
                       style: FilledButton.styleFrom(
                         backgroundColor: PawmartColors.accent400,
                         foregroundColor: PawmartColors.textOnAccent,
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        padding: const EdgeInsets.symmetric(horizontal: 36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(pawmartRadiusFull),
+                        ),
                       ),
                       child: Text(
                         '开始智能推荐',
@@ -400,79 +601,124 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // ——— Brand Promise Section ———
+          // ════════ Brand Promise Section ════════
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 wide ? 40 : 16,
-                32,
+                36,
                 wide ? 40 : 16,
-                32,
+                36,
               ),
-              child: Row(
-                children: [
-                  _brandPromise(Icons.shield_outlined, '正品保障', '假一赔十'),
-                  const SizedBox(width: 12),
-                  _brandPromise(
-                    Icons.local_shipping_outlined,
-                    '极速配送',
-                    '主要城市次日达',
-                  ),
-                  const SizedBox(width: 12),
-                  _brandPromise(Icons.replay_outlined, '7天无理由', '不满意随时退换'),
-                  const SizedBox(width: 12),
-                  _brandPromise(
-                    Icons.support_agent_outlined,
-                    '专属客服',
-                    '7x24小时在线',
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (_, constraints) {
+                  final isCompact = constraints.maxWidth < 500;
+                  if (isCompact) {
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 20,
+                      alignment: WrapAlignment.spaceAround,
+                      children: [
+                        _brandPromise(
+                          Icons.verified_user_outlined,
+                          '正品保障',
+                          '全球品牌授权，假一赔十',
+                        ),
+                        _brandPromise(
+                          Icons.local_shipping_outlined,
+                          '极速配送',
+                          '全国主要城市次日达',
+                        ),
+                        _brandPromise(
+                          Icons.replay_outlined,
+                          '7天无理由',
+                          '不满意随时退换货',
+                        ),
+                        _brandPromise(
+                          Icons.headset_mic_outlined,
+                          '专属客服',
+                          '7x24小时在线咨询',
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      _brandPromise(
+                        Icons.verified_user_outlined,
+                        '正品保障',
+                        '全球品牌授权，假一赔十',
+                      ),
+                      const SizedBox(width: 12),
+                      _brandPromise(
+                        Icons.local_shipping_outlined,
+                        '极速配送',
+                        '全国主要城市次日达',
+                      ),
+                      const SizedBox(width: 12),
+                      _brandPromise(
+                        Icons.replay_outlined,
+                        '7天无理由',
+                        '不满意随时退换货',
+                      ),
+                      const SizedBox(width: 12),
+                      _brandPromise(
+                        Icons.headset_mic_outlined,
+                        '专属客服',
+                        '7x24小时在线咨询',
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
 
-          // ——— Footer ———
+          // ════════ Footer ════════
           SliverToBoxAdapter(
             child: Container(
               color: PawmartColors.neutral900,
               padding: EdgeInsets.fromLTRB(
                 wide ? 40 : 24,
-                32,
+                40,
                 wide ? 40 : 24,
                 24,
               ),
-              child: Column(
-                children: [
-                  Text(
-                    'PawMart 宠物商城',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 20,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
+              child: LayoutBuilder(
+                builder: (_, constraints) {
+                  final isNarrow = constraints.maxWidth < 500;
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _footerColumn('关于PawMart', ['品牌故事', '加入我们', '联系客服']),
+                        const SizedBox(height: 24),
+                        _footerColumn('购物指南', ['新手指南', '支付方式', '配送说明']),
+                        const SizedBox(height: 24),
+                        _footerColumn('客户服务', ['退换政策', '售后保障', '常见问题']),
+                        const SizedBox(height: 24),
+                        _footerColumn('关注我们', ['微信公众号', '微博', '小红书']),
+                        const SizedBox(height: 28),
+                        _footerBottom(),
+                      ],
+                    );
+                  }
+                  return Column(
                     children: [
-                      _footerLink('关于我们'),
-                      _footerLink('联系客服'),
-                      _footerLink('隐私政策'),
-                      _footerLink('用户协议'),
-                      _footerLink('帮助中心'),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _footerColumn('关于PawMart', ['品牌故事', '加入我们', '联系客服'])),
+                          Expanded(child: _footerColumn('购物指南', ['新手指南', '支付方式', '配送说明'])),
+                          Expanded(child: _footerColumn('客户服务', ['退换政策', '售后保障', '常见问题'])),
+                          Expanded(child: _footerColumn('关注我们', ['微信公众号', '微博', '小红书'])),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      _footerBottom(),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '© 2026 PawMart. 保留所有权利。',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withAlpha(130),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -514,7 +760,7 @@ class _HomePageState extends State<HomePage> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors:
@@ -533,8 +779,10 @@ class _HomePageState extends State<HomePage> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: (isMerchant ? Colors.white : PawmartColors.primary500)
-                    .withAlpha(40),
+                color:
+                    isMerchant
+                        ? Colors.white.withAlpha(40)
+                        : PawmartColors.primary50,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -599,10 +847,11 @@ class _HomePageState extends State<HomePage> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
           decoration: BoxDecoration(
             color: active ? PawmartColors.accent400 : PawmartColors.neutral100,
             borderRadius: BorderRadius.circular(pawmartRadiusFull),
+            boxShadow: active ? pawmartShadow1 : null,
           ),
           child: Text(
             label,
@@ -628,6 +877,7 @@ class _HomePageState extends State<HomePage> {
       PawmartColors.neutral100,
       PawmartColors.primary50,
     ];
+    final isOos = product.stock <= 0;
     return InkWell(
       borderRadius: BorderRadius.circular(pawmartRadiusMd),
       onTap:
@@ -646,129 +896,135 @@ class _HomePageState extends State<HomePage> {
           color: PawmartColors.surfaceCard,
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
           boxShadow: pawmartShadow1,
+          border: Border.all(color: PawmartColors.neutral200),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Product Image Area
             Container(
-              height: 120,
+              height: 140,
               decoration: BoxDecoration(
                 color: colors[product.category.hashCode.abs() % colors.length],
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(pawmartRadiusMd),
                 ),
               ),
-              child:
-                  product.coverUrl.isNotEmpty
-                      ? ClipRRect(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (product.coverUrl.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(pawmartRadiusMd),
+                      ),
+                      child: Image.network(
+                        product.coverUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _productIcon(product),
+                      ),
+                    )
+                  else
+                    _productIcon(product),
+                  if (isOos)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(100),
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(pawmartRadiusMd),
                         ),
-                        child: Image.network(
-                          product.coverUrl,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (_, __, ___) => _productIcon(product),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '已售罄',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
                         ),
-                      )
-                      : _productIcon(product),
+                      ),
+                    ),
+                ],
+              ),
             ),
+            // Product Info
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Category Tag
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
+                      horizontal: 8,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: PawmartColors.primary50,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      product.category,
+                      product.category.isNotEmpty ? product.category : '通用',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 10,
+                        fontWeight: FontWeight.w600,
                         color: PawmartColors.primary600,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
+                  // Product Name
                   Text(
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      height: 1.2,
+                      fontSize: 14,
+                      height: 1.3,
                       color: PawmartColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+                  // Price
                   Text(
-                    product.description.isEmpty
-                        ? '商家暂未填写简介'
-                        : product.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    '¥${product.price.toStringAsFixed(0)}',
                     style: TextStyle(
-                      fontSize: 11,
-                      height: 1.25,
-                      color: PawmartColors.textSecondary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      color: PawmartColors.primary500,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '库存 ${product.stock}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: PawmartColors.textSecondary,
+                  const SizedBox(height: 10),
+                  // Add to Cart Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 34,
+                    child: FilledButton(
+                      onPressed: !isOos ? () => _addProductToCart(product) : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor:
+                            isOos
+                                ? PawmartColors.neutral200
+                                : PawmartColors.accent400,
+                        foregroundColor:
+                            isOos
+                                ? PawmartColors.neutral400
+                                : PawmartColors.textOnAccent,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(pawmartRadiusSm),
+                        ),
+                        textStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: Text(isOos ? '已售罄' : '加入购物车'),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        '¥${product.price.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: PawmartColors.primary500,
-                        ),
-                      ),
-                      const Spacer(),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(pawmartRadiusFull),
-                        onTap:
-                            product.stock > 0
-                                ? () => _addProductToCart(product)
-                                : null,
-                        child: Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color:
-                                product.stock > 0
-                                    ? PawmartColors.accent400
-                                    : PawmartColors.neutral200,
-                            borderRadius: BorderRadius.circular(
-                              pawmartRadiusFull,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.add_shopping_cart_rounded,
-                            size: 14,
-                            color: PawmartColors.textOnAccent,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -779,11 +1035,78 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Compact product card for "新品上市" section
+  Widget _productCardMini(Product product) {
+    final colors = [
+      PawmartColors.primary100, PawmartColors.accent50,
+      PawmartColors.neutral100, PawmartColors.primary50,
+    ];
+    return InkWell(
+      borderRadius: BorderRadius.circular(pawmartRadiusMd),
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ProductDetailPage(product: product, apiClient: widget.apiClient),
+      )),
+      child: Container(
+        decoration: BoxDecoration(
+          color: PawmartColors.surfaceCard,
+          borderRadius: BorderRadius.circular(pawmartRadiusMd),
+          boxShadow: pawmartShadow1,
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: colors[product.category.hashCode.abs() % colors.length],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
+            ),
+            child: Stack(fit: StackFit.expand, children: [
+              if (product.coverUrl.isNotEmpty)
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
+                  child: Image.network(product.coverUrl, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _productIcon(product)),
+                )
+              else
+                _productIcon(product),
+              if (product.stock <= 0)
+                Container(color: Colors.black.withAlpha(80), alignment: Alignment.center,
+                  child: const Text('售罄', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: PawmartColors.textPrimary)),
+              const SizedBox(height: 4),
+              Row(children: [
+                Text('¥${product.price.toStringAsFixed(0)}',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: PawmartColors.primary500)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: product.stock > 0 ? () => _addProductToCart(product) : null,
+                  child: Container(
+                    width: 26, height: 26,
+                    decoration: BoxDecoration(
+                      color: PawmartColors.accent400,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.add, size: 16, color: PawmartColors.textOnAccent),
+                  ),
+                ),
+              ]),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
   Widget _productIcon(Product product) {
     return Center(
       child: Icon(
         product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined,
-        size: 36,
+        size: 40,
         color: PawmartColors.primary400,
       ),
     );
@@ -802,40 +1125,41 @@ class _HomePageState extends State<HomePage> {
   Widget _featureCard(IconData icon, String title, String desc) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: PawmartColors.surfaceCard,
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
           border: Border.all(color: PawmartColors.neutral200),
+          boxShadow: pawmartShadow1,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: PawmartColors.primary50,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 20, color: PawmartColors.primary500),
+              child: Icon(icon, size: 22, color: PawmartColors.primary500),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: PawmartColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               desc,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 color: PawmartColors.textSecondary,
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ],
@@ -850,36 +1174,83 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: PawmartColors.primary50,
               borderRadius: BorderRadius.circular(pawmartRadiusFull),
             ),
-            child: Icon(icon, size: 20, color: PawmartColors.primary500),
+            child: Icon(icon, size: 24, color: PawmartColors.primary500),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             title,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
               color: PawmartColors.textPrimary,
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             sub,
-            style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary),
+            style: TextStyle(
+              fontSize: 12,
+              color: PawmartColors.textSecondary,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _footerLink(String text) {
-    return Text(
-      text,
-      style: TextStyle(fontSize: 13, color: Colors.white.withAlpha(180)),
+  Widget _footerColumn(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              item,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withAlpha(180),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _footerBottom() {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 1,
+          color: Colors.white.withAlpha(25),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          '© 2026 PawMart 宠物商城',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white.withAlpha(130),
+          ),
+        ),
+      ],
     );
   }
 }

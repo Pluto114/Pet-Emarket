@@ -6,15 +6,16 @@ import '../../core/theme/app_theme.dart';
 import 'cart/cart_page.dart' show CartPage, CartPageState;
 import 'home/home_page.dart';
 import 'order/order_page.dart' show OrderPage, OrderPageState;
+import 'product/product_list_page.dart';
 import 'profile/profile_tab.dart';
 import 'store/nearby_store_page.dart';
 
 const _navItems = [
-  {'l': 'Home', 'i': Icons.home},
-  {'l': 'Nearby', 'i': Icons.store},
-  {'l': 'Cart', 'i': Icons.shopping_cart},
-  {'l': 'Orders', 'i': Icons.receipt_long},
-  {'l': 'Me', 'i': Icons.person},
+  {'l': '首页', 'i': Icons.home},
+  {'l': '商品', 'i': Icons.shopping_bag},
+  {'l': '附近', 'i': Icons.store},
+  {'l': '购物车', 'i': Icons.shopping_cart},
+  {'l': '订单', 'i': Icons.receipt_long},
 ];
 
 class UserShell extends StatefulWidget {
@@ -44,9 +45,8 @@ class _UserShellState extends State<UserShell> {
 
   void _onTabChanged(int i) {
     setState(() => _idx = i);
-    // 切换 tab 时自动刷新对应页面数据
-    if (i == 2) _cartKey.currentState?.load();
-    if (i == 3) _orderKey.currentState?.load();
+    if (i == 3) _cartKey.currentState?.load();
+    if (i == 4) _orderKey.currentState?.load();
   }
 
   static const _tabs = [
@@ -54,6 +54,11 @@ class _UserShellState extends State<UserShell> {
       icon: Icon(Icons.home_outlined),
       selectedIcon: Icon(Icons.home),
       label: '首页',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.shopping_bag_outlined),
+      selectedIcon: Icon(Icons.shopping_bag),
+      label: '商品',
     ),
     NavigationDestination(
       icon: Icon(Icons.store_outlined),
@@ -92,166 +97,167 @@ class _UserShellState extends State<UserShell> {
     final isLight = t.brightness == Brightness.light;
     final xWide = screenW > 1100;
     final navGap = xWide ? 24.0 : 12.0;
-    final searchMaxW = xWide ? 400.0 : (wide ? 220.0 : screenW * 0.4);
+    final searchMaxW = xWide ? 400.0 : (wide ? 220.0 : screenW * 0.35);
     return PreferredSize(
       preferredSize: Size.fromHeight(wide ? 64 : 56),
       child: Container(
         color: PawmartColors.surfaceCard,
         child: SafeArea(
           bottom: false,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: wide && xWide ? 40 : 12,
-              vertical: 4,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: PawmartColors.neutral200),
+              ),
             ),
-            child: Row(
-              children: [
-                // Logo
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: PawmartColors.primary500,
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      child: const Icon(
-                        Icons.pets,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'PawMart',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
-                        color: PawmartColors.primary500,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                // Search bar
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: searchMaxW),
-                    child: SizedBox(
-                      height: 38,
-                      child: TextField(
-                        controller: _searchCtrl,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: PawmartColors.neutral50,
-                          hintText: wide ? '搜索宠物、口粮…' : '搜索…',
-                          hintStyle: TextStyle(
-                            fontSize: 13,
-                            color: PawmartColors.textSecondary.withAlpha(150),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search_rounded,
-                            size: 20,
-                            color: PawmartColors.neutral400,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              pawmartRadiusFull,
-                            ),
-                            borderSide: BorderSide(
-                              color: PawmartColors.neutral200,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              pawmartRadiusFull,
-                            ),
-                            borderSide: BorderSide(
-                              color: PawmartColors.primary500,
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 9,
-                          ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: wide && xWide ? 40 : 12,
+                vertical: 4,
+              ),
+              child: Row(
+                children: [
+                  // Logo
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: PawmartColors.primary500,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.pets,
+                          color: Colors.white,
+                          size: 18,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'PawMart',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          color: PawmartColors.primary500,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                // Wide nav items
-                if (wide) ...[
-                  ...List.generate(_navItems.length, (i) {
-                    final item = _navItems[i];
-                    final active = i == _idx;
-                    return Padding(
-                      padding: EdgeInsets.only(left: i == 0 ? 0 : navGap),
-                      child: InkWell(
-                        onTap: () => _onTabChanged(i),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 2,
-                            vertical: 2,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                item['i'] as IconData,
-                                size: 18,
-                                color:
-                                    active
+                  const SizedBox(width: 16),
+                  // Wide nav items
+                  if (wide) ...[
+                    ...List.generate(_navItems.length, (i) {
+                      final item = _navItems[i];
+                      final active = i == _idx;
+                      return Padding(
+                        padding: EdgeInsets.only(left: i == 0 ? 0 : navGap),
+                        child: InkWell(
+                          onTap: () => _onTabChanged(i),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item['i'] as IconData,
+                                  size: 20,
+                                  color: active
+                                      ? PawmartColors.primary500
+                                      : PawmartColors.textSecondary,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item['l'] as String,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: active
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: active
                                         ? PawmartColors.primary500
                                         : PawmartColors.textSecondary,
-                              ),
-                              Text(
-                                item['l'] as String,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight:
-                                      active
-                                          ? FontWeight.w700
-                                          : FontWeight.w400,
-                                  color:
-                                      active
-                                          ? PawmartColors.primary500
-                                          : PawmartColors.textSecondary,
+                                  ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(width: 12),
+                  ],
+                  const Spacer(),
+                  // Search bar
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: searchMaxW),
+                      child: SizedBox(
+                        height: 38,
+                        child: TextField(
+                          controller: _searchCtrl,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: PawmartColors.neutral50,
+                            hintText: wide ? '搜索宠物、口粮…' : '搜索…',
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              color: PawmartColors.textSecondary.withAlpha(150),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              size: 20,
+                              color: PawmartColors.neutral400,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(pawmartRadiusFull),
+                              borderSide: BorderSide(color: PawmartColors.neutral200),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(pawmartRadiusFull),
+                              borderSide: BorderSide(
+                                color: PawmartColors.primary500,
+                                width: 2,
                               ),
-                            ],
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                            isDense: true,
                           ),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                   const SizedBox(width: 8),
+                  // Theme toggle
+                  IconButton(
+                    tooltip: '切换主题',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      isLight ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                      size: 20,
+                      color: PawmartColors.textSecondary,
+                    ),
+                    onPressed: widget.onThemeToggle,
+                  ),
+                  // User profile
+                  IconButton(
+                    tooltip: '个人中心',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      Icons.person_outline,
+                      size: 20,
+                      color: _idx == 5 ? PawmartColors.primary500 : PawmartColors.textSecondary,
+                    ),
+                    onPressed: () => _onTabChanged(5),
+                  ),
                 ],
-                // Theme toggle
-                IconButton(
-                  tooltip: '切换主题',
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    isLight ? Icons.dark_mode : Icons.light_mode,
-                    color: PawmartColors.textSecondary,
-                  ),
-                  onPressed: widget.onThemeToggle,
-                ),
-                // Logout button
-                IconButton(
-                  tooltip: '退出登录',
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    Icons.logout,
-                    color: PawmartColors.textSecondary,
-                  ),
-                  onPressed: widget.onLogout,
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -272,6 +278,7 @@ class _UserShellState extends State<UserShell> {
         sessionStore: widget.sessionStore,
         onGoToMerchant: widget.onGoToMerchant,
       ),
+      ProductListPage(apiClient: widget.apiClient),
       NearbyStorePage(apiClient: widget.apiClient),
       CartPage(key: _cartKey, apiClient: widget.apiClient),
       OrderPage(key: _orderKey, apiClient: widget.apiClient, sessionStore: widget.sessionStore),

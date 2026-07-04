@@ -20,15 +20,31 @@ class CartPageState extends State<CartPage> {
   List<CartItem> items = [];
   List<ShippingAddress> addresses = [];
   ShippingAddress? selectedAddress;
+  final Set<String> _selectedIds = {};
 
-  double get total => items.fold(0, (sum, item) => sum + item.subtotal);
-
-  bool get canCheckout => items.isNotEmpty;
+  List<CartItem> get selectedItems => items.where((item) => _selectedIds.contains(item.id)).toList();
+  double get total => selectedItems.fold(0, (sum, item) => sum + item.subtotal);
+  bool get canCheckout => selectedItems.isNotEmpty;
+  bool get allSelected => items.isNotEmpty && _selectedIds.length == items.length;
 
   @override
   void initState() {
     super.initState();
     load();
+  }
+
+  void _toggleItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) _selectedIds.remove(id);
+      else _selectedIds.add(id);
+    });
+  }
+
+  void _toggleSelectAll() {
+    setState(() {
+      if (allSelected) _selectedIds.clear();
+      else _selectedIds.addAll(items.map((item) => item.id));
+    });
   }
 
   @override
@@ -39,19 +55,36 @@ class CartPageState extends State<CartPage> {
     return Scaffold(
       backgroundColor: PawmartColors.surfaceBg,
       appBar: AppBar(
-        title: const Text('购物车'),
+        title: Row(
+          children: [
+            const Text('我的购物车'),
+            if (items.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Text(
+                '(${items.length})',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: PawmartColors.textSecondary,
+                ),
+              ),
+            ],
+          ],
+        ),
         actions: [
           if (items.isNotEmpty)
             TextButton(
-              onPressed: canCheckout ? goToCheckout : null,
+              onPressed: () async {
+                final toDelete = _selectedIds.isNotEmpty ? selectedItems : items;
+                for (final item in toDelete) {
+                  await widget.apiClient.deleteCartItem(item.id);
+                }
+                await load();
+              },
               child: Text(
-                '去结算',
+                '删除',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color:
-                      canCheckout
-                          ? PawmartColors.primary500
-                          : PawmartColors.textSecondary,
+                  color: PawmartColors.error.withAlpha(200),
                 ),
               ),
             ),
@@ -91,177 +124,250 @@ class CartPageState extends State<CartPage> {
               ),
               const SizedBox(height: 16),
 
-              // Cart Items
               if (items.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: PawmartColors.surfaceCard,
-                    borderRadius: BorderRadius.circular(pawmartRadiusMd),
-                    boxShadow: pawmartShadow1,
-                  ),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 48,
-                          color: PawmartColors.neutral300,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '购物车为空',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: PawmartColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '先去逛逛，添加喜欢的商品吧',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: PawmartColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ...items.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _CartItemCard(
-                    item: item,
-                    onIncrease: () => updateQuantity(item, item.quantity + 1),
-                    onDecrease:
-                        () =>
-                            item.quantity > 1
-                                ? updateQuantity(item, item.quantity - 1)
-                                : null,
-                    onDelete: () => deleteItem(item),
-                  ),
-                ),
-              ),
-              if (items.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                // Total Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: PawmartColors.surfaceCard,
-                    borderRadius: BorderRadius.circular(pawmartRadiusMd),
-                    boxShadow: pawmartShadow1,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        '合计',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: PawmartColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '¥${total.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: PawmartColors.primary500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (items.isNotEmpty && selectedAddress == null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    '请先新增并选择收货地址。',
-                    style: TextStyle(fontSize: 13, color: PawmartColors.error),
-                  ),
-                ),
+                _emptyCart()
+              else if (wide)
+                _wideLayout()
+              else
+                _narrowLayout(),
             ],
           ],
         ),
       ),
-      // Sticky bottom bar when has items
-      bottomNavigationBar:
-          items.isNotEmpty
-              ? Container(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                decoration: BoxDecoration(
-                  color: PawmartColors.surfaceCard,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF36322E).withAlpha(15),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '合计',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: PawmartColors.textSecondary,
-                              ),
-                            ),
-                            Text(
-                              '¥${total.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: PawmartColors.primary500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        height: 48,
-                        width: 140,
-                        child: FilledButton(
-                          onPressed: canCheckout ? goToCheckout : null,
-                          style: FilledButton.styleFrom(
-                            backgroundColor:
-                                canCheckout
-                                    ? PawmartColors.accent400
-                                    : PawmartColors.neutral200,
-                            foregroundColor:
-                                canCheckout
-                                    ? PawmartColors.textOnAccent
-                                    : PawmartColors.neutral400,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                          ),
-                          child: Text(
-                            '去结算',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+    );
+  }
+
+  Widget _emptyCart() {
+    return Container(
+      padding: const EdgeInsets.all(48),
+      decoration: BoxDecoration(
+        color: PawmartColors.surfaceCard,
+        borderRadius: BorderRadius.circular(pawmartRadiusLg),
+        boxShadow: pawmartShadow1,
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: PawmartColors.neutral100,
+                borderRadius: BorderRadius.circular(pawmartRadiusFull),
+              ),
+              child: Icon(
+                Icons.shopping_cart_outlined,
+                size: 36,
+                color: PawmartColors.neutral300,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '购物车空空如也',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: PawmartColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '快去挑选心仪的宠物好物吧',
+              style: TextStyle(
+                fontSize: 14,
+                color: PawmartColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Wide layout: two-column (items + order summary)
+  Widget _wideLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Column(
+            children:
+                items.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _CartItemCard(
+                    item: item,
+                    selected: _selectedIds.contains(item.id),
+                    onToggleSelect: () => _toggleItem(item.id),
+                    onIncrease: () => updateQuantity(item, item.quantity + 1),
+                    onDecrease: () => item.quantity > 1
+                        ? updateQuantity(item, item.quantity - 1)
+                        : null,
+                    onDelete: () => deleteItem(item),
                   ),
+                )).toList(),
+          ),
+        ),
+        const SizedBox(width: 20),
+        Expanded(
+          flex: 2,
+          child: _buildOrderSummary(),
+        ),
+      ],
+    );
+  }
+
+  Widget _narrowLayout() {
+    return Column(
+      children: [
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _CartItemCard(
+              item: item,
+              selected: _selectedIds.contains(item.id),
+              onToggleSelect: () => _toggleItem(item.id),
+              onIncrease: () => updateQuantity(item, item.quantity + 1),
+              onDecrease: () => item.quantity > 1
+                  ? updateQuantity(item, item.quantity - 1)
+                  : null,
+              onDelete: () => deleteItem(item),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildOrderSummary(),
+      ],
+    );
+  }
+
+  Widget _buildOrderSummary() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: PawmartColors.surfaceCard,
+        borderRadius: BorderRadius.circular(pawmartRadiusLg),
+        boxShadow: pawmartShadow1,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '订单摘要',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: PawmartColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Select all
+          Row(children: [
+            SizedBox(width: 20, height: 20, child: Checkbox(value: allSelected, onChanged: (v) { if (v != null) _toggleSelectAll(); }, activeColor: PawmartColors.primary500, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap)),
+            const SizedBox(width: 8),
+            Text('全选', style: TextStyle(fontSize: 14, color: PawmartColors.textPrimary)),
+            const Spacer(),
+            Text('已选 ${selectedItems.length} 件', style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+          ]),
+          const SizedBox(height: 10),
+          const Divider(),
+          const SizedBox(height: 12),
+          _summaryRow('商品总价', '¥${total.toStringAsFixed(2)}'),
+          const SizedBox(height: 10),
+          _summaryRow('运费', '免运费', valueColor: PawmartColors.success),
+          const SizedBox(height: 10),
+          _summaryRow('优惠', '-¥0.00', valueColor: PawmartColors.error),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                '应付总额',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: PawmartColors.textPrimary,
                 ),
-              )
-              : null,
+              ),
+              const Spacer(),
+              Text(
+                '¥${total.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: PawmartColors.primary500,
+                ),
+              ),
+            ],
+          ),
+          if (selectedAddress == null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: PawmartColors.error.withAlpha(15),
+                borderRadius: BorderRadius.circular(pawmartRadiusSm),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 16, color: PawmartColors.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '请先新增并选择收货地址',
+                      style: TextStyle(fontSize: 12, color: PawmartColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              onPressed: canCheckout ? goToCheckout : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: canCheckout
+                    ? PawmartColors.accent400
+                    : PawmartColors.neutral200,
+                foregroundColor: canCheckout
+                    ? PawmartColors.textOnAccent
+                    : PawmartColors.neutral400,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(pawmartRadiusMd),
+                ),
+              ),
+              child: Text(
+                '去结算',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(String label, String value, {Color? valueColor}) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: valueColor ?? PawmartColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -282,6 +388,7 @@ class CartPageState extends State<CartPage> {
           nextAddresses.where((a) => a.id == previousSelectedId).firstOrNull;
       items = nextItems;
       addresses = nextAddresses;
+      _selectedIds.addAll(nextItems.map((item) => item.id));
       selectedAddress =
           previousSelected ??
           defaultAddress ??
@@ -294,6 +401,18 @@ class CartPageState extends State<CartPage> {
   }
 
   Future<void> updateQuantity(CartItem item, int quantity) async {
+    if (quantity > item.product.stock) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${item.product.name} 库存仅剩 ${item.product.stock} 件'),
+            backgroundColor: const Color(0xFFE8BF20),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
     try {
       await widget.apiClient.updateCartItem(item.id, quantity);
       await load();
@@ -353,14 +472,14 @@ class CartPageState extends State<CartPage> {
   }
 
   Future<void> goToCheckout() async {
-    if (items.isEmpty) return;
+    if (selectedItems.isEmpty) return;
     final created = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => CheckoutPage(
           apiClient: widget.apiClient,
           sessionStore: widget.apiClient.sessionStore,
-          items: items,
+          items: selectedItems,
         ),
       ),
     );
@@ -382,11 +501,15 @@ class CartPageState extends State<CartPage> {
 class _CartItemCard extends StatelessWidget {
   const _CartItemCard({
     required this.item,
+    required this.selected,
+    required this.onToggleSelect,
     required this.onIncrease,
     required this.onDecrease,
     required this.onDelete,
   });
   final CartItem item;
+  final bool selected;
+  final VoidCallback onToggleSelect;
   final VoidCallback onIncrease;
   final VoidCallback? onDecrease;
   final VoidCallback onDelete;
@@ -394,30 +517,51 @@ class _CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final product = item.product;
+    final stock = product.stock;
+    final isLowStock = stock > 0 && stock <= 5;
+    final isOos = stock <= 0;
+    final atLimit = item.quantity >= stock;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: PawmartColors.surfaceCard,
         borderRadius: BorderRadius.circular(pawmartRadiusMd),
         boxShadow: pawmartShadow1,
+        border: Border.all(color: isLowStock ? const Color(0xFFE8BF20).withAlpha(80) : PawmartColors.neutral200),
       ),
       child: Row(
         children: [
-          // Icon
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: PawmartColors.primary50,
-              borderRadius: BorderRadius.circular(pawmartRadiusMd),
-            ),
-            child: Icon(
-              product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined,
-              color: PawmartColors.primary500,
-              size: 24,
+          // Checkbox
+          SizedBox(
+            width: 24, height: 24,
+            child: Checkbox(
+              value: selected,
+              onChanged: (v) { if (v != null) onToggleSelect(); },
+              activeColor: PawmartColors.primary500,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          // Product Image
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: PawmartColors.neutral100,
+              borderRadius: BorderRadius.circular(pawmartRadiusSm),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(pawmartRadiusSm),
+              child: product.coverUrl.isNotEmpty
+                  ? Image.network(
+                      product.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _productIcon(product),
+                    )
+                  : _productIcon(product),
+            ),
+          ),
+          const SizedBox(width: 14),
           // Info
           Expanded(
             child: Column(
@@ -425,6 +569,8 @@ class _CartItemCard extends StatelessWidget {
               children: [
                 Text(
                   product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -432,73 +578,141 @@ class _CartItemCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '¥${product.price.toStringAsFixed(2)} x ${item.quantity}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: PawmartColors.textSecondary,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      product.category.isNotEmpty ? product.category : '通用',
+                      style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+                    ),
+                    const Spacer(),
+                    if (isLowStock)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8BF20).withAlpha(30),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '库存仅剩 $stock',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFFCCA218)),
+                        ),
+                      ),
+                    if (isOos)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: PawmartColors.error.withAlpha(25),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '已售罄',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: PawmartColors.error),
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '小计：¥${item.subtotal.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: PawmartColors.primary500,
-                  ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      '¥${product.price.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: PawmartColors.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Quantity Controls
+                    Container(
+                      height: 32,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(pawmartRadiusSm),
+                        border: Border.all(color: PawmartColors.neutral200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: onDecrease,
+                            borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(pawmartRadiusSm),
+                            ),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              child: Icon(Icons.remove, size: 16, color: PawmartColors.textSecondary),
+                            ),
+                          ),
+                          Container(
+                            width: 36,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(color: PawmartColors.neutral200),
+                                right: BorderSide(color: PawmartColors.neutral200),
+                              ),
+                            ),
+                            child: Text(
+                              '${item.quantity}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: atLimit ? PawmartColors.error : PawmartColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: atLimit ? null : onIncrease,
+                            borderRadius: const BorderRadius.horizontal(
+                              right: Radius.circular(pawmartRadiusSm),
+                            ),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              child: Icon(Icons.add, size: 16, color: atLimit ? PawmartColors.neutral300 : PawmartColors.textSecondary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '¥${item.subtotal.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: PawmartColors.primary500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          // Quantity Controls
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(pawmartRadiusMd),
-              border: Border.all(color: PawmartColors.neutral200),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove, size: 16),
-                  onPressed: onDecrease,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                ),
-                Text(
-                  '${item.quantity}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: PawmartColors.textPrimary,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add, size: 16),
-                  onPressed: onIncrease,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           // Delete
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 18),
             onPressed: onDelete,
             color: PawmartColors.error.withAlpha(180),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _productIcon(dynamic product) {
+    return Center(
+      child: Icon(
+        product.isLivePet ? Icons.pets : Icons.shopping_bag_outlined,
+        size: 24,
+        color: PawmartColors.neutral400,
       ),
     );
   }
@@ -529,28 +743,37 @@ class _AddressSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: PawmartColors.surfaceCard,
         borderRadius: BorderRadius.circular(pawmartRadiusMd),
         boxShadow: pawmartShadow1,
+        border: Border.all(color: PawmartColors.neutral200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 18,
-                color: PawmartColors.primary500,
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: PawmartColors.primary50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.location_on_outlined,
+                  size: 18,
+                  color: PawmartColors.primary500,
+                ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
               Text(
                 '收货地址',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  fontSize: 15,
+                  fontSize: 16,
                   color: PawmartColors.textPrimary,
                 ),
               ),
@@ -559,7 +782,7 @@ class _AddressSection extends StatelessWidget {
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_location_alt_outlined, size: 16),
                 label: Text(
-                  '新增',
+                  '新增地址',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -567,7 +790,7 @@ class _AddressSection extends StatelessWidget {
           ),
           if (addresses.isEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
                 '暂无收货地址，请新增后再下单。',
                 style: TextStyle(
@@ -578,55 +801,98 @@ class _AddressSection extends StatelessWidget {
             )
           else
             ...addresses.map(
-              (address) => ListTile(
-                selected: selectedAddress?.id == address.id,
-                selectedTileColor: PawmartColors.primary50,
-                shape: RoundedRectangleBorder(
+              (address) => Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: selectedAddress?.id == address.id
+                      ? PawmartColors.primary50
+                      : PawmartColors.neutral50,
                   borderRadius: BorderRadius.circular(pawmartRadiusSm),
-                ),
-                dense: true,
-                onTap: () => onSelected(address),
-                leading: Icon(
-                  selectedAddress?.id == address.id
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  size: 20,
-                  color:
-                      selectedAddress?.id == address.id
-                          ? PawmartColors.primary500
-                          : PawmartColors.neutral400,
-                ),
-                title: Text(
-                  '${address.receiver}  ${address.phone}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: PawmartColors.textPrimary,
+                  border: Border.all(
+                    color: selectedAddress?.id == address.id
+                        ? PawmartColors.primary200
+                        : Colors.transparent,
                   ),
                 ),
-                subtitle: Text(
-                  address.fullAddress,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: PawmartColors.textSecondary,
+                child: InkWell(
+                  onTap: () => onSelected(address),
+                  borderRadius: BorderRadius.circular(pawmartRadiusSm),
+                  child: Row(
+                    children: [
+                      Icon(
+                        selectedAddress?.id == address.id
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: selectedAddress?.id == address.id
+                            ? PawmartColors.primary500
+                            : PawmartColors.neutral400,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  '${address.receiver}  ${address.phone}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: PawmartColors.textPrimary,
+                                  ),
+                                ),
+                                if (address.defaultAddress) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: PawmartColors.primary500,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '默认',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              address.fullAddress,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: PawmartColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') onEdit(address);
+                          if (value == 'default') onDefault(address);
+                          if (value == 'delete') onDelete(address);
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                          if (!address.defaultAddress)
+                            const PopupMenuItem(value: 'default', child: Text('设为默认')),
+                          const PopupMenuItem(value: 'delete', child: Text('删除')),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                trailing: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit(address);
-                    if (value == 'default') onDefault(address);
-                    if (value == 'delete') onDelete(address);
-                  },
-                  itemBuilder:
-                      (context) => [
-                        const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                        if (!address.defaultAddress)
-                          const PopupMenuItem(
-                            value: 'default',
-                            child: Text('设为默认'),
-                          ),
-                        const PopupMenuItem(value: 'delete', child: Text('删除')),
-                      ],
                 ),
               ),
             ),

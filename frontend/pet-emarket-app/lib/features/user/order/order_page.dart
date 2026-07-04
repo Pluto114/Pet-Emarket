@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../models/order.dart';
 
 class OrderPage extends StatefulWidget {
@@ -253,6 +256,10 @@ class _OrderCard extends StatelessWidget {
               _StatusProgressBar(status: order.status),
               const SizedBox(height: 12),
             ],
+
+            // -- 支付倒计时（待支付订单）--
+            if (order.isUnpaid && order.deadlineDateTime != null)
+              _PaymentCountdown(deadline: order.deadlineDateTime!),
 
             // -- 信息 --
             Text('应付 ¥${order.payAmount.toStringAsFixed(2)}，优惠 ¥${order.discountAmount.toStringAsFixed(2)}'),
@@ -592,6 +599,101 @@ class _ReviewDialogState extends State<_ReviewDialog> {
           child: const Text('提交'),
         ),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════
+// Payment Countdown Timer
+// ═══════════════════════════════════════════
+class _PaymentCountdown extends StatefulWidget {
+  const _PaymentCountdown({required this.deadline});
+  final DateTime deadline;
+
+  @override
+  State<_PaymentCountdown> createState() => _PaymentCountdownState();
+}
+
+class _PaymentCountdownState extends State<_PaymentCountdown> {
+  Duration _remaining = Duration.zero;
+  late final StreamSubscription _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick();
+    _sub = Stream.periodic(const Duration(seconds: 1)).listen((_) {
+      if (mounted) _tick();
+    });
+  }
+
+  void _tick() {
+    final now = DateTime.now();
+    if (now.isAfter(widget.deadline)) {
+      if (mounted) setState(() => _remaining = Duration.zero);
+      return;
+    }
+    setState(() => _remaining = widget.deadline.difference(now));
+  }
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+
+  String get _text {
+    if (_remaining.inSeconds <= 0) return '已超时';
+    final h = _remaining.inHours;
+    final m = _remaining.inMinutes.remainder(60);
+    final s = _remaining.inSeconds.remainder(60);
+    if (h > 0) return '剩余 ${h}时${m}分${s}秒';
+    if (m > 0) return '剩余 ${m}分${s}秒';
+    return '剩余 ${s}秒';
+  }
+
+  bool get _urgent => _remaining.inMinutes < 5;
+
+  @override
+  Widget build(BuildContext context) {
+    final expired = _remaining.inSeconds <= 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: expired
+            ? PawmartColors.error.withAlpha(20)
+            : _urgent
+                ? const Color(0xFFFDF7D5)
+                : PawmartColors.neutral50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: expired
+              ? PawmartColors.error.withAlpha(60)
+              : _urgent
+                  ? const Color(0xFFF6E478)
+                  : PawmartColors.neutral200,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            expired ? Icons.timer_off : Icons.timer_outlined,
+            size: 16,
+            color: expired ? PawmartColors.error : (_urgent ? const Color(0xFFCCA218) : PawmartColors.textSecondary),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _text,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: expired ? PawmartColors.error : (_urgent ? const Color(0xFFCCA218) : PawmartColors.textSecondary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

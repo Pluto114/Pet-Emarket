@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AiAssistantPage extends StatefulWidget {
   const AiAssistantPage({required this.apiClient, super.key});
@@ -77,7 +78,7 @@ class _AS extends State<AiAssistantPage> {
     final t = Theme.of(ctx);
     final s = t.colorScheme;
     return Scaffold(
-      backgroundColor: s.surface,
+      backgroundColor: PawmartColors.surfaceBg,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: IconButton(
@@ -95,17 +96,17 @@ class _AS extends State<AiAssistantPage> {
               ),
             ),
             const SizedBox(width: 10),
-            Text(
+            const Text(
               'Voldog 智能AI宠医 🐾',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
-                color: s.onSurface,
+                color: PawmartColors.textPrimary,
               ),
             ),
           ],
         ),
-        backgroundColor: s.surface.withAlpha(210),
+        backgroundColor: PawmartColors.surfaceCard.withAlpha(220),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
@@ -118,37 +119,57 @@ class _AS extends State<AiAssistantPage> {
       body: Column(
         children: [
           const SizedBox(height: kToolbarHeight + 20),
-          // 状态栏
+          // Status bar
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: s.surfaceContainerLow,
+              color: PawmartColors.surfaceCard,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: PawmartColors.neutral200),
             ),
             child: Row(
               children: [
-                Icon(Icons.verified, size: 16, color: const Color(0xFF4CAF50)),
+                const Icon(Icons.verified, size: 16, color: Color(0xFF4CAF50)),
                 const SizedBox(width: 8),
-                Text(
-                  '在线中 · 46 篇兽医知识',
-                  style: TextStyle(fontSize: 12, color: s.onSurfaceVariant),
+                const Text(
+                  '在线中 · 153 篇宠物知识库',
+                  style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
                 ),
                 const Spacer(),
-                Icon(
-                  Icons.shield_outlined,
-                  size: 14,
-                  color: s.onSurfaceVariant,
-                ),
+                Icon(Icons.shield_outlined, size: 14, color: PawmartColors.textSecondary),
                 const SizedBox(width: 4),
-                Text(
-                  '端到端加密',
-                  style: TextStyle(fontSize: 11, color: s.onSurfaceVariant),
+                const Text(
+                  '仅供参考',
+                  style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary),
                 ),
               ],
             ),
           ),
-          // 消息列表
+          // Disclaimer
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: PawmartColors.accent50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: PawmartColors.accent200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 14, color: PawmartColors.accent600),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text(
+                    'AI建议仅供参考，严重健康问题请咨询执业兽医',
+                    style: TextStyle(fontSize: 11, color: PawmartColors.accent700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Message list
           Expanded(
             child:
                 _list.isEmpty && !_b
@@ -161,30 +182,41 @@ class _AS extends State<AiAssistantPage> {
                             height: 80,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(24),
-                              color: s.primaryContainer,
+                              color: PawmartColors.primary50,
                             ),
                             child: Icon(
                               Icons.smart_toy_rounded,
                               size: 40,
-                              color: s.primary,
+                              color: PawmartColors.primary500,
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'Voldog 智能AI宠医',
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: s.onSurface,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: PawmartColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             '可以问我宠物养护、疾病、喂养等问题',
                             style: TextStyle(
-                              fontSize: 13,
-                              color: s.onSurfaceVariant,
+                              fontSize: 14,
+                              color: PawmartColors.textSecondary,
                             ),
+                          ),
+                          const SizedBox(height: 20),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _suggestionChip('狗狗打什么疫苗？'),
+                              _suggestionChip('猫咪不吃东西怎么办？'),
+                              _suggestionChip('幼犬如何喂养？'),
+                              _suggestionChip('宠物掉毛严重正常吗？'),
+                            ],
                           ),
                         ],
                       ),
@@ -203,27 +235,22 @@ class _AS extends State<AiAssistantPage> {
                       },
                     ),
           ),
-          // 底部输入胶囊
+          // Input capsule
           Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             decoration: BoxDecoration(
-              color: s.surfaceContainerLow,
+              color: PawmartColors.surfaceCard,
               borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: s.shadow.withAlpha(20),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              border: Border.all(color: PawmartColors.neutral200),
+              boxShadow: pawmartShadow2,
             ),
             child: Row(
               children: [
                 IconButton(
                   icon: Icon(
                     Icons.pets,
-                    color: s.primary.withAlpha(140),
+                    color: PawmartColors.primary500.withAlpha(160),
                     size: 22,
                   ),
                   onPressed: () {
@@ -236,15 +263,15 @@ class _AS extends State<AiAssistantPage> {
                 Expanded(
                   child: TextField(
                     controller: _c,
-                    style: TextStyle(color: s.onSurface, fontSize: 15),
-                    decoration: InputDecoration(
+                    style: const TextStyle(color: PawmartColors.textPrimary, fontSize: 15),
+                    decoration: const InputDecoration(
                       hintText: '输入问题…',
                       hintStyle: TextStyle(
-                        color: s.onSurfaceVariant,
+                        color: PawmartColors.textSecondary,
                         fontSize: 14,
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
+                      contentPadding: EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 12,
                       ),
@@ -255,7 +282,7 @@ class _AS extends State<AiAssistantPage> {
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: s.primary,
+                    color: PawmartColors.primary500,
                   ),
                   child: IconButton(
                     icon: const Icon(
@@ -270,6 +297,31 @@ class _AS extends State<AiAssistantPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _suggestionChip(String text) {
+    return InkWell(
+      onTap: () {
+        _c.text = text;
+        _send();
+      },
+      borderRadius: BorderRadius.circular(pawmartRadiusFull),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: PawmartColors.surfaceCard,
+          borderRadius: BorderRadius.circular(pawmartRadiusFull),
+          border: Border.all(color: PawmartColors.neutral200),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 13,
+            color: PawmartColors.textSecondary,
+          ),
+        ),
       ),
     );
   }

@@ -11,6 +11,7 @@ class PetOrder {
     required this.payAmount,
     required this.paymentNo,
     required this.paidAt,
+    required this.paymentDeadline,
     required this.rewardPoints,
     required this.pointsReversed,
     required this.receiver,
@@ -34,6 +35,7 @@ class PetOrder {
   final double payAmount;
   final String paymentNo;
   final String paidAt;
+  final String paymentDeadline;
   final int rewardPoints;
   final bool pointsReversed;
   final String receiver;
@@ -47,6 +49,13 @@ class PetOrder {
   final List<OrderItem> items;
   final List<OrderStatusLog> statusLogs;
 
+  DateTime? get deadlineDateTime {
+    if (paymentDeadline.isEmpty) return null;
+    return DateTime.tryParse(paymentDeadline);
+  }
+
+  bool get isUnpaid => status == 0;
+
   factory PetOrder.fromJson(Map<String, dynamic> json) {
     return PetOrder(
       id: json['id']?.toString() ?? '',
@@ -58,6 +67,7 @@ class PetOrder {
       payAmount: NumberParser.toDouble(json['payAmount']),
       paymentNo: json['paymentNo']?.toString() ?? '',
       paidAt: json['paidAt']?.toString() ?? '',
+      paymentDeadline: json['paymentDeadline']?.toString() ?? '',
       rewardPoints: NumberParser.toInt(json['rewardPoints']),
       pointsReversed: json['pointsReversed'] == true,
       receiver: json['receiver']?.toString() ?? '',
