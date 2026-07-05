@@ -1,10 +1,35 @@
+import 'dart:html' as html;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../models/media_asset.dart';
 import '../../../models/product.dart';
 import '../../../shared/widgets/toast.dart';
+
+/// Register HTML5 video player view factory (call once)
+void _ensureVideoFactoryRegistered() {
+  try {
+    ui.platformViewRegistry.registerViewFactory(
+      'pawmart-video-player',
+      (int viewId) {
+        final el = html.VideoElement()
+          ..controls = true
+          ..autoplay = true
+          ..style.width = '100%'
+          ..style.height = '100%'
+          ..style.backgroundColor = '#000'
+          ..style.outline = 'none';
+        return el;
+      },
+    );
+  } catch (_) {
+    // Already registered
+  }
+}
 
 // ═══════════════════════════════════════════
 // ProductsPage — Admin product management
@@ -590,9 +615,12 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   late Product product;
   List<ProductReview> reviews = [];
+  List<MediaAsset> _mediaAssets = [];
   String? reviewError;
   int _qty = 1;
   int _selectedTab = 0;
+
+  List<MediaAsset> get _videos => _mediaAssets.where((m) => m.mediaType == 'VIDEO' && m.status == 'APPROVED').toList();
 
   @override
   void initState() {
@@ -616,6 +644,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => reviewError = error.toString());
+    }
+    // Load media independently — failure does not break the page
+    try {
+      _mediaAssets = await widget.apiClient.listProductMedia(widget.product.id);
+      if (mounted) setState(() {});
+    } catch (_) {
+      _mediaAssets = [];
     }
   }
 
@@ -679,6 +714,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               _trustBadge(Icons.replay_outlined, '7天无理由'),
             ]),
           ),
+
+          // ── Product Videos ──
+          if (_videos.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            _buildVideoSection(wide),
+          ],
 
           const SizedBox(height: 24),
 
@@ -966,6 +1007,180 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
       ]),
     );
+  }
+
+  // ── Video Section ──
+  Widget _buildVideoSection(bool wide) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: wide ? 40 : 16),
+          child: pawmartSectionHeader('商品视频', actionLabel: '${_videos.length}个视频'),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 200,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: wide ? 40 : 16),
+            itemCount: _videos.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            itemBuilder: (_, i) => _videoCard(_videos[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _videoCard(MediaAsset video) {
+    return GestureDetector(
+      onTap: () => _playVideo(video),
+      child: Container(
+        width: 300,
+        decoration: BoxDecoration(
+          color: PawmartColors.neutral900,
+          borderRadius: BorderRadius.circular(pawmartRadiusMd),
+          boxShadow: pawmartShadow1,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Cover or placeholder
+            if (video.coverUrl.isNotEmpty)
+              Image.network(video.coverUrl, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _videoPlaceholder(),
+              )
+            else
+              _videoPlaceholder(),
+            // Gradient overlay
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black.withAlpha(180), Colors.transparent],
+                  ),
+                ),
+              ),
+            ),
+            // Play button
+            Center(
+              child: Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(220),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 12)],
+                ),
+                child: const Icon(Icons.play_arrow_rounded, size: 32, color: PawmartColors.primary500),
+              ),
+            ),
+            // Title overlay
+            Positioned(
+              bottom: 12, left: 14, right: 14,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                  if (video.description.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(video.description, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: Colors.white.withAlpha(180))),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _videoPlaceholder() {
+    return Container(
+      color: PawmartColors.neutral800,
+      child: Center(
+        child: Icon(Icons.videocam_rounded, size: 48, color: Colors.white.withAlpha(80)),
+      ),
+    );
+  }
+
+  void _playVideo(MediaAsset video) {
+    _ensureVideoFactoryRegistered();
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Close bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: Colors.black87,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(video.title,
+                        style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w600),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.open_in_new, color: Colors.white70, size: 20),
+                          tooltip: '在新标签页打开',
+                          onPressed: () => html.window.open(video.url, '_blank'),
+                          padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70, size: 22),
+                          onPressed: () => Navigator.pop(ctx),
+                          padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // HTML5 Video Player
+              const SizedBox(
+                width: 800,
+                height: 450,
+                child: HtmlElementView(viewType: 'pawmart-video-player'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    // Set video source after dialog is shown
+    Future.delayed(const Duration(milliseconds: 100), () {
+      final videoElements = html.document.getElementsByTagName('video');
+      if (videoElements.isNotEmpty) {
+        final el = videoElements.last as html.VideoElement;
+        el.src = _resolveMediaUrl(video.url);
+        el.load();
+      }
+    });
+  }
+
+  String _resolveMediaUrl(String url) {
+    if (url.startsWith('/uploads/')) {
+      return 'http://localhost:8080$url';
+    }
+    return url;
   }
 
   Widget _lr(String label, String value) {

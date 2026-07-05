@@ -9,6 +9,7 @@ import 'order/order_page.dart' show OrderPage, OrderPageState;
 import 'product/product_list_page.dart';
 import 'profile/profile_tab.dart';
 import 'store/nearby_store_page.dart';
+import 'video/video_page.dart';
 
 const _navItems = [
   {'l': '首页', 'i': Icons.home},
@@ -235,6 +236,22 @@ class _UserShellState extends State<UserShell> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  // Video page
+                  IconButton(
+                    tooltip: '宠物视频',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      Icons.videocam_outlined,
+                      size: 20,
+                      color: PawmartColors.textSecondary,
+                    ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VideoPage(apiClient: widget.apiClient),
+                      ),
+                    ),
+                  ),
                   // Theme toggle
                   IconButton(
                     tooltip: '切换主题',

@@ -1,5 +1,7 @@
 package com.petemarket.server.media;
 
+import java.util.List;
+
 import com.petemarket.server.common.ApiResponse;
 import com.petemarket.server.common.BusinessException;
 import com.petemarket.server.common.PageData;
@@ -26,6 +28,12 @@ public class MediaAssetController {
 
     public MediaAssetController(MediaAssetService mediaAssetService) {
         this.mediaAssetService = mediaAssetService;
+    }
+
+    /** Public: get approved media for a product (no auth required for browsing) */
+    @GetMapping("/product/{productId}")
+    public ApiResponse<List<MediaAssetResponse>> listByProduct(@PathVariable Long productId) {
+        return ApiResponse.ok(mediaAssetService.listByProduct(productId));
     }
 
     @GetMapping

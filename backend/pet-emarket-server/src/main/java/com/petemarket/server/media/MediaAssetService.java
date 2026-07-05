@@ -88,6 +88,14 @@ public class MediaAssetService {
         return MediaAssetResponse.from(asset);
     }
 
+    @Transactional(readOnly = true)
+    public List<MediaAssetResponse> listByProduct(Long productId) {
+        return mediaAssetRepository.findByProductIdAndStatus(productId, MediaStatus.APPROVED)
+                .stream()
+                .map(MediaAssetResponse::from)
+                .toList();
+    }
+
     @Transactional
     public void delete(Long id) {
         mediaAssetRepository.delete(find(id));

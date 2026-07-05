@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface MediaAssetRepository extends JpaRepository<MediaAsset, Long> {
     List<MediaAsset> findByStatusOrderByCreatedAtDesc(MediaStatus status);
 
+    List<MediaAsset> findByProductIdAndStatus(Long productId, MediaStatus status);
+
     long countByStatus(MediaStatus status);
 }

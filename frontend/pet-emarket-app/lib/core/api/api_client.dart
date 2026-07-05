@@ -523,6 +523,17 @@ class ApiClient {
     await _request('DELETE', '/api/v1/media/$id');
   }
 
+  /// Get approved media assets (images/videos) for a product
+  Future<List<MediaAsset>> listProductMedia(String productId) async {
+    final data = await _request('GET', '/api/v1/media/product/$productId');
+    if (data is List) {
+      return (data as List)
+          .map((item) => MediaAsset.fromJson(Map<String, dynamic>.from(item as Map)))
+          .toList();
+    }
+    return [];
+  }
+
   Future<List<RecommendationItem>> recommendations({
     String scene = 'HOME',
     String lastProductId = '',

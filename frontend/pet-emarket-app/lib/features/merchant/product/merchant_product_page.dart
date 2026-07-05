@@ -1,6 +1,10 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../models/product.dart';
 import '../../../models/store.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -157,11 +161,20 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
                 IntrinsicWidth(
                   child: FilledButton.icon(
                     onPressed: () => _showDialog(),
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('发布商品'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IntrinsicWidth(
+                  child: OutlinedButton.icon(
+                    onPressed: _showVideoUploadDialog,
+                    icon: const Icon(Icons.videocam_outlined, size: 18),
+                    label: const Text('上传视频'),
                   ),
                 ),
               ],
@@ -514,6 +527,29 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
       if (mounted) showError(context, e.toString());
     }
   }
+
+  // ── Video Upload ──
+  Future<void> _showVideoUploadDialog() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => const _VideoUploadDialog(),
+    );
+    if (result == null || !mounted) return;
+    try {
+      await widget.apiClient.uploadMedia(
+        title: result['title'] as String,
+        mediaType: 'VIDEO',
+        fileName: result['fileName'] as String,
+        fileBytes: result['fileBytes'] as List<int>,
+        productId: result['productId']?.toString() ?? '',
+        description: result['description']?.toString() ?? '',
+        fileContentType: result['contentType']?.toString() ?? '',
+      );
+      if (mounted) showSuccess(context, '视频已上传，等待审核');
+    } catch (e) {
+      if (mounted) showError(context, e.toString());
+    }
+  }
 }
 
 class _StoreChip extends StatelessWidget {
@@ -803,6 +839,121 @@ class _ProductDialogState extends State<_ProductDialog> {
             Navigator.pop(context, payload);
           },
           child: Text(widget.product == null ? '发布商品' : '保存修改'),
+        ),
+      ],
+    );
+  }
+
+}
+
+// ── Video Upload Dialog ──
+class _VideoUploadDialog extends StatefulWidget {
+  const _VideoUploadDialog();
+  @override
+  State<_VideoUploadDialog> createState() => _VideoUploadDialogState();
+}
+
+class _VideoUploadDialogState extends State<_VideoUploadDialog> {
+  final titleCtrl = TextEditingController();
+  final descCtrl = TextEditingController();
+  final productIdCtrl = TextEditingController();
+  String? fileName;
+  List<int>? fileBytes;
+  String? contentType;
+  bool uploading = false;
+
+  @override
+  void dispose() {
+    titleCtrl.dispose();
+    descCtrl.dispose();
+    productIdCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickVideo() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.video,
+      allowMultiple: false,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) {
+      if (mounted) showError(context, '无法读取文件');
+      return;
+    }
+    setState(() {
+      fileName = file.name;
+      fileBytes = file.bytes!;
+      contentType = 'video/mp4';
+      if (titleCtrl.text.isEmpty) {
+        titleCtrl.text = file.name.replaceAll(RegExp(r'\.[^.]+'), '');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('上传视频'),
+      content: SizedBox(
+        width: 440,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _pickVideo,
+                icon: const Icon(Icons.videocam_outlined),
+                label: Text(fileName ?? '选择视频文件'),
+              ),
+              if (fileName != null) ...[
+                const SizedBox(height: 4),
+                Text(fileName!, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
+              ],
+              const SizedBox(height: 14),
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: '视频标题 *'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: '视频描述'),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: productIdCtrl,
+                decoration: const InputDecoration(
+                  labelText: '关联商品ID（可选）',
+                  helperText: '填写商品数字ID可将视频关联到该商品',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: (titleCtrl.text.trim().isEmpty || fileBytes == null || uploading)
+              ? null
+              : () {
+                  setState(() => uploading = true);
+                  Navigator.pop(context, {
+                    'title': titleCtrl.text.trim(),
+                    'description': descCtrl.text.trim(),
+                    'productId': productIdCtrl.text.trim(),
+                    'fileName': fileName,
+                    'fileBytes': fileBytes,
+                    'contentType': contentType,
+                  });
+                },
+          child: const Text('上传'),
         ),
       ],
     );

@@ -1,5 +1,9 @@
 package com.petemarket.server.config;
 
+import com.petemarket.server.media.MediaAsset;
+import com.petemarket.server.media.MediaAssetRepository;
+import com.petemarket.server.media.MediaStatus;
+import com.petemarket.server.media.MediaType;
 import com.petemarket.server.product.Product;
 import com.petemarket.server.product.ProductAuditStatus;
 import com.petemarket.server.product.ProductRepository;
@@ -26,6 +30,7 @@ public class DataInitializer {
     CommandLineRunner seedData(UserRepository userRepository,
                                ProductRepository productRepository,
                                PetStoreRepository storeRepository,
+                               MediaAssetRepository mediaAssetRepository,
                                PasswordEncoder passwordEncoder) {
         return args -> {
             if (!userRepository.existsByUsername("admin")) {
@@ -108,6 +113,29 @@ public class DataInitializer {
                 Product toy = product("Interactive Dog Toy", ProductType.GOODS, "Toy", new BigDecimal("59.00"), 45, storeC);
                 toy.setDescription("Durable toy for dog training and daily companionship.");
                 productRepository.save(toy);
+            }
+
+            // Seed demo media assets
+            if (mediaAssetRepository.count() == 0) {
+                MediaAsset video = new MediaAsset();
+                video.setTitle("New Kitten Care Guide");
+                video.setMediaType(MediaType.VIDEO);
+                video.setUrl("https://www.w3schools.com/html/mov_bbb.mp4");
+                video.setCoverUrl("");
+                video.setDescription("Demo video for live pet onboarding and health care tips.");
+                video.setStatus(MediaStatus.APPROVED);
+                video.setAuditRemark("Seed media approved");
+                mediaAssetRepository.save(video);
+
+                MediaAsset image = new MediaAsset();
+                image.setTitle("Pet-Emarket Home Banner");
+                image.setMediaType(MediaType.IMAGE);
+                image.setUrl("https://via.placeholder.com/800x400.png?text=PetEmarket");
+                image.setCoverUrl("");
+                image.setDescription("Demo marketing image for the home page.");
+                image.setStatus(MediaStatus.APPROVED);
+                image.setAuditRemark("Seed media approved");
+                mediaAssetRepository.save(image);
             }
 
             List<Product> zeroStockOnSaleProducts = productRepository.findAll().stream()
