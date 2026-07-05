@@ -26,7 +26,7 @@ class _ProductListPageState extends State<ProductListPage> {
   // Filter state
   String _petType = '全部';
   final Set<String> _selectedPriceRanges = {};
-  final Set<String> _selectedBrands = {};
+  final Set<String> _selectedCategories = {};
   String _sortBy = '综合排序';
 
   final _searchCtrl = TextEditingController();
@@ -42,9 +42,9 @@ class _ProductListPageState extends State<ProductListPage> {
     return filteredProducts.sublist(start, end);
   }
 
-  List<String> get _brands {
-    final brands = allProducts.map((p) => p.category.trim()).where((c) => c.isNotEmpty).toSet().toList()..sort();
-    return brands;
+  List<String> get _categories {
+    final categories = allProducts.map((p) => p.category.trim()).where((c) => c.isNotEmpty).toSet().toList()..sort();
+    return categories;
   }
 
   static const _petTypes = ['全部', '狗狗', '猫猫'];
@@ -90,8 +90,8 @@ class _ProductListPageState extends State<ProductListPage> {
         });
       }).toList();
     }
-    if (_selectedBrands.isNotEmpty) {
-      list = list.where((p) => _selectedBrands.contains(p.category)).toList();
+    if (_selectedCategories.isNotEmpty) {
+      list = list.where((p) => _selectedCategories.contains(p.category)).toList();
     }
     switch (_sortBy) {
       case '价格升序': list.sort((a, b) => a.price.compareTo(b.price));
@@ -107,7 +107,7 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() {
       _petType = '全部';
       _selectedPriceRanges.clear();
-      _selectedBrands.clear();
+      _selectedCategories.clear();
       _sortBy = '综合排序';
       _applyFilters();
     });
@@ -197,9 +197,9 @@ class _ProductListPageState extends State<ProductListPage> {
       const SizedBox(height: 8),
       ..._priceRanges.map((r) => _checkboxRow(r, checked: _selectedPriceRanges.contains(r), onChanged: (v) => setState(() { if (v) _selectedPriceRanges.add(r); else _selectedPriceRanges.remove(r); _applyFilters(); }))),
       const SizedBox(height: 24),
-      _filterSectionTitle('品牌'),
+      _filterSectionTitle('类别'),
       const SizedBox(height: 8),
-      ..._brands.take(8).map((b) => _checkboxRow(b, checked: _selectedBrands.contains(b), onChanged: (v) => setState(() { if (v) _selectedBrands.add(b); else _selectedBrands.remove(b); _applyFilters(); }))),
+      ..._categories.take(8).map((b) => _checkboxRow(b, checked: _selectedCategories.contains(b), onChanged: (v) => setState(() { if (v) _selectedCategories.add(b); else _selectedCategories.remove(b); _applyFilters(); }))),
       const SizedBox(height: 24),
       _filterSectionTitle('排序方式'),
       const SizedBox(height: 8),
@@ -276,8 +276,8 @@ class _ProductListPageState extends State<ProductListPage> {
             _filterSectionTitle('价格区间'), const SizedBox(height: 8),
             ..._priceRanges.map((r) => _checkboxRow(r, checked: _selectedPriceRanges.contains(r), onChanged: (v) { setModalState(() {}); setState(() { if (v) _selectedPriceRanges.add(r); else _selectedPriceRanges.remove(r); _applyFilters(); }); })),
             const SizedBox(height: 24),
-            _filterSectionTitle('品牌'), const SizedBox(height: 8),
-            ..._brands.take(8).map((b) => _checkboxRow(b, checked: _selectedBrands.contains(b), onChanged: (v) { setModalState(() {}); setState(() { if (v) _selectedBrands.add(b); else _selectedBrands.remove(b); _applyFilters(); }); })),
+            _filterSectionTitle('类别'), const SizedBox(height: 8),
+            ..._categories.take(8).map((b) => _checkboxRow(b, checked: _selectedCategories.contains(b), onChanged: (v) { setModalState(() {}); setState(() { if (v) _selectedCategories.add(b); else _selectedCategories.remove(b); _applyFilters(); }); })),
             const SizedBox(height: 24),
             _filterSectionTitle('排序方式'), const SizedBox(height: 8),
             _sortDropdown(),

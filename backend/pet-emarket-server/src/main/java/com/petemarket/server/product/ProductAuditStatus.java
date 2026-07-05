@@ -4,5 +4,6 @@ public enum ProductAuditStatus {
     NOT_REQUIRED,
     PENDING,
     APPROVED,
-    REJECTED
+    REJECTED,
+    AUDITING
 }

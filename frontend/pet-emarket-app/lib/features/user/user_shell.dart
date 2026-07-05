@@ -256,6 +256,17 @@ class _UserShellState extends State<UserShell> {
                     ),
                     onPressed: () => _onTabChanged(5),
                   ),
+                  // Quick logout
+                  IconButton(
+                    tooltip: '退出登录',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      Icons.logout,
+                      size: 20,
+                      color: PawmartColors.textSecondary,
+                    ),
+                    onPressed: widget.onLogout,
+                  ),
                 ],
               ),
             ),

@@ -471,7 +471,7 @@ class _HomePageState extends State<HomePage> {
                   return SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: cols,
-                      childAspectRatio: 0.80,
+                      childAspectRatio: 0.78,
                       mainAxisSpacing: 10,
                       crossAxisSpacing: 10,
                     ),
@@ -1052,26 +1052,27 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(pawmartRadiusMd),
           boxShadow: pawmartShadow1,
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: colors[product.category.hashCode.abs() % colors.length],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors[product.category.hashCode.abs() % colors.length],
+              ),
+              child: Stack(fit: StackFit.expand, children: [
+                if (product.coverUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
+                    child: Image.network(product.coverUrl, fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => _productIcon(product)),
+                  )
+                else
+                  _productIcon(product),
+                if (product.stock <= 0)
+                  Container(color: Colors.black.withAlpha(80), alignment: Alignment.center,
+                    child: const Text('售罄', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))),
+              ]),
             ),
-            child: Stack(fit: StackFit.expand, children: [
-              if (product.coverUrl.isNotEmpty)
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
-                  child: Image.network(product.coverUrl, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _productIcon(product)),
-                )
-              else
-                _productIcon(product),
-              if (product.stock <= 0)
-                Container(color: Colors.black.withAlpha(80), alignment: Alignment.center,
-                  child: const Text('售罄', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))),
-            ]),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
