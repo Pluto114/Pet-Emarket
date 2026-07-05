@@ -8,10 +8,11 @@
 -- demo  / Demo@123456   -> $2a$10$...
 
 -- 1. 用户数据
-INSERT IGNORE INTO user_account (username, password_hash, display_name, phone, email, role, member_level, status, points_balance, created_at, updated_at)
+INSERT IGNORE INTO user_account (username, password_hash, display_name, phone, email, role, member_level, status, points_balance, total_spent, created_at, updated_at)
 VALUES
-('admin', '$2a$10$7oGS1WmFXF0mFIAMCQ9QcO2S2qB2VKPBcOEGf.j6FzBTG/PEl2N7y', 'System Admin', '18800000000', 'admin@pet-emarket.local', 'ADMIN', 'SVIP', 'ACTIVE', 99999, NOW(), NOW()),
-('demo',  '$2a$10$8oGS1WmFXF0mFIAMCQ9QcO2S2qB2VKPBcOEGf.j6FzBTG/PEl2N7z', 'Demo User',   '18800000001', 'demo@pet-emarket.local',  'CUSTOMER', 'VIP', 'ACTIVE', 500, NOW(), NOW());
+('admin', '$2a$10$7oGS1WmFXF0mFIAMCQ9QcO2S2qB2VKPBcOEGf.j6FzBTG/PEl2N7y', 'System Admin', '18800000000', 'admin@pet-emarket.local', 'ADMIN', 'SVIP', 'ACTIVE', 99999, 99999, NOW(), NOW()),
+('demo',  '$2a$10$8oGS1WmFXF0mFIAMCQ9QcO2S2qB2VKPBcOEGf.j6FzBTG/PEl2N7z', 'Demo User',   '18800000001', 'demo@pet-emarket.local',  'CUSTOMER', 'VIP', 'ACTIVE', 500, 600, NOW(), NOW()),
+('normal', '$2a$10$8oGS1WmFXF0mFIAMCQ9QcO2S2qB2VKPBcOEGf.j6FzBTG/PEl2N7z', 'Normal User', '18800000002', 'normal@pet-emarket.local', 'CUSTOMER', 'NORMAL', 'ACTIVE', 0, 120, NOW(), NOW());
 
 -- 2. 店铺数据
 INSERT IGNORE INTO pet_store (name, address, city, district, longitude, latitude, phone, business_hours, rating, status, feature_tags, created_at, updated_at)

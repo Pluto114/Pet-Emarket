@@ -12,6 +12,7 @@ public record UserResponse(
         MemberLevel memberLevel,
         AccountStatus status,
         Integer pointsBalance,
+        java.math.BigDecimal totalSpent,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -26,6 +27,7 @@ public record UserResponse(
                 user.getMemberLevel(),
                 user.getStatus(),
                 user.getPointsBalance(),
+                user.getTotalSpent(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

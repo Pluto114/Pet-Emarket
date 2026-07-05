@@ -49,6 +49,9 @@ public class UserAccount {
     @Column(nullable = false)
     private Integer pointsBalance = 0;
 
+    @Column(nullable = false, precision = 12, scale = 2)
+    private java.math.BigDecimal totalSpent = java.math.BigDecimal.ZERO;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -138,6 +141,14 @@ public class UserAccount {
 
     public void setPointsBalance(Integer pointsBalance) {
         this.pointsBalance = pointsBalance;
+    }
+
+    public java.math.BigDecimal getTotalSpent() {
+        return totalSpent;
+    }
+
+    public void setTotalSpent(java.math.BigDecimal totalSpent) {
+        this.totalSpent = totalSpent;
     }
 
     public Instant getCreatedAt() {

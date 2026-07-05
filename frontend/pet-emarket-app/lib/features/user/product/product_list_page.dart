@@ -33,7 +33,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
   // Pagination
   int _currentPage = 1;
-  static const int _pageSize = 9;
+  static const int _pageSize = 20;
   int get _totalPages => (filteredProducts.length / _pageSize).ceil();
   List<Product> get _pagedProducts {
     final start = (_currentPage - 1) * _pageSize;
@@ -311,7 +311,7 @@ class _ProductListPageState extends State<ProductListPage> {
         ),
       GridView.builder(
         shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: wide ? 3 : 2, childAspectRatio: 0.58, mainAxisSpacing: 16, crossAxisSpacing: 16),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: wide ? 4 : 2, childAspectRatio: 0.72, mainAxisSpacing: 14, crossAxisSpacing: 14),
         itemCount: _pagedProducts.length,
         itemBuilder: (_, i) => _productCard(_pagedProducts[i]),
       ),
@@ -323,48 +323,53 @@ class _ProductListPageState extends State<ProductListPage> {
   Widget _productCard(Product product) {
     final colors = [PawmartColors.primary100, PawmartColors.accent50, PawmartColors.neutral100, PawmartColors.primary50];
     final isOos = product.stock <= 0;
-    return Container(
-      decoration: BoxDecoration(color: PawmartColors.surfaceCard, borderRadius: BorderRadius.circular(pawmartRadiusMd), border: Border.all(color: PawmartColors.neutral200)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProductDetailPage(product: product, apiClient: widget.apiClient))),
-          child: Container(
-            height: 200,
-            decoration: BoxDecoration(color: colors[product.category.hashCode.abs() % colors.length], borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd))),
-            child: Stack(fit: StackFit.expand, children: [
-              if (product.coverUrl.isNotEmpty)
-                ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)), child: Image.network(product.coverUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _productIcon(product)))
-              else
-                _productIcon(product),
-              if (isOos) Container(alignment: Alignment.center, color: Colors.black.withAlpha(100), child: const Text('已售罄', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14))),
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProductDetailPage(product: product, apiClient: widget.apiClient))),
+      borderRadius: BorderRadius.circular(pawmartRadiusMd),
+      child: Container(
+        decoration: BoxDecoration(color: PawmartColors.surfaceCard, borderRadius: BorderRadius.circular(pawmartRadiusMd), border: Border.all(color: PawmartColors.neutral200)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Image area — fills remaining space
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(color: colors[product.category.hashCode.abs() % colors.length]),
+              child: Stack(fit: StackFit.expand, children: [
+                if (product.coverUrl.isNotEmpty)
+                  Image.network(product.coverUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _productIcon(product))
+                else
+                  _productIcon(product),
+                if (isOos) Container(alignment: Alignment.center, color: Colors.black.withAlpha(100), child: const Text('已售罄', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14))),
+              ]),
+            ),
+          ),
+          // Info area — fixed content size
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+              const SizedBox(height: 4),
+              Text(product.description.isNotEmpty ? product.description : '暂无描述', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary, height: 1.4)),
+              const SizedBox(height: 6),
+              Text('¥${product.price.toStringAsFixed(0)}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: PawmartColors.primary500)),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: SizedBox(height: 32, child: FilledButton(
+                  onPressed: !isOos ? () => _addToCart(product) : null,
+                  style: FilledButton.styleFrom(backgroundColor: isOos ? PawmartColors.neutral200 : PawmartColors.accent400, foregroundColor: isOos ? PawmartColors.neutral400 : PawmartColors.textOnAccent, padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(pawmartRadiusSm)), textStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  child: Text(isOos ? '已售罄' : '加入购物车'),
+                ))),
+                const SizedBox(width: 8),
+                Expanded(child: SizedBox(height: 32, child: OutlinedButton(
+                  onPressed: !isOos ? () => _addToCart(product, checkoutHint: true) : null,
+                  style: OutlinedButton.styleFrom(padding: EdgeInsets.zero, side: BorderSide(color: isOos ? PawmartColors.neutral300 : PawmartColors.neutral200), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(pawmartRadiusSm)), textStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  child: const Text('立即购买'),
+                ))),
+              ]),
             ]),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
-            const SizedBox(height: 6),
-            Text(product.description.isNotEmpty ? product.description : '暂无描述', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary, height: 1.4)),
-            const SizedBox(height: 8),
-            Text('¥${product.price.toStringAsFixed(0)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: PawmartColors.primary500)),
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(child: SizedBox(height: 34, child: FilledButton(
-                onPressed: !isOos ? () => _addToCart(product) : null,
-                style: FilledButton.styleFrom(backgroundColor: isOos ? PawmartColors.neutral200 : PawmartColors.accent400, foregroundColor: isOos ? PawmartColors.neutral400 : PawmartColors.textOnAccent, padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(pawmartRadiusSm)), textStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                child: Text(isOos ? '已售罄' : '加入购物车'),
-              ))),
-              const SizedBox(width: 8),
-              Expanded(child: SizedBox(height: 34, child: OutlinedButton(
-                onPressed: !isOos ? () => _addToCart(product, checkoutHint: true) : null,
-                style: OutlinedButton.styleFrom(padding: EdgeInsets.zero, side: BorderSide(color: isOos ? PawmartColors.neutral300 : PawmartColors.neutral200), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(pawmartRadiusSm)), textStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                child: const Text('立即购买'),
-              ))),
-            ]),
-          ]),
-        ),
-      ]),
+        ]),
+      ),
     );
   }
 
@@ -375,9 +380,15 @@ class _ProductListPageState extends State<ProductListPage> {
     final pages = <Widget>[];
     pages.add(_pageBtn(child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.chevron_left, size: 16), Text('上一页', style: TextStyle(fontSize: 13))]), onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null, outlined: true));
     final maxShow = 5;
-    var start = (_currentPage - maxShow ~/ 2).clamp(1, _totalPages - maxShow + 1);
-    if (_totalPages <= maxShow) start = 1;
-    final end = (start + maxShow - 1).clamp(0, _totalPages);
+    // Guard: only compute window when enough pages exist, otherwise show all
+    final int start, end;
+    if (_totalPages <= maxShow) {
+      start = 1;
+      end = _totalPages;
+    } else {
+      start = (_currentPage - maxShow ~/ 2).clamp(1, _totalPages - maxShow + 1);
+      end = (start + maxShow - 1).clamp(0, _totalPages);
+    }
     if (start > 1) { pages.add(_pageNum(1)); if (start > 2) pages.add(const Text('…', style: TextStyle(color: PawmartColors.textSecondary))); }
     for (var i = start; i <= end; i++) { pages.add(_pageNum(i)); }
     if (end < _totalPages) { if (end < _totalPages - 1) pages.add(const Text('…', style: TextStyle(color: PawmartColors.textSecondary))); pages.add(_pageNum(_totalPages)); }

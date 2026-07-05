@@ -31,16 +31,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   double get totalAmount =>
       widget.items.fold(0.0, (sum, item) => sum + item.subtotal);
 
-  double get memberDiscountRate {
-    final level = widget.sessionStore.user?.memberLevel ?? 'NORMAL';
-    return switch (level) {
-      'SVIP' => 0.12,
-      'DIAMOND' => 0.10,
-      'GOLD' => 0.07,
-      'VIP' => 0.05,
-      _ => 0.0,
-    };
-  }
+  double get memberDiscountRate => widget.sessionStore.user?.discountRate ?? 0.0;
 
   double get discountAmount => totalAmount * memberDiscountRate;
 
@@ -99,14 +90,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.of(context).size.width > 800;
-    final ml = widget.sessionStore.user?.memberLevel ?? 'NORMAL';
-    final levelLabel = switch (ml) {
-      'SVIP' => '至尊会员',
-      'DIAMOND' => '钻石会员',
-      'GOLD' => '金卡会员',
-      'VIP' => '银卡会员',
-      _ => '普通会员',
-    };
+    final levelLabel = widget.sessionStore.user?.memberLevelLabel ?? '普通会员';
 
     return Scaffold(
       backgroundColor: PawmartColors.surfaceBg,

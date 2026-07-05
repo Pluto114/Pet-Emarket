@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/cart_item.dart';
 import '../../../models/shipping_address.dart';
 import 'checkout_page.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({required this.apiClient, super.key});
+  const CartPage({required this.apiClient, required this.sessionStore, super.key});
   final ApiClient apiClient;
+  final SessionStore sessionStore;
 
   @override
   State<CartPage> createState() => CartPageState();
@@ -24,6 +26,10 @@ class CartPageState extends State<CartPage> {
 
   List<CartItem> get selectedItems => items.where((item) => _selectedIds.contains(item.id)).toList();
   double get total => selectedItems.fold(0, (sum, item) => sum + item.subtotal);
+  double get memberDiscountRate => widget.sessionStore.user?.discountRate ?? 0.0;
+  double get discountAmount => (total * memberDiscountRate * 100).floorToDouble() / 100;
+  double get payAmount => ((total - discountAmount) * 100).floorToDouble() / 100;
+  String get memberLevelLabel => widget.sessionStore.user?.memberLevelLabel ?? '普通会员';
   bool get canCheckout => selectedItems.isNotEmpty;
   bool get allSelected => items.isNotEmpty && _selectedIds.length == items.length;
 
@@ -273,10 +279,12 @@ class CartPageState extends State<CartPage> {
           const Divider(),
           const SizedBox(height: 12),
           _summaryRow('商品总价', '¥${total.toStringAsFixed(2)}'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
+          if (memberDiscountRate > 0) ...[
+            _summaryRow('$memberLevelLabel折扣', '-¥${discountAmount.toStringAsFixed(2)}', valueColor: Colors.red),
+            const SizedBox(height: 4),
+          ],
           _summaryRow('运费', '免运费', valueColor: PawmartColors.success),
-          const SizedBox(height: 10),
-          _summaryRow('优惠', '-¥0.00', valueColor: PawmartColors.error),
           const SizedBox(height: 12),
           const Divider(),
           const SizedBox(height: 12),
@@ -292,7 +300,7 @@ class CartPageState extends State<CartPage> {
               ),
               const Spacer(),
               Text(
-                '¥${total.toStringAsFixed(2)}',
+                '¥${payAmount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,

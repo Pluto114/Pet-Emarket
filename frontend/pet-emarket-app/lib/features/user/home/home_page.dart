@@ -8,7 +8,6 @@ import '../../../models/product.dart';
 import '../../../shared/widgets/toast.dart';
 import '../ai_assistant/ai_assistant_page.dart';
 import '../product/product_detail_page.dart';
-import '../product/product_list_page.dart';
 import '../recommendation/recommendation_page.dart';
 import '../../merchant/register/merchant_register_page.dart';
 
@@ -38,11 +37,13 @@ class HomePage extends StatefulWidget {
     required this.apiClient,
     required this.sessionStore,
     this.onGoToMerchant,
+    this.onNavigateToProducts,
     super.key,
   });
   final ApiClient apiClient;
   final SessionStore sessionStore;
   final VoidCallback? onGoToMerchant;
+  final VoidCallback? onNavigateToProducts;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -264,14 +265,7 @@ class _HomePageState extends State<HomePage> {
                                     height: 42,
                                     child: FilledButton(
                                       onPressed: () {
-                                        Navigator.push(
-                                          ctx,
-                                          MaterialPageRoute(
-                                            builder: (_) => ProductListPage(
-                                              apiClient: widget.apiClient,
-                                            ),
-                                          ),
-                                        );
+                                        widget.onNavigateToProducts?.call();
                                       },
                                       style: FilledButton.styleFrom(
                                         backgroundColor: PawmartColors.accent400,
@@ -391,12 +385,7 @@ class _HomePageState extends State<HomePage> {
               child: pawmartSectionHeader(
                 _sectionTitle,
                 actionLabel: '查看全部',
-                onAction: () => Navigator.push(
-                  ctx,
-                  MaterialPageRoute(
-                    builder: (_) => ProductListPage(apiClient: widget.apiClient),
-                  ),
-                ),
+                onAction: () => widget.onNavigateToProducts?.call(),
               ),
             ),
           ),
@@ -462,25 +451,18 @@ class _HomePageState extends State<HomePage> {
             )
           else
             SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: wide ? 36 : 12),
-              sliver: SliverLayoutBuilder(
-                builder: (_, cstr) {
-                  final cw = cstr.crossAxisExtent;
-                  final cols = cw >= 800 ? 4 : (cw >= 500 ? 3 : 2);
-                  final displayProducts = products.take(12).toList();
-                  return SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: cols,
-                      childAspectRatio: 0.78,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) => _productCardMini(displayProducts[i]),
-                      childCount: displayProducts.length,
-                    ),
-                  );
-                },
+              padding: EdgeInsets.symmetric(horizontal: wide ? 150 : 16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  childAspectRatio: 1.1,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (_, i) => _productCardMini(products[i]),
+                  childCount: products.length.clamp(0, 15),
+                ),
               ),
             ),
 
@@ -1041,6 +1023,7 @@ class _HomePageState extends State<HomePage> {
       PawmartColors.primary100, PawmartColors.accent50,
       PawmartColors.neutral100, PawmartColors.primary50,
     ];
+    final isOos = product.stock <= 0;
     return InkWell(
       borderRadius: BorderRadius.circular(pawmartRadiusMd),
       onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -1053,52 +1036,94 @@ class _HomePageState extends State<HomePage> {
           boxShadow: pawmartShadow1,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: colors[product.category.hashCode.abs() % colors.length],
-              ),
-              child: Stack(fit: StackFit.expand, children: [
-                if (product.coverUrl.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(pawmartRadiusMd)),
-                    child: Image.network(product.coverUrl, fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => _productIcon(product)),
-                  )
-                else
-                  _productIcon(product),
-                if (product.stock <= 0)
-                  Container(color: Colors.black.withAlpha(80), alignment: Alignment.center,
-                    child: const Text('售罄', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))),
-              ]),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: PawmartColors.textPrimary)),
-              const SizedBox(height: 4),
-              Row(children: [
-                Text('¥${product.price.toStringAsFixed(0)}',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: PawmartColors.primary500)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: product.stock > 0 ? () => _addProductToCart(product) : null,
-                  child: Container(
-                    width: 26, height: 26,
-                    decoration: BoxDecoration(
-                      color: PawmartColors.accent400,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.add, size: 16, color: PawmartColors.textOnAccent),
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image area
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors[product.category.hashCode.abs() % colors.length],
                 ),
-              ]),
-            ]),
-          ),
-        ]),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (product.coverUrl.isNotEmpty)
+                      Image.network(
+                        product.coverUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _productIcon(product),
+                      )
+                    else
+                      _productIcon(product),
+                    if (isOos)
+                      Container(
+                        color: Colors.black.withAlpha(80),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          '售罄',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // Product info
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: PawmartColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '¥${product.price.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: PawmartColors.primary500,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: isOos ? null : () => _addProductToCart(product),
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: isOos ? PawmartColors.neutral300 : PawmartColors.accent400,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            isOos ? Icons.block : Icons.add,
+                            size: 16,
+                            color: isOos ? PawmartColors.neutral400 : PawmartColors.textOnAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

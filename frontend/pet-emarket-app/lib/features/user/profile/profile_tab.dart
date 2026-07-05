@@ -163,7 +163,7 @@ class _ProfileTabState extends State<ProfileTab> {
                             ),
                           ),
                           child: Text(
-                            _memberBadge(user.memberLevel),
+                            user.memberLevelLabel,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -175,7 +175,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '会员等级: ${user.memberLevel}  |  积分: ${user.pointsBalance}',
+                      '累计消费 ¥${user.totalSpent.toStringAsFixed(0)}  |  积分 ${user.pointsBalance}',
                       style: TextStyle(
                         fontSize: 13,
                         color: PawmartColors.primary100,
@@ -212,7 +212,75 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+
+        // ═══ Membership Upgrade Progress ═══
+        if (user.nextLevelThreshold > 0)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: wide ? 40 : 16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: PawmartColors.surfaceCard,
+                borderRadius: BorderRadius.circular(pawmartRadiusMd),
+                boxShadow: pawmartShadow1,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.trending_up, size: 18, color: PawmartColors.accent400),
+                      const SizedBox(width: 8),
+                      Text(
+                        '升级进度',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: PawmartColors.textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '距${user.nextLevelLabel}还需 ¥${user.amountToNextLevel.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: PawmartColors.accent400,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: user.levelProgress,
+                      minHeight: 8,
+                      backgroundColor: PawmartColors.neutral200,
+                      valueColor: AlwaysStoppedAnimation(PawmartColors.accent400),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(
+                        '¥${user.totalSpent.toStringAsFixed(0)}',
+                        style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '¥${user.nextLevelThreshold.toStringAsFixed(0)}',
+                        style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 16),
 
         // ═══ Two-Column Layout ═══
         Padding(
@@ -280,18 +348,6 @@ class _ProfileTabState extends State<ProfileTab> {
   Color _warnColor() => const Color(0xFFE8BF20);
   Color _infoColor() => const Color(0xFF388EDC);
   Color _accentColor() => const Color(0xFFB5B520);
-
-  String _memberBadge(String level) {
-    switch (level) {
-      case 'VIP':
-      case 'GOLD':
-        return 'VIP会员';
-      case 'SILVER':
-        return '银卡会员';
-      default:
-        return '普通会员';
-    }
-  }
 
   Widget _orderStatItem(IconData icon, String label, String count, Color iconColor, Color countColor) {
     return Expanded(

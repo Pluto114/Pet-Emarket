@@ -7,6 +7,7 @@ import com.petemarket.server.behavior.UserBehaviorService;
 import com.petemarket.server.behavior.UserBehaviorType;
 import com.petemarket.server.common.BusinessException;
 import com.petemarket.server.loyalty.LoyaltyService;
+import com.petemarket.server.user.MembershipService;
 import com.petemarket.server.payment.PaymentRecord;
 import com.petemarket.server.payment.PaymentService;
 import com.petemarket.server.product.Product;
@@ -40,6 +41,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final PaymentService paymentService;
     private final LoyaltyService loyaltyService;
+    private final MembershipService membershipService;
     private final UserBehaviorService userBehaviorService;
     private final ShippingAddressService shippingAddressService;
     private final StoreService storeService;
@@ -51,6 +53,7 @@ public class OrderService {
                         ProductRepository productRepository,
                         PaymentService paymentService,
                         LoyaltyService loyaltyService,
+                        MembershipService membershipService,
                         UserBehaviorService userBehaviorService,
                         ShippingAddressService shippingAddressService,
                         StoreService storeService) {
@@ -59,6 +62,7 @@ public class OrderService {
         this.productRepository = productRepository;
         this.paymentService = paymentService;
         this.loyaltyService = loyaltyService;
+        this.membershipService = membershipService;
         this.userBehaviorService = userBehaviorService;
         this.shippingAddressService = shippingAddressService;
         this.storeService = storeService;
@@ -194,6 +198,7 @@ public class OrderService {
                 order.setPaymentNo(payment.getPaymentNo());
                 order.setPaidAt(payment.getPaidAt());
                 loyaltyService.awardOrderPoints(order);
+                membershipService.recordSpendingAndUpgrade(order);
                 cancelPaymentTimeout(order.getId());
             }
             case "ship" -> {

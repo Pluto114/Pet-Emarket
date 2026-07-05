@@ -261,8 +261,8 @@ class _OrderCard extends StatelessWidget {
             if (order.isUnpaid && order.deadlineDateTime != null)
               _PaymentCountdown(deadline: order.deadlineDateTime!),
 
-            // -- 信息 --
-            Text('应付 ¥${order.payAmount.toStringAsFixed(2)}，优惠 ¥${order.discountAmount.toStringAsFixed(2)}'),
+            // -- 金额明细 --
+            _buildAmountSummary(context),
             if (order.addressDetail.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text('收货：${order.receiver} ${order.phone}', style: theme.textTheme.bodySmall),
@@ -318,6 +318,54 @@ class _OrderCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAmountSummary(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasDiscount = order.discountAmount > 0;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: PawmartColors.neutral50,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text('商品总额', style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+              const Spacer(),
+              Text('¥${order.totalAmount.toStringAsFixed(2)}',
+                  style: TextStyle(fontSize: 13, color: PawmartColors.textPrimary)),
+            ],
+          ),
+          if (hasDiscount) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Text('会员折扣', style: TextStyle(fontSize: 13, color: Colors.red)),
+                const Spacer(),
+                Text('-¥${order.discountAmount.toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ],
+          const Divider(height: 12),
+          Row(
+            children: [
+              const Text('应付金额', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              Text('¥${order.payAmount.toStringAsFixed(2)}',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: PawmartColors.accent400)),
+            ],
+          ),
+        ],
       ),
     );
   }

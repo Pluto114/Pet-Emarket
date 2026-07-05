@@ -202,6 +202,7 @@ class _UserShellState extends State<UserShell> {
                         height: 38,
                         child: TextField(
                           controller: _searchCtrl,
+                          onSubmitted: (_) => _onTabChanged(1),
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: PawmartColors.neutral50,
@@ -288,10 +289,11 @@ class _UserShellState extends State<UserShell> {
         apiClient: widget.apiClient,
         sessionStore: widget.sessionStore,
         onGoToMerchant: widget.onGoToMerchant,
+        onNavigateToProducts: () => _onTabChanged(1),
       ),
       ProductListPage(apiClient: widget.apiClient),
       NearbyStorePage(apiClient: widget.apiClient),
-      CartPage(key: _cartKey, apiClient: widget.apiClient),
+      CartPage(key: _cartKey, apiClient: widget.apiClient, sessionStore: widget.sessionStore),
       OrderPage(key: _orderKey, apiClient: widget.apiClient, sessionStore: widget.sessionStore),
       ProfileTab(
         apiClient: widget.apiClient,
