@@ -35,6 +35,7 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   final _licenseCtrl = TextEditingController();
   final _reasonCtrl = TextEditingController();
   bool _submitting = false;
+  bool _locationPickedManually = false;
 
   @override
   void dispose() {
@@ -50,12 +51,12 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   }
 
   Future<void> _openMapPicker() async {
-    double lng = CityData.cityCoord(_province, _city)[0];
-    double lat = CityData.cityCoord(_province, _city)[1];
+    double lng = double.tryParse(_longitudeCtrl.text.trim()) ?? CityData.cityCoord(_province, _city)[0];
+    double lat = double.tryParse(_latitudeCtrl.text.trim()) ?? CityData.cityCoord(_province, _city)[1];
     // 尝试通过高德正地理编码获取更精确坐标
     try {
-      final addr = CityData.addressForGeocode(_province, _city, _district);
-      final geo = await widget.apiClient.geocode(addr);
+      final addr = _fullAddress();
+      final geo = await widget.apiClient.geocode(addr, city: _city);
       lng = geo.longitude;
       lat = geo.latitude;
     } catch (_) {}
@@ -65,6 +66,24 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
     if (result == null) return;
     _longitudeCtrl.text = result.longitude.toString();
     _latitudeCtrl.text = result.latitude.toString();
+    _locationPickedManually = true;
+  }
+
+  String _fullAddress() {
+    final detail = _addressCtrl.text.trim();
+    if (detail.isEmpty) return CityData.addressForGeocode(_province, _city, _district);
+    return '$_province$_city$_district$detail';
+  }
+
+  Future<void> _syncCoordinatesFromAddress() async {
+    if (_locationPickedManually) return;
+    try {
+      final geo = await widget.apiClient.geocode(_fullAddress(), city: _city);
+      if (geo.longitude != 0 && geo.latitude != 0) {
+        _longitudeCtrl.text = geo.longitude.toString();
+        _latitudeCtrl.text = geo.latitude.toString();
+      }
+    } catch (_) {}
   }
 
   Future<void> _submit() async {
@@ -72,6 +91,7 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
 
     setState(() => _submitting = true);
     try {
+      await _syncCoordinatesFromAddress();
       final user = widget.sessionStore.user;
       await widget.apiClient.submitMerchantApplication({
         'storeName': _nameCtrl.text.trim(),

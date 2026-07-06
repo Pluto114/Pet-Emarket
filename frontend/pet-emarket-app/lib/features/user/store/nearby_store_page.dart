@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
@@ -20,28 +21,133 @@ class NearbyStorePage extends StatefulWidget {
 }
 
 class _NearbyStorePageState extends State<NearbyStorePage> {
+  final MapController _mapController = MapController();
   bool loading = true;
+  bool locating = false;
   String? errorText;
+  String? locationHint;
   List<PetStore> stores = [];
   List<AmapPoi> amapPois = [];
   int selectedIndex = -1;
+  LatLng center = const LatLng(_defaultLat, _defaultLng);
+  LatLng? userLocation;
 
-  @override void initState() { super.initState(); loadData(); }
+  @override
+  void initState() {
+    super.initState();
+    loadData(refreshLocation: true);
+  }
 
-  Future<void> loadData() async {
-    setState(() { loading = true; errorText = null; });
-    try { stores = await widget.apiClient.nearbyStores(longitude: _defaultLng, latitude: _defaultLat, radiusKm: 30); } catch (e) { errorText = e.toString(); }
-    try { amapPois = await widget.apiClient.nearbyAmapPetStores(longitude: _defaultLng, latitude: _defaultLat, radius: 10000); } catch (_) {}
-    if (mounted) setState(() => loading = false);
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadData({bool refreshLocation = false}) async {
+    setState(() {
+      loading = true;
+      errorText = null;
+      if (refreshLocation) locationHint = null;
+    });
+    try {
+      final current = await _resolveLocation(refresh: refreshLocation);
+      final nextStores = await widget.apiClient.nearbyStores(
+        longitude: current.longitude,
+        latitude: current.latitude,
+        radiusKm: 30,
+      );
+      List<AmapPoi> nextPois = [];
+      try {
+        nextPois = await widget.apiClient.nearbyAmapPetStores(
+          longitude: current.longitude,
+          latitude: current.latitude,
+          radius: 10000,
+        );
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        center = current;
+        stores = nextStores;
+        amapPois = nextPois;
+        selectedIndex = -1;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _mapController.move(center, 13.5);
+      });
+    } catch (e) {
+      if (mounted) setState(() => errorText = e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<LatLng> _resolveLocation({bool refresh = false}) async {
+    if (!refresh && userLocation != null) return userLocation!;
+    setState(() => locating = true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return const LatLng(_defaultLat, _defaultLng);
+      if (!serviceEnabled) {
+        setState(() => locationHint = '定位服务未开启，已显示默认城市附近商家');
+        return const LatLng(_defaultLat, _defaultLng);
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (!mounted) return const LatLng(_defaultLat, _defaultLng);
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (!mounted) return const LatLng(_defaultLat, _defaultLng);
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() => locationHint = '未获得定位权限，已显示默认城市附近商家');
+        return const LatLng(_defaultLat, _defaultLng);
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+      if (!mounted) return const LatLng(_defaultLat, _defaultLng);
+      final current = LatLng(position.latitude, position.longitude);
+      setState(() {
+        userLocation = current;
+        locationHint = null;
+      });
+      return current;
+    } catch (_) {
+      if (mounted) setState(() => locationHint = '定位暂不可用，已显示默认城市附近商家');
+      return userLocation ?? const LatLng(_defaultLat, _defaultLng);
+    } finally {
+      if (mounted) setState(() => locating = false);
+    }
+  }
+
+  void _selectStore(int index) {
+    final store = stores[index];
+    final point = LatLng(store.latitude, store.longitude);
+    setState(() => selectedIndex = index);
+    _mapController.move(point, 15);
   }
 
   List<Marker> _buildMarkers() {
     final markers = <Marker>[];
+    if (userLocation != null) {
+      markers.add(Marker(
+        point: userLocation!,
+        width: 34,
+        height: 34,
+        child: const _UserMarker(),
+      ));
+    }
     for (var i = 0; i < stores.length; i++) {
       final s = stores[i];
       markers.add(Marker(
         point: LatLng(s.latitude, s.longitude), width: 40, height: 40,
-        child: GestureDetector(onTap: () => setState(() => selectedIndex = i), child: _StoreMarker(label: '${i + 1}', selected: selectedIndex == i)),
+        child: GestureDetector(onTap: () => _selectStore(i), child: _StoreMarker(label: '${i + 1}', selected: selectedIndex == i)),
       ));
     }
     for (final p in amapPois) {
@@ -59,25 +165,90 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
       body: Column(children: [
         SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.42,
-          child: FlutterMap(
-            options: MapOptions(initialCenter: const LatLng(_defaultLat, _defaultLng), initialZoom: 13.5, onTap: (_, __) => setState(() => selectedIndex = -1)),
+          child: Stack(
             children: [
-              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.petemarket.app'),
-              MarkerLayer(markers: _buildMarkers()),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(initialCenter: center, initialZoom: 13.5, onTap: (_, __) => setState(() => selectedIndex = -1)),
+                children: [
+                  TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.petemarket.app'),
+                  MarkerLayer(markers: _buildMarkers()),
+                ],
+              ),
+              Positioned(
+                right: 14,
+                bottom: 14,
+                child: FloatingActionButton.small(
+                  heroTag: 'nearby-locate',
+                  onPressed: locating ? null : () => loadData(refreshLocation: true),
+                  backgroundColor: Colors.white,
+                  foregroundColor: PawmartColors.primary500,
+                  child: locating
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.my_location_rounded),
+                ),
+              ),
+              if (locationHint != null)
+                Positioned(
+                  left: 12,
+                  right: 72,
+                  top: 12,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(235),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: pawmartShadow1,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Text(
+                        locationHint!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
         Expanded(child: loading
           ? const Center(child: CircularProgressIndicator())
           : errorText != null
-            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(errorText!, style: TextStyle(color: theme.colorScheme.error)), const SizedBox(height: 8), OutlinedButton(onPressed: loadData, child: const Text('重试'))]))
+            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(errorText!, style: TextStyle(color: theme.colorScheme.error)), const SizedBox(height: 8), OutlinedButton(onPressed: () => loadData(), child: const Text('重试'))]))
             : ListView(physics: const BouncingScrollPhysics(), padding: const EdgeInsets.only(top: 8), children: [
+                if (stores.isEmpty) _emptyStoreHint(theme),
                 ..._storeTiles(theme),
                 if (amapPois.isNotEmpty) _poiSection(theme),
               ])),
       ]),
     );
   }
+
+  Widget _emptyStoreHint(ThemeData theme) => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 44, 24, 20),
+    child: Column(
+      children: [
+        Icon(Icons.storefront_outlined, size: 42, color: PawmartColors.neutral400),
+        const SizedBox(height: 10),
+        Text(
+          '附近没有哦',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: PawmartColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '可以稍后再试，或看看下方高德附近宠物店',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary),
+        ),
+      ],
+    ),
+  );
 
   void _openDetail(BuildContext context, PetStore store) {
     Navigator.of(context).push(
@@ -93,7 +264,7 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
-        onTap: () => setState(() => selectedIndex = i),
+        onTap: () => _selectStore(i),
         borderRadius: BorderRadius.circular(pawmartRadiusMd),
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -225,7 +396,7 @@ class _NearbyStorePageState extends State<NearbyStorePage> {
           ],
         ),
       ),
-      ...List.generate(amapPois.length.clamp(0, 5), (i) {
+      ...List.generate(amapPois.length > 5 ? 5 : amapPois.length, (i) {
         final p = amapPois[i];
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
@@ -294,5 +465,29 @@ class _PoiMarker extends StatelessWidget {
   @override Widget build(BuildContext c) => Container(width: 24, height: 24,
     decoration: BoxDecoration(color: Colors.blueAccent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
     child: const Icon(Icons.location_on, color: Colors.white, size: 14),
+  );
+}
+
+class _UserMarker extends StatelessWidget {
+  const _UserMarker();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: const Color(0xFF2F80ED).withAlpha(45),
+      shape: BoxShape.circle,
+    ),
+    child: Center(
+      child: Container(
+        width: 18,
+        height: 18,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2F80ED),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+        ),
+      ),
+    ),
   );
 }

@@ -885,11 +885,22 @@ class _VideoUploadDialogState extends State<_VideoUploadDialog> {
     setState(() {
       fileName = file.name;
       fileBytes = file.bytes!;
-      contentType = 'video/mp4';
+      contentType = _videoContentType(file.name);
       if (titleCtrl.text.isEmpty) {
         titleCtrl.text = file.name.replaceAll(RegExp(r'\.[^.]+'), '');
       }
     });
+  }
+
+  String _videoContentType(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    return switch (ext) {
+      'mov' => 'video/quicktime',
+      'avi' => 'video/x-msvideo',
+      'webm' => 'video/webm',
+      'm4v' => 'video/mp4',
+      _ => 'video/mp4',
+    };
   }
 
   @override

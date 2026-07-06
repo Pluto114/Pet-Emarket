@@ -1,26 +1,12 @@
-import 'dart:html' as html;
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../models/media_asset.dart';
-
-void _ensureVideoFactory() {
-  try {
-    ui.platformViewRegistry.registerViewFactory(
-      'pawmart-video-player',
-      (int viewId) => html.VideoElement()
-        ..controls = true
-        ..autoplay = true
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..style.backgroundColor = '#000'
-        ..style.outline = 'none',
-    );
-  } catch (_) {}
-}
+import '../../../../shared/widgets/web_helpers_stub.dart'
+    if (dart.library.html) '../../../../shared/widgets/web_helpers_web.dart';
+import '../../../../shared/widgets/video_factory_stub.dart'
+    if (dart.library.html) '../../../../shared/widgets/video_factory_web.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({required this.apiClient, super.key});
@@ -156,7 +142,7 @@ class _VideoPageState extends State<VideoPage> {
   }
 
   void _playVideo(MediaAsset video) {
-    _ensureVideoFactory();
+    ensureVideoFactory();
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -170,7 +156,7 @@ class _VideoPageState extends State<VideoPage> {
               color: Colors.black87,
               child: Row(children: [
                 Expanded(child: Text(video.title, style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                IconButton(icon: const Icon(Icons.open_in_new, color: Colors.white70, size: 20), tooltip: '新标签页打开', onPressed: () => html.window.open(video.url, '_blank'), padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36)),
+                IconButton(icon: const Icon(Icons.open_in_new, color: Colors.white70, size: 20), tooltip: '新标签页打开', onPressed: () => openUrlInNewTab(video.url), padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.white70, size: 22), onPressed: () => Navigator.pop(ctx), padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36)),
               ]),
             ),
@@ -180,9 +166,8 @@ class _VideoPageState extends State<VideoPage> {
       ),
     );
     Future.delayed(const Duration(milliseconds: 100), () {
-      final els = html.document.getElementsByTagName('video');
-      if (els.isNotEmpty) {
-        final el = els.last as html.VideoElement;
+      final el = getFirstVideoElement();
+      if (el != null) {
         el.src = _resolveUrl(video.url);
         el.load();
       }

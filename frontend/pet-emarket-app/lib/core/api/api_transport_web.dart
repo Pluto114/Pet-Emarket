@@ -64,7 +64,7 @@ Future<TransportResponse> sendMultipartRequest({
   }
 
   request.open('POST', uri.toString());
-  request.timeout = 30000;
+  request.timeout = 300000;
   headers.forEach(request.setRequestHeader);
   request.onLoad.listen((_) {
     if (completer.isCompleted) return;

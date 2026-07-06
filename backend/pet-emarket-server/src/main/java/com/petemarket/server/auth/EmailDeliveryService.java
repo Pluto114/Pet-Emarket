@@ -21,7 +21,7 @@ public class EmailDeliveryService {
     public void sendRegisterCode(String email, String code, int expiresInSeconds) {
         PetEmarketProperties.Mail mail = properties.getMail();
         if (!mail.isEnabled()) {
-            return;
+            throw new BusinessException("100011", "SMTP mail is not configured", HttpStatus.SERVICE_UNAVAILABLE);
         }
         if (isBlank(mail.getHost()) || isBlank(mail.getUsername()) || isBlank(mail.getPassword()) || isBlank(mail.getFrom())) {
             throw new BusinessException("100011", "SMTP mail is not configured", HttpStatus.SERVICE_UNAVAILABLE);
@@ -64,7 +64,7 @@ public class EmailDeliveryService {
 
     public boolean shouldExposeDevCode() {
         PetEmarketProperties.Mail mail = properties.getMail();
-        return !mail.isEnabled() || mail.isDevCodeInResponse();
+        return mail.isDevCodeInResponse();
     }
 
     private boolean isBlank(String value) {
