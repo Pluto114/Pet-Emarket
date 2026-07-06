@@ -8,6 +8,8 @@ import '../../../models/product.dart';
 import '../../../shared/widgets/toast.dart';
 import '../../../shared/widgets/video_factory_stub.dart'
     if (dart.library.html) '../../../shared/widgets/video_factory_web.dart';
+import '../../../shared/widgets/web_helpers_stub.dart'
+    if (dart.library.html) '../../../shared/widgets/web_helpers_web.dart';
 
 /// Register HTML5 video player view factory (call once)
 void _ensureVideoFactoryRegistered() {
@@ -1124,7 +1126,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         IconButton(
                           icon: const Icon(Icons.open_in_new, color: Colors.white70, size: 20),
                           tooltip: '在新标签页打开',
-                          onPressed: () => html.window.open(video.url, '_blank'),
+                          onPressed: () => openUrlInNewTab(video.url),
                           padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                         ),
                         IconButton(
@@ -1150,9 +1152,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
     // Set video source after dialog is shown
     Future.delayed(const Duration(milliseconds: 100), () {
-      final videoElements = html.document.getElementsByTagName('video');
-      if (videoElements.isNotEmpty) {
-        final el = videoElements.last as html.VideoElement;
+      final el = getFirstVideoElement();
+      if (el != null) {
         el.src = _resolveMediaUrl(video.url);
         el.load();
       }

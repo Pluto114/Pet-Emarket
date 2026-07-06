@@ -1,10 +1,10 @@
-/// Video factory — Web-only (dart:html + platformViewRegistry)
+/// Video factory — Web (Flutter 3.44+ uses dart:ui_web)
 import 'dart:html' as html;
-import 'dart:ui' as ui;
+import 'dart:ui_web' as ui_web;
 
 void ensureVideoFactory() {
   try {
-    ui.platformViewRegistry.registerViewFactory(
+    ui_web.platformViewRegistry.registerViewFactory(
       'pawmart-video-player',
       (int viewId) => html.VideoElement()
         ..controls = true
@@ -19,7 +19,7 @@ void ensureVideoFactory() {
 
 void ensureVideoFactoryRegistered() {
   try {
-    ui.platformViewRegistry.registerViewFactory(
+    ui_web.platformViewRegistry.registerViewFactory(
       'pawmart-video-player',
       (int viewId) {
         final el = html.VideoElement()
