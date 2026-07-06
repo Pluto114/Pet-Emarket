@@ -621,10 +621,13 @@ class ApiClient {
     await _request('DELETE', '/api/v1/cart/items/$id');
   }
 
-  Future<PetOrder> createOrderFromCart({String addressId = ''}) async {
+  Future<PetOrder> createOrderFromCart({String addressId = '', List<String>? cartItemIds}) async {
     final body = <String, dynamic>{};
     if (addressId.trim().isNotEmpty) {
       body['addressId'] = int.tryParse(addressId.trim()) ?? addressId.trim();
+    }
+    if (cartItemIds != null && cartItemIds.isNotEmpty) {
+      body['cartItemIds'] = cartItemIds.map((id) => int.tryParse(id) ?? id).toList();
     }
     final data = await _request('POST', '/api/v1/orders', body: body);
     return PetOrder.fromJson(_object(data, 'order'));

@@ -393,7 +393,76 @@ class _ProductListPageState extends State<ProductListPage> {
     for (var i = start; i <= end; i++) { pages.add(_pageNum(i)); }
     if (end < _totalPages) { if (end < _totalPages - 1) pages.add(const Text('…', style: TextStyle(color: PawmartColors.textSecondary))); pages.add(_pageNum(_totalPages)); }
     pages.add(_pageBtn(child: const Row(mainAxisSize: MainAxisSize.min, children: [Text('下一页', style: TextStyle(fontSize: 13)), Icon(Icons.chevron_right, size: 16)]), onTap: _currentPage < _totalPages ? () => setState(() => _currentPage++) : null, outlined: true));
+    // Jump-to-page input
+    pages.add(const SizedBox(width: 12));
+    pages.add(_buildPageJumpInput());
     return Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.center, children: pages);
+  }
+
+  Widget _buildPageJumpInput() {
+    final controller = TextEditingController();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('跳至', style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+        const SizedBox(width: 6),
+        SizedBox(
+          width: 52,
+          height: 34,
+          child: TextField(
+            controller: controller,
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: PawmartColors.textPrimary),
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+              isDense: true,
+              hintText: '$_currentPage',
+              hintStyle: TextStyle(fontSize: 13, color: PawmartColors.neutral400),
+              filled: true,
+              fillColor: PawmartColors.neutral50,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(color: PawmartColors.neutral200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(color: PawmartColors.primary500, width: 1.5),
+              ),
+            ),
+            onSubmitted: (value) {
+              final page = int.tryParse(value.trim());
+              if (page != null && page >= 1 && page <= _totalPages) {
+                setState(() => _currentPage = page);
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text('页', style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+        const SizedBox(width: 4),
+        SizedBox(
+          height: 32,
+          child: TextButton(
+            onPressed: () {
+              final page = int.tryParse(controller.text.trim());
+              if (page != null && page >= 1 && page <= _totalPages) {
+                setState(() => _currentPage = page);
+              }
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 32),
+              backgroundColor: PawmartColors.primary500,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            child: const Text('GO'),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _pageNum(int page) {

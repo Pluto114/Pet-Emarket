@@ -14,10 +14,14 @@ import org.springframework.web.multipart.MultipartFile;
 public class MediaAssetService {
     private final MediaAssetRepository mediaAssetRepository;
     private final OssStorageService ossStorageService;
+    private final LocalMediaStorageService localMediaStorageService;
 
-    public MediaAssetService(MediaAssetRepository mediaAssetRepository, OssStorageService ossStorageService) {
+    public MediaAssetService(MediaAssetRepository mediaAssetRepository,
+                             OssStorageService ossStorageService,
+                             LocalMediaStorageService localMediaStorageService) {
         this.mediaAssetRepository = mediaAssetRepository;
         this.ossStorageService = ossStorageService;
+        this.localMediaStorageService = localMediaStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -52,14 +56,24 @@ public class MediaAssetService {
                                      MultipartFile coverFile,
                                      Long operatorId) {
         MediaType safeType = mediaType == null ? MediaType.IMAGE : mediaType;
-        OssUploadResult main = ossStorageService.upload(file, safeType);
-        OssUploadResult cover = coverFile == null || coverFile.isEmpty()
-                ? null
-                : ossStorageService.upload(coverFile, MediaType.IMAGE);
+
+        OssUploadResult main;
+        OssUploadResult cover = null;
+        if (ossStorageService.isEnabled()) {
+            main = ossStorageService.upload(file, safeType);
+            if (coverFile != null && !coverFile.isEmpty()) {
+                cover = ossStorageService.upload(coverFile, MediaType.IMAGE);
+            }
+        } else {
+            main = localMediaStorageService.store(file, safeType);
+            if (coverFile != null && !coverFile.isEmpty()) {
+                cover = localMediaStorageService.store(coverFile, MediaType.IMAGE);
+            }
+        }
 
         MediaAsset asset = new MediaAsset();
         asset.setCreatedBy(operatorId);
-        asset.setTitle(defaultText(title, defaultText(file.getOriginalFilename(), "OSS Media Asset")));
+        asset.setTitle(defaultText(title, defaultText(file.getOriginalFilename(), "Media Asset")));
         asset.setMediaType(safeType);
         asset.setUrl(main.url());
         asset.setCoverUrl(cover == null ? "" : cover.url());

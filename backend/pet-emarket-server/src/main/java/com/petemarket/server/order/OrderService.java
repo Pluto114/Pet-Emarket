@@ -19,6 +19,7 @@ import com.petemarket.server.user.UserAccount;
 import com.petemarket.server.user.UserRole;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -45,6 +46,7 @@ public class OrderService {
     private final UserBehaviorService userBehaviorService;
     private final ShippingAddressService shippingAddressService;
     private final StoreService storeService;
+    private final JdbcTemplate jdbc;
     private ScheduledExecutorService scheduler;
     private final Map<Long, ScheduledFuture<?>> paymentTimeouts = new ConcurrentHashMap<>();
 
@@ -56,7 +58,8 @@ public class OrderService {
                         MembershipService membershipService,
                         UserBehaviorService userBehaviorService,
                         ShippingAddressService shippingAddressService,
-                        StoreService storeService) {
+                        StoreService storeService,
+                        JdbcTemplate jdbc) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
@@ -66,6 +69,7 @@ public class OrderService {
         this.userBehaviorService = userBehaviorService;
         this.shippingAddressService = shippingAddressService;
         this.storeService = storeService;
+        this.jdbc = jdbc;
     }
 
     @PostConstruct
@@ -82,13 +86,21 @@ public class OrderService {
         if (scheduler != null) scheduler.shutdownNow();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<OrderResponse> list(UserAccount currentUser) {
-        List<PetOrder> orders = currentUser.getRole() == UserRole.ADMIN
-                ? orderRepository.findAllByOrderByCreatedAtDesc()
-                : currentUser.getRole() == UserRole.MERCHANT
-                        ? merchantOrders(currentUser)
-                        : orderRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+        List<Long> ids;
+        if (currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.MERCHANT) {
+            ids = jdbc.queryForList("SELECT id FROM pet_order ORDER BY created_at DESC", Long.class);
+        } else {
+            ids = jdbc.queryForList("SELECT id FROM pet_order WHERE user_id = ? ORDER BY created_at DESC", Long.class, currentUser.getId());
+        }
+        if (ids.isEmpty()) return List.of();
+        // 批量查询，1 次 SQL 替代 N 次
+        List<PetOrder> orders = orderRepository.findAllById(ids);
+        // 按 created_at DESC 排序 （findAllById 不保证顺序）
+        orders.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        // @BatchSize 自动批量加载 items 和 statusLogs
+        for (PetOrder o : orders) { o.getItems().size(); o.getStatusLogs().size(); }
         return orders.stream().map(OrderResponse::from).toList();
     }
 
@@ -203,6 +215,14 @@ public class OrderService {
             }
             case "ship" -> {
                 requireAdminOrMerchant(currentUser);
+                if (currentUser.getRole() == UserRole.MERCHANT) {
+                    if (order.getUserId().equals(currentUser.getId())) {
+                        throw new BusinessException("100403", "不能给自己的订单发货", HttpStatus.FORBIDDEN);
+                    }
+                    if (!orderContainsManagedStore(currentUser, order)) {
+                        throw new BusinessException("100403", "只能操作自己店铺的订单", HttpStatus.FORBIDDEN);
+                    }
+                }
                 transition(order, currentUser, List.of(1), 2, "管理员发货");
             }
             case "receive" -> transition(order, currentUser, List.of(2), 3, "用户确认收货");
@@ -373,12 +393,6 @@ public class OrderService {
 
     private boolean isAdminOrMerchant(UserAccount user) {
         return user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.MERCHANT;
-    }
-
-    private List<PetOrder> merchantOrders(UserAccount user) {
-        return orderRepository.findAllByOrderByCreatedAtDesc().stream()
-                .filter(order -> orderContainsManagedStore(user, order))
-                .toList();
     }
 
     private boolean orderContainsManagedStore(UserAccount user, PetOrder order) {

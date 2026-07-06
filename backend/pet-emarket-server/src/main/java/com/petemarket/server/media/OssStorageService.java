@@ -26,6 +26,14 @@ public class OssStorageService {
         this.properties = properties;
     }
 
+    public boolean isEnabled() {
+        return properties.getOss().isEnabled()
+                && !blank(properties.getOss().getEndpoint())
+                && !blank(properties.getOss().getBucket())
+                && !blank(properties.getOss().getAccessKeyId())
+                && !blank(properties.getOss().getAccessKeySecret());
+    }
+
     public OssUploadResult upload(MultipartFile file, MediaType mediaType) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("OSS_EMPTY_FILE", "Upload file is empty");

@@ -6,8 +6,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<PetOrder, Long> {
-    List<PetOrder> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    @Query(value = "SELECT * FROM pet_order WHERE user_id = :userId ORDER BY created_at DESC", nativeQuery = true)
+    List<PetOrder> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
+
+    @Query(value = "SELECT * FROM pet_order ORDER BY created_at DESC", nativeQuery = true)
     List<PetOrder> findAllByOrderByCreatedAtDesc();
 
     @Query("""

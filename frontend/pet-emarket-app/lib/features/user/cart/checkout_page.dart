@@ -69,6 +69,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       final order = await widget.apiClient.createOrderFromCart(
         addressId: selectedAddress!.id,
+        cartItemIds: widget.items.map((item) => item.id).toList(),
       );
       if (mounted) {
         _snack('订单 ${order.orderNo} 已生成，状态：待支付');

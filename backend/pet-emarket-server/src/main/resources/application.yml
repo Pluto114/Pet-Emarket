@@ -4,6 +4,10 @@
 spring:
   application:
     name: pet-emarket-server
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
   datasource:
     # 只需要修改下面这行 url
     url: "${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pet_emarket}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=true&enabledTLSProtocols=TLSv1.2,TLSv1.3&createDatabaseIfNotExist=true}"

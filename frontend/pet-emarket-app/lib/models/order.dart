@@ -3,6 +3,7 @@ import 'product.dart';
 class PetOrder {
   const PetOrder({
     required this.id,
+    required this.userId,
     required this.orderNo,
     required this.status,
     required this.statusName,
@@ -24,9 +25,12 @@ class PetOrder {
     required this.inventoryRestored,
     required this.items,
     required this.statusLogs,
+    this.reviewRating,
+    this.reviewContent = '',
   });
 
   final String id;
+  final String userId;
   final String orderNo;
   final int status;
   final String statusName;
@@ -48,6 +52,8 @@ class PetOrder {
   final bool inventoryRestored;
   final List<OrderItem> items;
   final List<OrderStatusLog> statusLogs;
+  final int? reviewRating;
+  final String reviewContent;
 
   DateTime? get deadlineDateTime {
     if (paymentDeadline.isEmpty) return null;
@@ -59,6 +65,7 @@ class PetOrder {
   factory PetOrder.fromJson(Map<String, dynamic> json) {
     return PetOrder(
       id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
       orderNo: json['orderNo']?.toString() ?? '',
       status: NumberParser.toInt(json['status']),
       statusName: json['statusName']?.toString() ?? '',
@@ -81,6 +88,8 @@ class PetOrder {
               : NumberParser.toInt(json['refundRollbackStatus']),
       auditRemark: json['auditRemark']?.toString() ?? '',
       inventoryRestored: json['inventoryRestored'] == true,
+      reviewRating: json['reviewRating'] == null ? null : NumberParser.toInt(json['reviewRating']),
+      reviewContent: json['reviewContent']?.toString() ?? '',
       items:
           (json['items'] is List)
               ? (json['items'] as List)
