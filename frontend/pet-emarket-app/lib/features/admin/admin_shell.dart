@@ -10,6 +10,7 @@ import 'member/member_manage_page.dart';
 import 'merchant/merchant_application_page.dart';
 import 'store/store_manage_page.dart';
 import 'media/media_manage_page.dart';
+import 'announcement/announcement_manage_page.dart';
 import 'dashboard/dashboard_page.dart';
 
 class AdminShell extends StatefulWidget {
@@ -42,6 +43,7 @@ class _AdminShellState extends State<AdminShell> {
     _MenuItem(icon: Icons.store, label: '店铺管理'),
     _MenuItem(icon: Icons.assignment_ind, label: '商家审核'),
     _MenuItem(icon: Icons.videocam, label: '媒体管理'),
+    _MenuItem(icon: Icons.campaign, label: '公告管理'),
   ];
 
   @override
@@ -62,6 +64,7 @@ class _AdminShellState extends State<AdminShell> {
       StoreManagePage(apiClient: widget.apiClient),
       MerchantApplicationPage(apiClient: widget.apiClient),
       MediaManagePage(apiClient: widget.apiClient),
+      AnnouncementManagePage(apiClient: widget.apiClient),
     ];
 
     return LayoutBuilder(

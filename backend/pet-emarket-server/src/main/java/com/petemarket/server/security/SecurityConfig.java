@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/stores", "/api/v1/stores/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/geo/amap/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/media/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/recommend", "/api/v1/recommendations/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/ai/chat").permitAll()
                         .anyRequest().authenticated()

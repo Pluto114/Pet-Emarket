@@ -9,6 +9,7 @@ import 'order/order_page.dart' show OrderPage, OrderPageState;
 import 'product/product_list_page.dart';
 import 'profile/profile_tab.dart';
 import 'store/nearby_store_page.dart';
+import 'announcement/announcement_page.dart';
 import 'video/video_page.dart';
 
 const _navItems = [
@@ -236,6 +237,13 @@ class _UserShellState extends State<UserShell> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  // Announcements
+                  IconButton(
+                    tooltip: '公告',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.campaign_outlined, size: 20, color: PawmartColors.textSecondary),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AnnouncementPage(apiClient: widget.apiClient))),
+                  ),
                   // Video page
                   IconButton(
                     tooltip: '宠物视频',

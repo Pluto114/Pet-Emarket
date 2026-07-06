@@ -569,6 +569,28 @@ class ApiClient {
     return AiChatAnswer.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  Future<List<Map<String, dynamic>>> listAnnouncements() async {
+    final data = await _request('GET', '/api/v1/announcements');
+    return (data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> listAllAnnouncements() async {
+    final data = await _request('GET', '/api/v1/announcements/all');
+    return (data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<void> createAnnouncement(Map<String, String> body) async {
+    await _request('POST', '/api/v1/announcements', body: body);
+  }
+
+  Future<void> updateAnnouncement(String id, Map<String, dynamic> body) async {
+    await _request('PUT', '/api/v1/announcements/$id', body: body);
+  }
+
+  Future<void> deleteAnnouncement(String id) async {
+    await _request('DELETE', '/api/v1/announcements/$id');
+  }
+
   Future<void> trackBehavior({
     required String productId,
     required String behaviorType,

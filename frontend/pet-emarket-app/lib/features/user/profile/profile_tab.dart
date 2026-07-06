@@ -8,6 +8,8 @@ import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/app_user.dart';
 import '../../../models/merchant_application.dart';
+import '../../../shared/widgets/city_data.dart';
+import '../../../shared/widgets/map_picker_page.dart';
 import '../../../shared/widgets/toast.dart';
 import '../order/order_page.dart';
 
@@ -750,155 +752,70 @@ class _EditDialogState extends State<_EditDialog> {
 
 class _MerchantApplyDialog extends StatefulWidget {
   const _MerchantApplyDialog();
-
   @override
   State<_MerchantApplyDialog> createState() => _MerchantApplyDialogState();
 }
 
 class _MerchantApplyDialogState extends State<_MerchantApplyDialog> {
-  final storeName = TextEditingController();
-  final city = TextEditingController(text: '杭州');
-  final district = TextEditingController(text: '西湖区');
-  final address = TextEditingController();
-  final longitude = TextEditingController(text: '120.1551');
-  final latitude = TextEditingController(text: '30.2741');
-  final contactName = TextEditingController();
-  final contactPhone = TextEditingController();
-  final licenseNo = TextEditingController();
-  final reason = TextEditingController();
+  final _name = TextEditingController(), _address = TextEditingController(), _phone = TextEditingController();
+  final _lng = TextEditingController(text: '120.1551'), _lat = TextEditingController(text: '30.2741');
+  final _license = TextEditingController(), _reason = TextEditingController();
+  String _province = '浙江省', _city = '杭州市', _district = '西湖区';
+  List<String> _cities = CityData.citiesOf('浙江省'), _districts = CityData.districtsOf('浙江省', '杭州市');
+  bool _picked = false;
 
   @override
-  void dispose() {
-    storeName.dispose();
-    city.dispose();
-    district.dispose();
-    address.dispose();
-    longitude.dispose();
-    latitude.dispose();
-    contactName.dispose();
-    contactPhone.dispose();
-    licenseNo.dispose();
-    reason.dispose();
-    super.dispose();
+  void dispose() { _name.dispose(); _address.dispose(); _phone.dispose(); _lng.dispose(); _lat.dispose(); _license.dispose(); _reason.dispose(); super.dispose(); }
+
+  Future<void> _openMap() async {
+    double lng = CityData.cityCoord(_province, _city)[0], lat = CityData.cityCoord(_province, _city)[1];
+    final r = await Navigator.push<MapPickerResult>(context, MaterialPageRoute(builder: (_) => MapPickerPage(apiClient: ApiClient(sessionStore: SessionStore()), lng: lng, lat: lat)));
+    if (r == null) return;
+    _lng.text = r.longitude.toString(); _lat.text = r.latitude.toString(); _picked = true;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('申请成为商家'),
-      content: SizedBox(
-        width: 520,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: storeName,
-                decoration: const InputDecoration(labelText: '店铺名称'),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: city,
-                      decoration: const InputDecoration(labelText: '城市'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: district,
-                      decoration: const InputDecoration(labelText: '区域'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: address,
-                decoration: const InputDecoration(labelText: '详细地址'),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: longitude,
-                      decoration: const InputDecoration(labelText: '经度'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: latitude,
-                      decoration: const InputDecoration(labelText: '纬度'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: contactName,
-                      decoration: const InputDecoration(labelText: '联系人'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: contactPhone,
-                      decoration: const InputDecoration(labelText: '联系电话'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: licenseNo,
-                decoration: const InputDecoration(labelText: '营业执照号'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: reason,
-                decoration: const InputDecoration(labelText: '申请说明'),
-                maxLines: 3,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () {
-            if (storeName.text.trim().isEmpty || address.text.trim().isEmpty) {
-              showError(context, '请填写店铺名称和详细地址');
-              return;
-            }
-            Navigator.pop(context, {
-              'storeName': storeName.text.trim(),
-              'city': city.text.trim(),
-              'district': district.text.trim(),
-              'address': address.text.trim(),
-              'longitude': double.tryParse(longitude.text) ?? 120.1551,
-              'latitude': double.tryParse(latitude.text) ?? 30.2741,
-              'contactName': contactName.text.trim(),
-              'contactPhone': contactPhone.text.trim(),
-              'businessLicenseNo': licenseNo.text.trim(),
-              'reason': reason.text.trim(),
-            });
-          },
-          child: const Text('提交'),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('申请成为商家'),
+    content: SizedBox(width: 520, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      TextField(controller: _name, decoration: const InputDecoration(labelText: '店铺名称 *')),
+      const SizedBox(height: 10),
+      Row(children: [
+        Expanded(flex: 3, child: DropdownButtonFormField<String>(value: _province, decoration: const InputDecoration(labelText: '省', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+          items: CityData.provinces.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+          onChanged: (v) => setState(() { _province = v!; _cities = CityData.citiesOf(_province); _city = _cities.first; _districts = CityData.districtsOf(_province, _city); _district = _districts.first; }))),
+        const SizedBox(width: 6),
+        Expanded(flex: 3, child: DropdownButtonFormField<String>(value: _city, decoration: const InputDecoration(labelText: '市', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+          items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
+          onChanged: (v) => setState(() { _city = v!; _districts = CityData.districtsOf(_province, _city); _district = _districts.first; }))),
+        const SizedBox(width: 6),
+        Expanded(flex: 3, child: DropdownButtonFormField<String>(value: _district, decoration: const InputDecoration(labelText: '区', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14)),
+          items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 13)))).toList(),
+          onChanged: (v) => setState(() => _district = v!))),
+      ]),
+      const SizedBox(height: 10),
+      TextField(controller: _address, decoration: const InputDecoration(labelText: '详细地址 *')),
+      const SizedBox(height: 10),
+      Row(children: [
+        Expanded(child: TextField(controller: _lng, decoration: const InputDecoration(labelText: '经度'), keyboardType: TextInputType.number)),
+        const SizedBox(width: 8),
+        Expanded(child: TextField(controller: _lat, decoration: const InputDecoration(labelText: '纬度'), keyboardType: TextInputType.number)),
+      ]),
+      const SizedBox(height: 6),
+      OutlinedButton.icon(onPressed: _openMap, icon: const Icon(Icons.map, size: 16), label: const Text('在地图上选点')),
+      const SizedBox(height: 10),
+      TextField(controller: _phone, decoration: const InputDecoration(labelText: '联系电话'), keyboardType: TextInputType.phone),
+      const SizedBox(height: 10),
+      TextField(controller: _license, decoration: const InputDecoration(labelText: '营业执照号')),
+      const SizedBox(height: 10),
+      TextField(controller: _reason, decoration: const InputDecoration(labelText: '申请说明'), maxLines: 2),
+    ]))),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+      FilledButton(onPressed: () {
+        if (_name.text.trim().isEmpty || _address.text.trim().isEmpty) { showError(context, '请填写店铺名称和详细地址'); return; }
+        Navigator.pop(context, {'storeName': _name.text.trim(), 'city': _city, 'district': _district, 'address': _address.text.trim(), 'longitude': double.tryParse(_lng.text) ?? 120.1551, 'latitude': double.tryParse(_lat.text) ?? 30.2741, 'contactName': '', 'contactPhone': _phone.text.trim(), 'businessLicenseNo': _license.text.trim(), 'reason': _reason.text.trim()});
+      }, child: const Text('提交')),
+    ],
+  );
 }
