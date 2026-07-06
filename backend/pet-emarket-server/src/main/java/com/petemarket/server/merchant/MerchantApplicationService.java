@@ -29,11 +29,13 @@ public class MerchantApplicationService {
 
     @Transactional
     public MerchantApplicationResponse submit(UserAccount currentUser, MerchantApplicationRequest request) {
-        if (currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.MERCHANT) {
-            throw new BusinessException("400001", "Current account is already a manager", HttpStatus.CONFLICT);
+        // ADMIN 不能申请成为商家
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            throw new BusinessException("400001", "Admin cannot apply for merchant", HttpStatus.CONFLICT);
         }
+        // 同一用户同一时间只能有一个待审核的申请（防止刷申请）
         if (applicationRepository.existsByUserIdAndStatus(currentUser.getId(), MerchantApplicationStatus.PENDING)) {
-            throw new BusinessException("400002", "A pending merchant application already exists", HttpStatus.CONFLICT);
+            throw new BusinessException("400002", "您已有一个待审核的申请，请等待审核完成后再提交新的申请", HttpStatus.CONFLICT);
         }
 
         MerchantApplication application = new MerchantApplication();
@@ -84,7 +86,10 @@ public class MerchantApplicationService {
         if (approved) {
             UserAccount applicant = userRepository.findById(application.getUserId())
                     .orElseThrow(() -> new BusinessException("100404", "User not found", HttpStatus.NOT_FOUND));
-            applicant.setRole(UserRole.MERCHANT);
+            // 已经是商家的不再重复设置角色，CUSTOMER 升级为 MERCHANT
+            if (applicant.getRole() != UserRole.MERCHANT && applicant.getRole() != UserRole.ADMIN) {
+                applicant.setRole(UserRole.MERCHANT);
+            }
             PetStore store = new PetStore();
             store.setName(application.getStoreName());
             store.setCity(application.getCity());

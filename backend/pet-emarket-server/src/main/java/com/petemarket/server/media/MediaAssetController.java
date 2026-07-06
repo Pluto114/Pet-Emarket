@@ -1,10 +1,10 @@
 package com.petemarket.server.media;
 
 import java.util.List;
+import java.util.Map;
 
 import com.petemarket.server.common.ApiResponse;
 import com.petemarket.server.common.BusinessException;
-import com.petemarket.server.common.PageData;
 import com.petemarket.server.user.UserAccount;
 import com.petemarket.server.user.UserRole;
 import jakarta.validation.Valid;
@@ -37,11 +37,12 @@ public class MediaAssetController {
     }
 
     @GetMapping
-    public ApiResponse<PageData<MediaAssetResponse>> list(@AuthenticationPrincipal UserAccount currentUser,
-                                                          @RequestParam(required = false) MediaStatus status,
-                                                          @RequestParam(required = false) String keyword) {
+    public ApiResponse<Map<String, Object>> list(@AuthenticationPrincipal UserAccount currentUser,
+                                                  @RequestParam(required = false) MediaStatus status,
+                                                  @RequestParam(required = false) String keyword) {
         boolean includeAll = isMediaManager(currentUser);
-        return ApiResponse.ok(PageData.of(mediaAssetService.list(includeAll, status, keyword)));
+        var items = mediaAssetService.list(includeAll, status, keyword);
+        return ApiResponse.ok(Map.of("items", items, "total", items.size()));
     }
 
     @PostMapping

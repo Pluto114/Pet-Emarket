@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../models/media_asset.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/toast.dart';
@@ -18,6 +19,16 @@ class _MediaManagePageState extends State<MediaManagePage> {
   String? errorText;
   List<MediaAsset> assets = [];
   final keywordCtrl = TextEditingController();
+  String _filterType = '全部', _filterStatus = '全部';
+  static const _types = ['全部', 'IMAGE', 'VIDEO'];
+  static const _statuses = ['全部', 'PENDING', 'APPROVED', 'REJECTED'];
+
+  List<MediaAsset> get _filtered {
+    var list = assets;
+    if (_filterType != '全部') list = list.where((a) => a.mediaType == _filterType).toList();
+    if (_filterStatus != '全部') list = list.where((a) => a.status == _filterStatus).toList();
+    return list;
+  }
 
   @override
   void initState() {
@@ -41,141 +52,121 @@ class _MediaManagePageState extends State<MediaManagePage> {
         authenticated: true,
         keyword: keywordCtrl.text,
       );
+      debugPrint('[MediaPage] loaded ${assets.length} assets');
     } catch (e) {
-      errorText = e.toString();
+      errorText = '[MediaPage] $e';
+      debugPrint('[MediaPage] error: $e');
     }
     if (mounted) setState(() => loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return RefreshIndicator(
-      onRefresh: load,
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '媒体管理',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: _showUploadDialog,
-                icon: const Icon(Icons.cloud_upload),
-                label: const Text('上传媒体'),
-              ),
-            ],
+    final filtered = _filtered;
+    return Column(children: [
+      Padding(padding: const EdgeInsets.fromLTRB(20, 16, 20, 0), child: Row(children: [
+        Text('媒体管理', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary)),
+        const Spacer(),
+        FilledButton.icon(onPressed: _showUploadDialog, icon: const Icon(Icons.cloud_upload, size: 18), label: const Text('上传'),
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 14)),),
+      ])),
+      Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 0), child: Row(children: [
+        Expanded(child: SizedBox(height: 38, child: TextField(controller: keywordCtrl,
+          decoration: InputDecoration(hintText: '搜索...', prefixIcon: const Icon(Icons.search, size: 18), isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 9)),
+          onSubmitted: (_) => load()))),
+        const SizedBox(width: 8),
+        _filterDropdown(_types, _filterType, (v) => setState(() => _filterType = v ?? '全部')),
+        const SizedBox(width: 6),
+        _filterDropdown(_statuses, _filterStatus, (v) => setState(() => _filterStatus = v ?? '全部')),
+      ])),
+      const SizedBox(height: 12),
+      Expanded(child: loading
+          ? const Center(child: CircularProgressIndicator())
+          : errorText != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(errorText!, style: TextStyle(color: PawmartColors.error)), const SizedBox(height: 8),
+                  OutlinedButton(onPressed: load, child: const Text('重试'))]))
+              : filtered.isEmpty
+                  ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.perm_media_outlined, size: 56, color: PawmartColors.neutral300),
+                      const SizedBox(height: 12),
+                      Text(assets.isEmpty ? '暂无媒体，点击上方「上传」添加' : '没有匹配结果', style: TextStyle(fontSize: 14, color: PawmartColors.textSecondary)),
+                      if (assets.isEmpty) ...[const SizedBox(height: 12), OutlinedButton.icon(onPressed: _showUploadDialog, icon: const Icon(Icons.add), label: const Text('上传媒体'),
+    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36))),],
+                    ]))
+                  : RefreshIndicator(onRefresh: load, child: GridView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 280, childAspectRatio: 0.82, mainAxisSpacing: 12, crossAxisSpacing: 12),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) => _mediaCard(filtered[i])))),
+    ]);
+  }
+
+  Widget _filterDropdown(List<String> opts, String val, ValueChanged<String?> cb) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(border: Border.all(color: PawmartColors.neutral200), borderRadius: BorderRadius.circular(8)),
+    child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: val, isDense: true, style: TextStyle(fontSize: 13, color: PawmartColors.textPrimary),
+      items: opts.map((o) => DropdownMenuItem(value: o, child: Text(o == '全部' ? (opts == _types ? '类型' : '状态') : o == 'IMAGE' ? '图片' : o == 'VIDEO' ? '视频' : o == 'PENDING' ? '待审核' : o == 'APPROVED' ? '已通过' : o == 'REJECTED' ? '已驳回' : o, style: TextStyle(fontSize: 13)))).toList(), onChanged: cb)),
+  );
+
+  Widget _mediaCard(MediaAsset a) {
+    final isVideo = a.mediaType == 'VIDEO';
+    return Container(
+      decoration: BoxDecoration(color: PawmartColors.surfaceCard, borderRadius: BorderRadius.circular(12), boxShadow: pawmartShadow1, border: Border.all(color: PawmartColors.neutral100)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Preview area
+        Expanded(
+          child: Container(
+            color: isVideo ? const Color(0xFF1E1B18) : PawmartColors.neutral100,
+            child: Stack(children: [
+              if (a.url.isNotEmpty && !isVideo)
+                Positioned.fill(child: Image.network(a.url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _ph(false))),
+              if (isVideo || a.url.isEmpty)
+                Center(child: _ph(isVideo)),
+              // Status badge
+              Align(alignment: Alignment.topRight, child: Padding(padding: const EdgeInsets.all(8), child: _statusBadge(a.status))),
+            ]),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: keywordCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '搜索媒体',
-                    prefixIcon: Icon(Icons.search),
-                    isDense: true,
-                  ),
-                  onSubmitted: (_) => load(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(onPressed: load, icon: const Icon(Icons.search)),
+        ),
+        // Info
+        Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: PawmartColors.textPrimary)),
+          const SizedBox(height: 2),
+          Text('${a.mediaType}${a.productId.isNotEmpty ? " | 商品#${a.productId}" : ""}', style: TextStyle(fontSize: 11, color: PawmartColors.textSecondary)),
+          const SizedBox(height: 8),
+          Row(children: [
+            if (a.status == 'PENDING') ...[
+              _actBtn(Icons.check, Colors.green, '通过', () => _audit(a, true)),
+              const SizedBox(width: 6),
+              _actBtn(Icons.close, Colors.orange, '驳回', () => _audit(a, false)),
             ],
-          ),
-          const SizedBox(height: 12),
-          if (loading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          if (errorText != null)
-            Text(errorText!, style: TextStyle(color: theme.colorScheme.error)),
-          if (!loading && errorText == null && assets.isEmpty)
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Text('暂无媒体资源'),
-              ),
-            ),
-          if (!loading && errorText == null)
-            ...assets.map(
-              (asset) => Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      asset.mediaType == 'VIDEO'
-                          ? Icons.play_arrow
-                          : Icons.image,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  title: Text(asset.title),
-                  subtitle: Text(
-                    '${asset.mediaType} · ${asset.status}\n${asset.url}',
-                  ),
-                  isThreeLine: true,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (asset.status == 'PENDING')
-                        IconButton(
-                          tooltip: '审核通过',
-                          icon: const Icon(Icons.verified, color: Colors.green),
-                          onPressed: () => _audit(asset, true),
-                        ),
-                      if (asset.status == 'PENDING')
-                        IconButton(
-                          tooltip: '驳回',
-                          icon: const Icon(Icons.block, color: Colors.orange),
-                          onPressed: () => _audit(asset, false),
-                        ),
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _showDialog(asset: asset),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _delete(asset),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+            const Spacer(),
+            InkWell(onTap: () => _showDialog(asset: a), borderRadius: BorderRadius.circular(4), child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.edit_outlined, size: 16, color: PawmartColors.textSecondary))),
+            const SizedBox(width: 4),
+            InkWell(onTap: () => _delete(a), borderRadius: BorderRadius.circular(4), child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.delete_outline, size: 16, color: PawmartColors.error))),
+          ]),
+        ])),
+      ]),
     );
   }
 
+  Widget _ph(bool v) => Center(child: Icon(v ? Icons.videocam_outlined : Icons.image_outlined, size: 32, color: PawmartColors.neutral300));
+  Widget _statusBadge(String s) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(color: s == 'APPROVED' ? const Color(0xFFDCF5DF) : s == 'PENDING' ? const Color(0xFFFDF7D5) : const Color(0xFFFDE0E0), borderRadius: BorderRadius.circular(4)),
+    child: Text(s == 'APPROVED' ? '已通过' : s == 'PENDING' ? '待审核' : s, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: s == 'APPROVED' ? const Color(0xFF3F9E53) : s == 'PENDING' ? const Color(0xFFE8BF20) : PawmartColors.error)));
+  Widget _actBtn(IconData icon, Color c, String tip, VoidCallback fn) => InkWell(onTap: fn, borderRadius: BorderRadius.circular(4), child: Tooltip(message: tip, child: Padding(padding: const EdgeInsets.all(3), child: Icon(icon, size: 16, color: c))));
+
+  // -- Dialogs (unchanged) --
   Future<void> _showDialog({MediaAsset? asset}) async {
-    final payload = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (ctx) => _MediaDialog(asset: asset),
-    );
-    if (payload == null) return;
+    final p = await showDialog<Map<String, dynamic>>(context: context, builder: (ctx) => _MediaDialog(asset: asset));
+    if (p == null) return;
     try {
-      if (asset == null) {
-        await widget.apiClient.createMedia(payload);
-        if (mounted) showSuccess(context, '媒体已创建');
-      } else {
-        await widget.apiClient.updateMedia(asset.id, payload);
-        if (mounted) showSuccess(context, '媒体已更新');
-      }
+      if (asset == null) { await widget.apiClient.createMedia(p); if (mounted) showSuccess(context, '已创建'); }
+      else { await widget.apiClient.updateMedia(asset.id, p); if (mounted) showSuccess(context, '已更新'); }
       await load();
-    } catch (e) {
-      if (mounted) showError(context, e.toString());
-    }
+    } catch (e) { if (mounted) showError(context, e.toString()); }
   }
 
   Future<void> _showUploadDialog() async {

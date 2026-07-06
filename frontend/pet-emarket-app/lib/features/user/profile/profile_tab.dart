@@ -410,62 +410,8 @@ class _ProfileTabState extends State<ProfileTab> {
           ],
         ),
         const SizedBox(height: 16),
-        // Merchant Application / Status
-        if (user.role == 'CUSTOMER') _merchantApplicationCard(),
-        if (user.role == 'MERCHANT')
-          _sectionCard(
-            title: '商家状态',
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: PawmartColors.success.withAlpha(25),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.storefront,
-                        color: PawmartColors.success,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '商家身份已开通',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: PawmartColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            '请从商家工作台维护店铺、商品和订单',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: PawmartColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.verified,
-                      color: PawmartColors.success,
-                      size: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        // Merchant Application — CUSTOMER 和 MERCHANT 都可申请
+        if (user.role != 'ADMIN') _merchantApplicationCard(),
       ],
     );
   }
@@ -622,6 +568,8 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Widget _merchantApplicationCard() {
+    final isMerchant = widget.sessionStore.user?.role == 'MERCHANT';
+    final hasPending = applications.any((a) => a.status == 'PENDING');
     final latest = applications.isEmpty ? null : applications.first;
     return Container(
       decoration: BoxDecoration(
@@ -634,52 +582,43 @@ class _ProfileTabState extends State<ProfileTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.storefront_outlined, color: PawmartColors.primary500),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '申请成为商家',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: PawmartColors.textPrimary,
-                    ),
-                  ),
-                ),
-                if (applicationLoading)
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
+            Row(children: [
+              Icon(Icons.storefront_outlined, color: PawmartColors.primary500),
+              const SizedBox(width: 10),
+              Expanded(child: Text(isMerchant ? '店铺管理' : '申请成为商家',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: PawmartColors.textPrimary))),
+              if (isMerchant) Icon(Icons.verified, color: PawmartColors.success, size: 20),
+              if (applicationLoading) const Padding(padding: EdgeInsets.only(left: 8), child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+            ]),
             const SizedBox(height: 8),
-            Text(
-              latest == null
-                  ? '提交门店信息后，由管理员审核，通过后自动开通商家工作台。'
-                  : '最近申请：${latest.storeName} · ${latest.status}${latest.auditRemark.isEmpty ? '' : ' · ${latest.auditRemark}'}',
-              style: TextStyle(
-                fontSize: 13,
-                color: PawmartColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 14),
+            // 申请历史
+            if (applications.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              ...applications.take(3).map((a) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(children: [
+                  Container(width: 8, height: 8, decoration: BoxDecoration(
+                    color: a.status == 'APPROVED' ? Colors.green : a.status == 'PENDING' ? Colors.orange : Colors.red,
+                    shape: BoxShape.circle)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(a.storeName, style: TextStyle(fontSize: 13, color: PawmartColors.textPrimary))),
+                  Text(_statusLabel(a.status), style: TextStyle(fontSize: 12, color: _statusColor(a.status))),
+                ]),
+              )),
+              if (applications.length > 3) Text('...还有 ${applications.length - 3} 条申请', style: TextStyle(fontSize: 12, color: PawmartColors.textSecondary)),
+              const SizedBox(height: 8),
+            ] else
+              Text('提交门店信息后，由管理员审核，通过后自动开通商家工作台。',
+                  style: TextStyle(fontSize: 13, color: PawmartColors.textSecondary)),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               height: 40,
               child: FilledButton.icon(
-                onPressed:
-                    latest?.status == 'PENDING'
-                        ? null
-                        : _submitMerchantApplication,
-                icon: const Icon(Icons.assignment_ind_outlined, size: 18),
-                label: Text(
-                  latest?.status == 'PENDING' ? '审核中' : '提交申请',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
+                onPressed: hasPending ? null : _submitMerchantApplication,
+                icon: Icon(isMerchant ? Icons.add_business : Icons.assignment_ind_outlined, size: 18),
+                label: Text(hasPending ? '审核中' : (isMerchant ? '申请新店铺' : '提交申请'),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
               ),
             ),
           ],
@@ -687,6 +626,9 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
     );
   }
+
+  String _statusLabel(String s) => switch (s) { 'PENDING' => '审核中', 'APPROVED' => '已通过', 'REJECTED' => '已驳回', _ => s };
+  Color _statusColor(String s) => switch (s) { 'PENDING' => Colors.orange, 'APPROVED' => Colors.green, 'REJECTED' => Colors.red, _ => PawmartColors.textSecondary };
 
   Future<void> _submitMerchantApplication() async {
     final payload = await showDialog<Map<String, dynamic>>(
