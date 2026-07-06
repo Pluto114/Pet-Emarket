@@ -1,6 +1,3 @@
-import 'dart:html' as html;
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
@@ -9,26 +6,12 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/media_asset.dart';
 import '../../../models/product.dart';
 import '../../../shared/widgets/toast.dart';
+import '../../../shared/widgets/video_factory_stub.dart'
+    if (dart.library.html) '../../../shared/widgets/video_factory_web.dart';
 
 /// Register HTML5 video player view factory (call once)
 void _ensureVideoFactoryRegistered() {
-  try {
-    ui.platformViewRegistry.registerViewFactory(
-      'pawmart-video-player',
-      (int viewId) {
-        final el = html.VideoElement()
-          ..controls = true
-          ..autoplay = true
-          ..style.width = '100%'
-          ..style.height = '100%'
-          ..style.backgroundColor = '#000'
-          ..style.outline = 'none';
-        return el;
-      },
-    );
-  } catch (_) {
-    // Already registered
-  }
+  ensureVideoFactoryRegistered();
 }
 
 // ═══════════════════════════════════════════

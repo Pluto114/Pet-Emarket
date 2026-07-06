@@ -1,26 +1,10 @@
-import 'dart:html' as html;
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../models/media_asset.dart';
-
-void _ensureVideoFactory() {
-  try {
-    ui.platformViewRegistry.registerViewFactory(
-      'pawmart-video-player',
-      (int viewId) => html.VideoElement()
-        ..controls = true
-        ..autoplay = true
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..style.backgroundColor = '#000'
-        ..style.outline = 'none',
-    );
-  } catch (_) {}
-}
+import '../../../../shared/widgets/video_factory_stub.dart'
+    if (dart.library.html) '../../../../shared/widgets/video_factory_web.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({required this.apiClient, super.key});
@@ -156,7 +140,7 @@ class _VideoPageState extends State<VideoPage> {
   }
 
   void _playVideo(MediaAsset video) {
-    _ensureVideoFactory();
+    ensureVideoFactory();
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
