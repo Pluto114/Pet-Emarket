@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../../models/app_user.dart';
 import '../../models/admin_dashboard.dart';
@@ -299,27 +298,17 @@ class ApiClient {
     return AmapGeocode.fromJson(Map<String, dynamic>.from(data));
   }
 
-  /// 正地理编码：地址 → 经纬度（直接调高德 API，绕过可能有 bug 的后端 RestTemplate）
-  Future<AmapGeocode> geocode(String address) async {
-    const key = String.fromEnvironment('AMAP_API_KEY');
-    final uri = Uri.parse('https://restapi.amap.com/v3/geocode/geo').replace(queryParameters: {
-      'key': key, 'address': address,
-    });
-    final resp = await http.get(uri);
-    if (resp.statusCode != 200) throw Exception('AMap geocode failed');
-    final body = jsonDecode(resp.body) as Map<String, dynamic>;
-    if (body['status'] != '1') throw Exception(body['info'] ?? 'AMap error');
-    final geocodes = body['geocodes'] as List;
-    if (geocodes.isEmpty) throw Exception('No geocode result');
-    final item = geocodes[0] as Map<String, dynamic>;
-    final loc = (item['location'] as String).split(',');
-    return AmapGeocode(
-      longitude: double.parse(loc[0]), latitude: double.parse(loc[1]),
-      formattedAddress: item['formatted_address'] as String? ?? '',
-      province: item['province'] as String? ?? '',
-      city: (item['city'] as String?) ?? '',
-      district: (item['district'] as String?) ?? '',
+  /// 正地理编码：地址 -> 经纬度，统一走后端，避免前端暴露或缺失高德 key。
+  Future<AmapGeocode> geocode(String address, {String city = ''}) async {
+    final query = <String, String>{'address': address.trim()};
+    if (city.trim().isNotEmpty) query['city'] = city.trim();
+    final data = await _request(
+      'GET',
+      '/api/v1/geo/amap/geocode',
+      query: query,
+      authenticated: false,
     );
+    return AmapGeocode.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   Future<PetStore> createStore(Map<String, dynamic> payload) async {

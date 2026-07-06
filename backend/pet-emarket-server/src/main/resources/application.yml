@@ -2,6 +2,10 @@
   port: 8080
 
 spring:
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../../.env[.properties]
   application:
     name: pet-emarket-server
   datasource:
@@ -10,6 +14,10 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:Zhaojerry331!}
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:500MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:520MB}
   flyway:
     enabled: ${FLYWAY_ENABLED:true}
     locations: classpath:db/migration

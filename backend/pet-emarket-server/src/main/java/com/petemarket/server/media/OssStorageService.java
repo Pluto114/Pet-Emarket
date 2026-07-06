@@ -52,7 +52,7 @@ public class OssStorageService {
         }
 
         OSS client = new OSSClientBuilder().build(
-                config.getEndpoint(),
+                normalizedEndpoint(config.getEndpoint()),
                 config.getAccessKeyId(),
                 config.getAccessKeySecret()
         );
@@ -70,11 +70,13 @@ public class OssStorageService {
 
     private void requireConfigured(PetEmarketProperties.Oss config) {
         if (!config.isEnabled()) {
-            throw new BusinessException("OSS_DISABLED", "OSS upload is disabled", HttpStatus.SERVICE_UNAVAILABLE);
+            throw new BusinessException("OSS_DISABLED", "OSS 上传未启用，请配置 OSS_ENABLED=true", HttpStatus.SERVICE_UNAVAILABLE);
         }
-        if (blank(config.getEndpoint()) || blank(config.getBucket())
-                || blank(config.getAccessKeyId()) || blank(config.getAccessKeySecret())) {
-            throw new BusinessException("OSS_NOT_CONFIGURED", "OSS endpoint, bucket and credentials are required", HttpStatus.SERVICE_UNAVAILABLE);
+        if (blank(config.getEndpoint()) || blank(config.getBucket())) {
+            throw new BusinessException("OSS_NOT_CONFIGURED", "OSS endpoint 和 bucket 不能为空", HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        if (blank(config.getAccessKeyId()) || blank(config.getAccessKeySecret())) {
+            throw new BusinessException("OSS_NOT_CONFIGURED", "OSS AccessKeyId/AccessKeySecret 不能为空", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -92,6 +94,14 @@ public class OssStorageService {
         }
         String endpoint = config.getEndpoint().replaceFirst("^https?://", "");
         return "https://" + config.getBucket() + "." + trimTrailingSlash(endpoint) + "/" + objectKey;
+    }
+
+    private String normalizedEndpoint(String endpoint) {
+        String trimmed = trimTrailingSlash(endpoint == null ? "" : endpoint.trim());
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            return trimmed;
+        }
+        return "https://" + trimmed;
     }
 
     private String extension(String filename) {

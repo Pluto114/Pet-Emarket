@@ -116,14 +116,9 @@ class _AuthPageState extends State<AuthPage> {
       _codeHint = null;
     });
     try {
-      final code = await widget.apiClient.sendRegisterEmailCode(email);
+      await widget.apiClient.sendRegisterEmailCode(email);
       setState(() {
-        if (code.isNotEmpty) {
-          _code.text = code;
-          _codeHint = '验证码已生成，演示码：$code';
-        } else {
-          _codeHint = '验证码已发送，请查收邮箱';
-        }
+        _codeHint = '验证码已发送，请查收邮箱';
       });
     } catch (e) {
       setState(() => _err = _emailCodeErrorText(e));

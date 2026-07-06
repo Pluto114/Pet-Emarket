@@ -44,10 +44,10 @@ Future<TransportResponse> sendMultipartRequest({
   final client = HttpClient();
   final boundary = '----petemarket${DateTime.now().microsecondsSinceEpoch}';
   try {
-    client.connectionTimeout = const Duration(seconds: 30);
+    client.connectionTimeout = const Duration(minutes: 5);
     final request = await client
         .postUrl(uri)
-        .timeout(const Duration(seconds: 30));
+        .timeout(const Duration(minutes: 5));
     headers.forEach(request.headers.set);
     request.headers.set(
       HttpHeaders.contentTypeHeader,
@@ -76,10 +76,10 @@ Future<TransportResponse> sendMultipartRequest({
     }
     write('--$boundary--\r\n');
 
-    final response = await request.close().timeout(const Duration(seconds: 30));
+    final response = await request.close().timeout(const Duration(minutes: 5));
     final text = await utf8
         .decodeStream(response)
-        .timeout(const Duration(seconds: 30));
+        .timeout(const Duration(minutes: 5));
     return TransportResponse(statusCode: response.statusCode, body: text);
   } on TimeoutException {
     return const TransportResponse(
