@@ -51,12 +51,10 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   }
 
   Future<void> _openMapPicker() async {
-    double lng = double.tryParse(_longitudeCtrl.text.trim()) ?? CityData.cityCoord(_province, _city)[0];
-    double lat = double.tryParse(_latitudeCtrl.text.trim()) ?? CityData.cityCoord(_province, _city)[1];
-    // 尝试通过高德正地理编码获取更精确坐标
+    double lng = CityData.cityCoord(_province, _city)[0];
+    double lat = CityData.cityCoord(_province, _city)[1];
     try {
-      final addr = _fullAddress();
-      final geo = await widget.apiClient.geocode(addr, city: _city);
+      final geo = await widget.apiClient.geocode(_fullAddress(), city: _city);
       lng = geo.longitude;
       lat = geo.latitude;
     } catch (_) {}

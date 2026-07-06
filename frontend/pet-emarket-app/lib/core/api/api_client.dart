@@ -298,17 +298,29 @@ class ApiClient {
     return AmapGeocode.fromJson(Map<String, dynamic>.from(data));
   }
 
-  /// 正地理编码：地址 -> 经纬度，统一走后端，避免前端暴露或缺失高德 key。
+  /// 正地理编码。先走后端；失败直调高德（区级精度）。
   Future<AmapGeocode> geocode(String address, {String city = ''}) async {
-    final query = <String, String>{'address': address.trim()};
-    if (city.trim().isNotEmpty) query['city'] = city.trim();
-    final data = await _request(
-      'GET',
-      '/api/v1/geo/amap/geocode',
-      query: query,
-      authenticated: false,
-    );
-    return AmapGeocode.fromJson(Map<String, dynamic>.from(data as Map));
+    try {
+      final q = <String, String>{'address': address.trim()};
+      if (city.trim().isNotEmpty) q['city'] = city.trim();
+      final d = await _request('GET', '/api/v1/geo/amap/geocode', query: q, authenticated: false);
+      return AmapGeocode.fromJson(Map<String, dynamic>.from(d as Map));
+    } catch (_) {
+      final key = const String.fromEnvironment('AMAP_API_KEY');
+      if (key.isEmpty) rethrow;
+      final uri = Uri.parse('https://restapi.amap.com/v3/geocode/geo').replace(queryParameters: {'key': key, 'address': address});
+      final r = await sendHttpRequest(method: 'GET', uri: uri, headers: {});
+      if (r.statusCode != 200) rethrow;
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['status'] != '1' || (b['geocodes'] as List).isEmpty) rethrow;
+      final item = (b['geocodes'] as List)[0] as Map<String, dynamic>;
+      final loc = (item['location'] as String).split(',');
+      return AmapGeocode(longitude: double.parse(loc[0]), latitude: double.parse(loc[1]),
+        formattedAddress: item['formatted_address']?.toString() ?? '',
+        province: item['province']?.toString() ?? '',
+        city: item['city']?.toString() ?? '',
+        district: item['district']?.toString() ?? '');
+    }
   }
 
   Future<PetStore> createStore(Map<String, dynamic> payload) async {
