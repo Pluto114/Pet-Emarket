@@ -126,7 +126,7 @@ class _MerchantShellState extends State<MerchantShell> {
                           )
                           .toList(),
                 ),
-              Expanded(child: pages[selectedIndex]),
+              Expanded(child: IndexedStack(index: selectedIndex, children: pages)),
             ],
           ),
           bottomNavigationBar:

@@ -22,14 +22,18 @@ public class RecommendationController {
             @AuthenticationPrincipal UserAccount currentUser,
             @RequestParam(required = false) String scene,
             @RequestParam(required = false) Long lastProductId,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) Double longitude,
             @RequestParam(required = false) Double latitude) {
         return ApiResponse.ok(PageData.of(recommendationService.recommend(
                 currentUser,
                 scene,
                 lastProductId,
+                page,
                 limit,
+                category,
                 longitude,
                 latitude
         )));

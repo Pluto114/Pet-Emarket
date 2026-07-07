@@ -52,16 +52,31 @@ public class RecommendationService {
     public List<RecommendationResponse> recommend(UserAccount currentUser,
                                                   String scene,
                                                   Long lastProductId,
+                                                  Integer page,
                                                   Integer limit,
+                                                  String category,
                                                   Double longitude,
                                                   Double latitude) {
-        int pageSize = Math.min(Math.max(limit == null ? 8 : limit, 1), 20);
+        // 分页参数处理：默认第一页，每页默认10条（上限放宽到50，方便信息流加载）
+        int currentPage = page == null || page < 1 ? 1 : page;
+        int pageSize = Math.min(Math.max(limit == null ? 10 : limit, 1), 50);
+        long offset = (long) (currentPage - 1) * pageSize;
+
         String normalizedScene = scene == null || scene.isBlank()
                 ? "HOME"
                 : scene.trim().toUpperCase(Locale.ROOT);
+
+        // 过滤可用商品，并增加前端传来的 category 过滤
         List<Product> candidates = productRepository.findByStatus(ProductStatus.ON_SALE).stream()
                 .filter(product -> product.getStock() != null && product.getStock() > 0)
+                .filter(product -> {
+                    if (category == null || category.isBlank() || "全部".equals(category)) {
+                        return true; // 不限分类
+                    }
+                    return category.equalsIgnoreCase(product.getCategory());
+                })
                 .toList();
+
         if (candidates.isEmpty()) {
             return List.of();
         }
@@ -95,7 +110,8 @@ public class RecommendationService {
                 ))
                 .sorted(Comparator.comparingDouble(RecommendationResponse::score).reversed()
                         .thenComparing(response -> response.product().id()))
-                .limit(pageSize)
+                .skip(offset) // 跳过前面的页数
+                .limit(pageSize) // 截取当前页数据
                 .toList();
     }
 
@@ -110,21 +126,21 @@ public class RecommendationService {
                                                 Double longitude,
                                                 Double latitude) {
         List<String> reasons = new ArrayList<>();
-        String category = product.getCategory();
+        String productCategory = product.getCategory();
 
         double itemCfScore = 0;
-        int categoryWeight = categoryPreference.getOrDefault(category, 0);
+        int categoryWeight = categoryPreference.getOrDefault(productCategory, 0);
         if (categoryWeight > 0) {
             itemCfScore = Math.min(25.0, 10.0 + categoryWeight * 5.0);
-            reasons.add("协同过滤：匹配你的历史 " + category + " 偏好");
+            reasons.add("猜你需要"); // 文案精简，适合信息流标签
         }
 
         double markovScore = 0;
         if (currentState != null) {
-            double transition = transitionMatrix.getOrDefault(currentState, Map.of()).getOrDefault(category, 0.0);
+            double transition = transitionMatrix.getOrDefault(currentState, Map.of()).getOrDefault(productCategory, 0.0);
             if (transition > 0) {
                 markovScore = transition * 35.0;
-                reasons.add("马尔可夫链：从 " + currentState + " 转向 " + category + " 的概率较高");
+                reasons.add("为你精选"); // 优化文案，避免太像程序员写的提示
             }
         }
 
@@ -132,7 +148,7 @@ public class RecommendationService {
         int hotCount = hotCounts.getOrDefault(product.getId(), 0);
         if (hotCount > 0) {
             hotScore = hotCount * 15.0 / maxHot;
-            reasons.add("热门商品：近期订单转化较好");
+            reasons.add("近期热门");
         }
 
         double distanceScore = 0;
@@ -140,24 +156,26 @@ public class RecommendationService {
             double distanceKm = storeService.distanceToStoreKm(store, longitude, latitude);
             distanceScore = Math.max(0.0, 12.0 - distanceKm);
             if (distanceScore > 0) {
-                reasons.add("附近门店：距离约 " + distanceKm + "km");
+                reasons.add(String.format("距您 %.1fkm", distanceKm)); // 标签文案
             }
         }
 
         double stockScore = product.getStock() >= 20 ? 8.0 : 4.0;
-        reasons.add(product.getStock() >= 20 ? "库存充足" : "仍有库存，可尽快下单");
+        if (reasons.isEmpty()) {
+            reasons.add("库存充足"); // 只有没其他理由时才显示这个作为凑数标签
+        }
 
         double sceneWeight = "NEARBY".equals(scene) ? distanceScore * 0.35 : 0;
         double score = round(itemCfScore + markovScore + hotScore + distanceScore + stockScore + sceneWeight);
 
-        if (reasons.size() == 1) {
-            reasons.add("冷启动兜底：按上架状态、库存和门店评分推荐");
+        if (reasons.size() == 1 && reasons.get(0).equals("库存充足")) {
+            reasons.add("为你推荐"); // 冷启动兜底
         }
 
         return new RecommendationResponse(
                 ProductResponse.from(product),
                 score,
-                "HYBRID_ITEM_CF_MARKOV_HOT_LBS",
+                "HYBRID_FEED",
                 reasons,
                 round(itemCfScore),
                 round(markovScore),
@@ -178,7 +196,7 @@ public class RecommendationService {
                     order.getItems().stream()
                             .map(OrderItem::getCategory)
                             .filter(Objects::nonNull)
-                            .filter(category -> !category.isBlank())
+                            .filter(cat -> !cat.isBlank())
                             .forEach(sequence::add);
                 });
         behaviors.stream()
@@ -222,8 +240,8 @@ public class RecommendationService {
                 .flatMap(order -> order.getItems().stream())
                 .map(OrderItem::getCategory)
                 .filter(Objects::nonNull)
-                .filter(category -> !category.isBlank())
-                .forEach(category -> preference.merge(category, 1, Integer::sum));
+                .filter(cat -> !cat.isBlank())
+                .forEach(cat -> preference.merge(cat, 1, Integer::sum));
         behaviors.stream()
                 .filter(behavior -> Objects.equals(behavior.getUserId(), userId))
                 .filter(behavior -> behavior.getCategory() != null && !behavior.getCategory().isBlank())
@@ -258,7 +276,7 @@ public class RecommendationService {
                 .filter(behavior -> Objects.equals(behavior.getUserId(), currentUser.getId()))
                 .max(Comparator.comparing(UserBehavior::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
                 .map(UserBehavior::getCategory)
-                .filter(category -> category != null && !category.isBlank());
+                .filter(cat -> cat != null && !cat.isBlank());
         if (behaviorState.isPresent()) {
             return behaviorState;
         }
@@ -268,11 +286,11 @@ public class RecommendationService {
                 .flatMap(order -> order.getItems().stream()
                         .map(OrderItem::getCategory)
                         .filter(Objects::nonNull)
-                        .filter(category -> !category.isBlank())
+                        .filter(cat -> !cat.isBlank())
                         .findFirst());
     }
 
     private double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
+        return Math.round(value * 10.0) / 10.0;
     }
 }

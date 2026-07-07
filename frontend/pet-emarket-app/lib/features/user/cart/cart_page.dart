@@ -5,6 +5,7 @@ import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/cart_item.dart';
 import '../../../models/shipping_address.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import 'checkout_page.dart';
 
 class CartPage extends StatefulWidget {
@@ -102,12 +103,7 @@ class CartPageState extends State<CartPage> {
           padding: EdgeInsets.fromLTRB(wide ? 40 : 16, 16, wide ? 40 : 16, 100),
           children: [
             if (loading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(28),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
+              const SkeletonLoader(count: 3, height: 100.0),
             if (errorText != null)
               Padding(
                 padding: const EdgeInsets.all(12),

@@ -6,6 +6,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/order.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 
 class OrderPage extends StatefulWidget {
   const OrderPage({required this.apiClient, required this.sessionStore, super.key});
@@ -52,7 +53,7 @@ class OrderPageState extends State<OrderPage> {
     return Scaffold(
       backgroundColor: PawmartColors.surfaceBg,
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonLoader(count: 5, height: 100.0)
           : errorText != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(errorText!, style: TextStyle(color: PawmartColors.error)),

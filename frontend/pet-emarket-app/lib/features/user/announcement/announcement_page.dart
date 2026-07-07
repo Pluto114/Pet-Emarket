@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 
 class AnnouncementPage extends StatefulWidget {
   const AnnouncementPage({required this.apiClient, super.key});
@@ -54,18 +55,9 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   Widget _buildBody(bool wide) {
     // Loading state
     if (loading) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(color: PawmartColors.primary500),
-            const SizedBox(height: 16),
-            Text(
-              '加载中…',
-              style: TextStyle(fontSize: 14, color: PawmartColors.textSecondary),
-            ),
-          ],
-        ),
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: SkeletonLoader(count: 5, height: 100.0),
       );
     }
 

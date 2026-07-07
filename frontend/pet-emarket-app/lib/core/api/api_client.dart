@@ -185,10 +185,7 @@ class ApiClient {
   }
 
   Future<List<Product>> listStoreProducts(String storeId) async {
-    final data = await _request(
-      'GET',
-      '/api/v1/stores/$storeId/products',
-    );
+    final data = await _request('GET', '/api/v1/stores/$storeId/products');
     return (data['items'] as List)
         .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
@@ -291,10 +288,15 @@ class ApiClient {
   }
 
   Future<AmapGeocode> reverseGeocode(double longitude, double latitude) async {
-    final data = await _request('GET', '/api/v1/geo/amap/regeo', query: {
-      'longitude': longitude.toString(),
-      'latitude': latitude.toString(),
-    }, authenticated: false);
+    final data = await _request(
+      'GET',
+      '/api/v1/geo/amap/regeo',
+      query: {
+        'longitude': longitude.toString(),
+        'latitude': latitude.toString(),
+      },
+      authenticated: false,
+    );
     return AmapGeocode.fromJson(Map<String, dynamic>.from(data));
   }
 
@@ -303,23 +305,33 @@ class ApiClient {
     try {
       final q = <String, String>{'address': address.trim()};
       if (city.trim().isNotEmpty) q['city'] = city.trim();
-      final d = await _request('GET', '/api/v1/geo/amap/geocode', query: q, authenticated: false);
+      final d = await _request(
+        'GET',
+        '/api/v1/geo/amap/geocode',
+        query: q,
+        authenticated: false,
+      );
       return AmapGeocode.fromJson(Map<String, dynamic>.from(d as Map));
     } catch (_) {
       final key = const String.fromEnvironment('AMAP_API_KEY');
       if (key.isEmpty) rethrow;
-      final uri = Uri.parse('https://restapi.amap.com/v3/geocode/geo').replace(queryParameters: {'key': key, 'address': address});
+      final uri = Uri.parse(
+        'https://restapi.amap.com/v3/geocode/geo',
+      ).replace(queryParameters: {'key': key, 'address': address});
       final r = await sendHttpRequest(method: 'GET', uri: uri, headers: {});
       if (r.statusCode != 200) rethrow;
       final b = jsonDecode(r.body) as Map<String, dynamic>;
       if (b['status'] != '1' || (b['geocodes'] as List).isEmpty) rethrow;
       final item = (b['geocodes'] as List)[0] as Map<String, dynamic>;
       final loc = (item['location'] as String).split(',');
-      return AmapGeocode(longitude: double.parse(loc[0]), latitude: double.parse(loc[1]),
+      return AmapGeocode(
+        longitude: double.parse(loc[0]),
+        latitude: double.parse(loc[1]),
         formattedAddress: item['formatted_address']?.toString() ?? '',
         province: item['province']?.toString() ?? '',
         city: item['city']?.toString() ?? '',
-        district: item['district']?.toString() ?? '');
+        district: item['district']?.toString() ?? '',
+      );
     }
   }
 
@@ -529,7 +541,10 @@ class ApiClient {
     final data = await _request('GET', '/api/v1/media/product/$productId');
     if (data is List) {
       return (data as List)
-          .map((item) => MediaAsset.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) =>
+                MediaAsset.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList();
     }
     return [];
@@ -538,12 +553,29 @@ class ApiClient {
   Future<List<RecommendationItem>> recommendations({
     String scene = 'HOME',
     String lastProductId = '',
-    int limit = 8,
+    int page = 1,
+    int limit = 10,
+    String category = '',
+    double? longitude,
+    double? latitude,
   }) async {
-    final query = <String, String>{'scene': scene, 'limit': limit.toString()};
+    final query = <String, String>{
+      'scene': scene,
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
     if (lastProductId.trim().isNotEmpty) {
       query['lastProductId'] = lastProductId.trim();
     }
+    if (category.trim().isNotEmpty &&
+        category != '推荐' &&
+        category != '附近' &&
+        category != '全部') {
+      query['category'] = category.trim();
+    }
+    if (longitude != null) query['longitude'] = longitude.toString();
+    if (latitude != null) query['latitude'] = latitude.toString();
+
     final data = await _request(
       'GET',
       '/api/v1/recommend',
@@ -571,12 +603,16 @@ class ApiClient {
 
   Future<List<Map<String, dynamic>>> listAnnouncements() async {
     final data = await _request('GET', '/api/v1/announcements');
-    return (data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (data as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
   }
 
   Future<List<Map<String, dynamic>>> listAllAnnouncements() async {
     final data = await _request('GET', '/api/v1/announcements/all');
-    return (data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (data as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
   }
 
   Future<void> createAnnouncement(Map<String, dynamic> body) async {
@@ -644,13 +680,17 @@ class ApiClient {
     await _request('DELETE', '/api/v1/cart/items/$id');
   }
 
-  Future<PetOrder> createOrderFromCart({String addressId = '', List<String>? cartItemIds}) async {
+  Future<PetOrder> createOrderFromCart({
+    String addressId = '',
+    List<String>? cartItemIds,
+  }) async {
     final body = <String, dynamic>{};
     if (addressId.trim().isNotEmpty) {
       body['addressId'] = int.tryParse(addressId.trim()) ?? addressId.trim();
     }
     if (cartItemIds != null && cartItemIds.isNotEmpty) {
-      body['cartItemIds'] = cartItemIds.map((id) => int.tryParse(id) ?? id).toList();
+      body['cartItemIds'] =
+          cartItemIds.map((id) => int.tryParse(id) ?? id).toList();
     }
     final data = await _request('POST', '/api/v1/orders', body: body);
     return PetOrder.fromJson(_object(data, 'order'));
@@ -782,7 +822,7 @@ String defaultApiBaseUrl() {
   if (configured.isNotEmpty) return configured;
   if (kIsWeb) return 'http://localhost:8080';
   if (defaultTargetPlatform == TargetPlatform.android) {
-    return 'http://10.0.2.2:8080';
+    return 'http://172.20.10.2:8080';
   }
   return 'http://localhost:8080';
 }

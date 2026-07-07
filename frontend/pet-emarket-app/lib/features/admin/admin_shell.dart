@@ -136,7 +136,7 @@ class _AdminShellState extends State<AdminShell> {
                           )
                           .toList(),
                 ),
-              Expanded(child: pages[selectedIndex]),
+              Expanded(child: IndexedStack(index: selectedIndex, children: pages)),
             ],
           ),
           bottomNavigationBar:

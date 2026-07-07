@@ -48,7 +48,7 @@ public class AiServiceAutoStarter {
         }
         Path python = findPythonExecutable(aiDir);
         if (python == null) {
-            log.warn("AI service auto-start skipped: no usable Python environment was found under {}", aiDir);
+            log.info("AI service auto-start skipped: no Python found under {} (this is normal if AI runs separately)", aiDir);
             return;
         }
 
@@ -144,6 +144,16 @@ public class AiServiceAutoStarter {
             if (Files.isRegularFile(candidate)) {
                 return candidate.normalize();
             }
+        }
+        // 回退：尝试系统 PATH 中的 python
+        for (String cmd : new String[]{"python", "python3"}) {
+            try {
+                String result = new java.util.Scanner(Runtime.getRuntime().exec(new String[]{cmd, "--version"}).getInputStream())
+                        .useDelimiter("\\A").next();
+                if (result != null && !result.isBlank()) {
+                    return Path.of(cmd);
+                }
+            } catch (Exception ignored) {}
         }
         return null;
     }
