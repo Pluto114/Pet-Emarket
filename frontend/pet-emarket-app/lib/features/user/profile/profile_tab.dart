@@ -769,6 +769,11 @@ class _MerchantApplyDialogState extends State<_MerchantApplyDialog> {
 
   Future<void> _openMap() async {
     double lng = CityData.cityCoord(_province, _city)[0], lat = CityData.cityCoord(_province, _city)[1];
+    try {
+      final addr = CityData.addressForGeocode(_province, _city, _district);
+      final geo = await ApiClient(sessionStore: SessionStore()).geocode(addr, city: _city);
+      lng = geo.longitude; lat = geo.latitude;
+    } catch (_) {}
     final r = await Navigator.push<MapPickerResult>(context, MaterialPageRoute(builder: (_) => MapPickerPage(apiClient: ApiClient(sessionStore: SessionStore()), lng: lng, lat: lat)));
     if (r == null) return;
     _lng.text = r.longitude.toString(); _lat.text = r.latitude.toString(); _picked = true;
