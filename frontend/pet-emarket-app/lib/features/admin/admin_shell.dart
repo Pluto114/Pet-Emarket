@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
-import 'product/product_manage_page.dart';
 import 'pet_audit/pet_audit_page.dart';
 import 'order/order_manage_page.dart';
 import 'refund/refund_audit_page.dart';
@@ -35,7 +34,6 @@ class _AdminShellState extends State<AdminShell> {
 
   static const menuItems = [
     _MenuItem(icon: Icons.dashboard, label: '仪表盘'),
-    _MenuItem(icon: Icons.inventory_2, label: '商品管理'),
     _MenuItem(icon: Icons.pets, label: '宠物审核'),
     _MenuItem(icon: Icons.receipt_long, label: '订单管理'),
     _MenuItem(icon: Icons.money_off, label: '退款审核'),
@@ -50,10 +48,6 @@ class _AdminShellState extends State<AdminShell> {
   Widget build(BuildContext context) {
     final pages = [
       DashboardPage(
-        apiClient: widget.apiClient,
-        sessionStore: widget.sessionStore,
-      ),
-      ProductManagePage(
         apiClient: widget.apiClient,
         sessionStore: widget.sessionStore,
       ),
