@@ -30,6 +30,28 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
   List<PetStore> stores = [];
   PetStore? selectedStore;
   final keywordCtrl = TextEditingController();
+  String _categoryFilter = '';
+  int _currentPage = 0;
+  static const _pageSize = 10;
+
+  // 从商品列表中提取所有分类
+  Set<String> get _categories => products.map((p) => p.category).where((c) => c.isNotEmpty).toSet();
+
+  // 按分类过滤
+  List<Product> get _filteredProducts {
+    if (_categoryFilter.isEmpty) return products;
+    return products.where((p) => p.category == _categoryFilter).toList();
+  }
+
+  int get _totalPages => (_filteredProducts.length / _pageSize).ceil();
+
+  List<Product> get _pagedProducts {
+    final filtered = _filteredProducts;
+    final start = _currentPage * _pageSize;
+    if (start >= filtered.length) return [];
+    final end = (start + _pageSize).clamp(0, filtered.length);
+    return filtered.sublist(start, end);
+  }
 
   @override
   void initState() {
@@ -89,176 +111,106 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return RefreshIndicator(
-      onRefresh: () async {
-        await loadStores();
-      },
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // Page title
-          Text(
-            '商品管理',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Store selection chips
-          if (stores.isEmpty && errorText == null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(Icons.store, size: 40,
-                        color: theme.colorScheme.onSurfaceVariant.withAlpha(80)),
-                    const SizedBox(height: 8),
-                    Text('暂未关联店铺',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-            ),
-          if (stores.isNotEmpty) ...[
-            Text(
-              '选择店铺',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final store in stores)
-                  ChoiceChip(
-                    label: Text(store.name),
-                    selected: selectedStore?.id == store.id,
-                    onSelected: (_) => _selectStore(store),
-                    avatar: const Icon(Icons.store, size: 18),
-                    labelStyle: TextStyle(
-                      fontWeight: selectedStore?.id == store.id
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                    ),
-                  ),
+
+    if (loading) return const Center(child: CircularProgressIndicator());
+
+    if (errorText != null) {
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.error_outline, size: 48, color: Colors.red), const SizedBox(height: 12),
+        Text(errorText!, style: const TextStyle(color: Colors.red)), const SizedBox(height: 16),
+        ElevatedButton(onPressed: loadStores, child: const Text('重试')),
+      ]));
+    }
+
+    return ListView(padding: const EdgeInsets.all(24), children: [
+      Text('商品管理', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+      const SizedBox(height: 16),
+
+      // Store selector
+      if (stores.isEmpty)
+        const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('暂未关联店铺', style: TextStyle(color: Colors.grey)))))
+      else ...[
+        Text('选择店铺', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final s in stores) ChoiceChip(label: Text(s.name), selected: selectedStore?.id == s.id, onSelected: (_) => _selectStore(s), avatar: const Icon(Icons.store, size: 16)),
+        ]),
+        const SizedBox(height: 16),
+      ],
+
+      // Selected store header
+      if (selectedStore != null) ...[
+        Row(children: [
+          Expanded(child: Text('${selectedStore!.name} 的商品', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
+          ElevatedButton.icon(onPressed: () => _showDialog(), icon: const Icon(Icons.add, size: 16), label: const Text('发布商品')),
+        ]),
+        const SizedBox(height: 12),
+
+        // Category filter
+        if (products.isNotEmpty) ...[
+          Row(children: [
+            const Text('分类：', style: TextStyle(fontSize: 13)),
+            const SizedBox(width: 8),
+            SizedBox(width: 150, child: DropdownButtonFormField<String>(
+              value: _categoryFilter,
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+              items: [
+                const DropdownMenuItem(value: '', child: Text('所有类型', style: TextStyle(fontSize: 13))),
+                for (final cat in _categories) DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 13))),
               ],
-            ),
-            const SizedBox(height: 16),
-          ],
-          // Selected store info + create button
-          if (selectedStore != null) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${selectedStore!.name} 的商品',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                IntrinsicWidth(
-                  child: FilledButton.icon(
-                    onPressed: () => _showDialog(),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('发布商品'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                IntrinsicWidth(
-                  child: OutlinedButton.icon(
-                    onPressed: _showVideoUploadDialog,
-                    icon: const Icon(Icons.videocam_outlined, size: 18),
-                    label: const Text('上传视频'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-          // Search
-          if (selectedStore != null) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: keywordCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '搜索商品',
-                      prefixIcon: Icon(Icons.search),
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) => loadProducts(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                    onPressed: loadProducts, icon: const Icon(Icons.search)),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-          // Loading
-          if (loading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          // Error
-          if (errorText != null)
-            Card(
-              color: theme.colorScheme.errorContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: theme.colorScheme.error),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(errorText!,
-                          style: TextStyle(
-                              color: theme.colorScheme.onErrorContainer)),
-                    ),
-                    TextButton(
-                        onPressed: loadStores, child: const Text('重试')),
-                  ],
-                ),
-              ),
-            ),
-          // Empty
-          if (!loading && errorText == null && selectedStore != null && products.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(Icons.inventory_2, size: 48,
-                        color: theme.colorScheme.onSurfaceVariant.withAlpha(100)),
-                    const SizedBox(height: 12),
-                    Text('暂无商品',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
-                    Text('点击”发布商品”为 ${selectedStore!.name} 添加商品。',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-            ),
-          // Product list
-          if (!loading && errorText == null)
-            ...products.map((p) => _productManageCard(p, theme)),
+              onChanged: (v) => setState(() { _categoryFilter = v ?? ''; _currentPage = 0; }),
+            )),
+          ]),
+          const SizedBox(height: 8),
         ],
-      ),
-    );
+
+        // Page info
+        Text('共 ${_filteredProducts.length} 件  |  第 ${_currentPage + 1}/${_totalPages} 页', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+        const SizedBox(height: 8),
+
+        if (_filteredProducts.isEmpty)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('暂无商品', style: TextStyle(color: Colors.grey, fontSize: 15))))
+        else
+          for (final p in _pagedProducts)
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Expanded(child: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
+                    _chip(p.status == 'ON_SALE' ? '在售' : p.status == 'DRAFT' ? '草稿' : p.status == 'OFF_SALE' ? '下架' : p.status, p.status == 'ON_SALE' ? Colors.green : p.status == 'DRAFT' ? Colors.grey : Colors.orange),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text('${p.type == 'PET_LIVE' ? '活体宠物' : '周边商品'}  |  ${p.category}  |  ¥${p.price.toStringAsFixed(2)}  |  库存 ${p.stock}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  const SizedBox(height: 8),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    if (p.status != 'ON_SALE' && p.stock > 0) TextButton.icon(onPressed: () => _changeStatus(p, 'ON_SALE'), icon: const Icon(Icons.arrow_upward, size: 14), label: const Text('上架', style: TextStyle(fontSize: 11))),
+                    if (p.status != 'OFF_SALE') TextButton.icon(onPressed: () => _changeStatus(p, 'OFF_SALE'), icon: const Icon(Icons.arrow_downward, size: 14), label: const Text('下架', style: TextStyle(fontSize: 11))),
+                    TextButton.icon(onPressed: () => _showDialog(product: p), icon: const Icon(Icons.edit, size: 14), label: const Text('编辑', style: TextStyle(fontSize: 11))),
+                    TextButton.icon(onPressed: () => _delete(p), icon: const Icon(Icons.delete, size: 14, color: Colors.red), label: const Text('删除', style: TextStyle(color: Colors.red, fontSize: 11))),
+                  ]),
+                ]),
+              ),
+            ),
+
+        // Pagination
+        if (_totalPages > 1) ...[
+          const SizedBox(height: 8),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            IconButton(icon: const Icon(Icons.chevron_left), onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null),
+            Text('${_currentPage + 1} / $_totalPages', style: const TextStyle(fontSize: 13)),
+            IconButton(icon: const Icon(Icons.chevron_right), onPressed: _currentPage < _totalPages - 1 ? () => setState(() => _currentPage++) : null),
+          ]),
+        ],
+      ],
+    ]);
+  }
+
+  Widget _chip(String label, Color color) {
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)));
   }
 
   Widget _productManageCard(Product product, ThemeData theme) {

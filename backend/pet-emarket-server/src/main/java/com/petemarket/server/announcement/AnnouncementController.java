@@ -34,9 +34,12 @@ public class AnnouncementController {
 
     /** 管理端：创建 */
     @PostMapping
-    public ApiResponse<Map<String, Object>> create(@AuthenticationPrincipal UserAccount u, @RequestBody Map<String, String> body) {
+    public ApiResponse<Map<String, Object>> create(@AuthenticationPrincipal UserAccount u, @RequestBody Map<String, Object> body) {
         requireAdmin(u);
-        return ApiResponse.ok(toMap(service.create(body.get("title"), body.get("content"), u.getId())));
+        String title = body.get("title") != null ? body.get("title").toString() : "";
+        String content = body.get("content") != null ? body.get("content").toString() : "";
+        Long targetUserId = body.get("targetUserId") != null ? Long.valueOf(body.get("targetUserId").toString()) : null;
+        return ApiResponse.ok(toMap(service.create(title, content, u.getId(), targetUserId)));
     }
 
     /** 管理端：更新 */
@@ -46,7 +49,8 @@ public class AnnouncementController {
         String title = body.get("title") != null ? body.get("title").toString() : null;
         String content = body.get("content") != null ? body.get("content").toString() : null;
         Boolean published = body.containsKey("published") ? Boolean.valueOf(body.get("published").toString()) : null;
-        return ApiResponse.ok(toMap(service.update(id, title, content, published)));
+        Long targetUserId = body.get("targetUserId") != null ? Long.valueOf(body.get("targetUserId").toString()) : null;
+        return ApiResponse.ok(toMap(service.update(id, title, content, published, targetUserId)));
     }
 
     /** 管理端：删除 */
@@ -57,14 +61,15 @@ public class AnnouncementController {
     }
 
     private Map<String, Object> toMap(Announcement a) {
-        return Map.of(
-            "id", a.getId(),
-            "title", a.getTitle() != null ? a.getTitle() : "",
-            "content", a.getContent() != null ? a.getContent() : "",
-            "published", a.getPublished() != null && a.getPublished(),
-            "createdAt", a.getCreatedAt() != null ? a.getCreatedAt().toString() : "",
-            "updatedAt", a.getUpdatedAt() != null ? a.getUpdatedAt().toString() : ""
-        );
+        Map<String, Object> map = new java.util.LinkedHashMap<>();
+        map.put("id", a.getId());
+        map.put("title", a.getTitle() != null ? a.getTitle() : "");
+        map.put("content", a.getContent() != null ? a.getContent() : "");
+        map.put("published", a.getPublished() != null && a.getPublished());
+        map.put("targetUserId", a.getTargetUserId());
+        map.put("createdAt", a.getCreatedAt() != null ? a.getCreatedAt().toString() : "");
+        map.put("updatedAt", a.getUpdatedAt() != null ? a.getUpdatedAt().toString() : "");
+        return map;
     }
 
     private void requireAdmin(UserAccount u) {

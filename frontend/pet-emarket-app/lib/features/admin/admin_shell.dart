@@ -6,7 +6,7 @@ import 'product/product_manage_page.dart';
 import 'pet_audit/pet_audit_page.dart';
 import 'order/order_manage_page.dart';
 import 'refund/refund_audit_page.dart';
-import 'member/member_manage_page.dart';
+import 'user/user_manage_page.dart';
 import 'merchant/merchant_application_page.dart';
 import 'store/store_manage_page.dart';
 import 'media/media_manage_page.dart';
@@ -39,7 +39,7 @@ class _AdminShellState extends State<AdminShell> {
     _MenuItem(icon: Icons.pets, label: '宠物审核'),
     _MenuItem(icon: Icons.receipt_long, label: '订单管理'),
     _MenuItem(icon: Icons.money_off, label: '退款审核'),
-    _MenuItem(icon: Icons.group, label: '会员管理'),
+    _MenuItem(icon: Icons.group, label: '用户管理'),
     _MenuItem(icon: Icons.store, label: '店铺管理'),
     _MenuItem(icon: Icons.assignment_ind, label: '商家审核'),
     _MenuItem(icon: Icons.videocam, label: '媒体管理'),
@@ -60,7 +60,7 @@ class _AdminShellState extends State<AdminShell> {
       PetAuditPage(apiClient: widget.apiClient),
       OrderManagePage(apiClient: widget.apiClient),
       RefundAuditPage(apiClient: widget.apiClient),
-      MemberManagePage(apiClient: widget.apiClient),
+      UserManagePage(apiClient: widget.apiClient),
       StoreManagePage(apiClient: widget.apiClient),
       MerchantApplicationPage(apiClient: widget.apiClient),
       MediaManagePage(apiClient: widget.apiClient),

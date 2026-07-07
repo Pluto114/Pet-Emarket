@@ -6,6 +6,7 @@ import '../user/profile/profile_tab.dart';
 import 'dashboard/merchant_dashboard_page.dart';
 import 'order/merchant_order_page.dart';
 import 'product/merchant_product_page.dart';
+import 'video/merchant_video_page.dart';
 import 'store/merchant_store_page.dart';
 
 class MerchantShell extends StatefulWidget {
@@ -34,6 +35,7 @@ class _MerchantShellState extends State<MerchantShell> {
   static const menuItems = [
     _MenuItem(icon: Icons.space_dashboard_outlined, label: '商家概览'),
     _MenuItem(icon: Icons.inventory_2_outlined, label: '我的商品'),
+    _MenuItem(icon: Icons.videocam_outlined, label: '视频管理'),
     _MenuItem(icon: Icons.receipt_long_outlined, label: '店铺订单'),
     _MenuItem(icon: Icons.storefront_outlined, label: '我的店铺'),
     _MenuItem(icon: Icons.person_outline, label: '账号'),
@@ -50,6 +52,7 @@ class _MerchantShellState extends State<MerchantShell> {
         apiClient: widget.apiClient,
         sessionStore: widget.sessionStore,
       ),
+      MerchantVideoPage(apiClient: widget.apiClient),
       MerchantOrderPage(apiClient: widget.apiClient),
       MerchantStorePage(
         apiClient: widget.apiClient,

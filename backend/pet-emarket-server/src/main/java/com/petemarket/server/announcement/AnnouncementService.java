@@ -25,18 +25,20 @@ public class AnnouncementService {
     }
 
     @Transactional
-    public Announcement create(String title, String content, Long userId) {
+    public Announcement create(String title, String content, Long userId, Long targetUserId) {
         var a = new Announcement();
         a.setTitle(title); a.setContent(content); a.setCreatedBy(userId); a.setPublished(false);
+        a.setTargetUserId(targetUserId);
         return repo.save(a);
     }
 
     @Transactional
-    public Announcement update(Long id, String title, String content, Boolean published) {
+    public Announcement update(Long id, String title, String content, Boolean published, Long targetUserId) {
         var a = repo.findById(id).orElseThrow(() -> new BusinessException("400404", "Announcement not found", HttpStatus.NOT_FOUND));
         if (title != null) a.setTitle(title);
         if (content != null) a.setContent(content);
         if (published != null) a.setPublished(published);
+        if (targetUserId != null) a.setTargetUserId(targetUserId);
         return a;
     }
 

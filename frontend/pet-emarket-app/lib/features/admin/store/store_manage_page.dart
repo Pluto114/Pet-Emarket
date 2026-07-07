@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
+import '../../../models/app_user.dart';
 import '../../../models/store.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/toast.dart';
@@ -16,9 +17,26 @@ class _StoreManagePageState extends State<StoreManagePage> {
   bool loading = true;
   String? errorText;
   List<PetStore> stores = [];
+  List<AppUser> users = [];
   final keywordCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
   String statusFilter = '';
+
+  // 用户 -> 店铺分组
+  Map<String, List<PetStore>> get _grouped {
+    final map = <String, List<PetStore>>{};
+    for (final s in stores) {
+      final uid = s.ownerUserId.isNotEmpty ? s.ownerUserId : 'no_owner';
+      map.putIfAbsent(uid, () => []).add(s);
+    }
+    return map;
+  }
+
+  String _userName(String userId) {
+    if (userId == 'no_owner') return '未分配';
+    final u = users.where((u) => u.id == userId).firstOrNull;
+    return u?.displayName ?? '用户#$userId';
+  }
 
   @override
   void initState() {
@@ -39,133 +57,156 @@ class _StoreManagePageState extends State<StoreManagePage> {
       errorText = null;
     });
     try {
-      stores = await widget.apiClient.listStores(authenticated: true);
+      final allStores = await widget.apiClient.listStores(authenticated: true);
+      final allUsers = await widget.apiClient.listUsers();
+      var filtered = allStores;
       if (keywordCtrl.text.isNotEmpty) {
         final kw = keywordCtrl.text.toLowerCase();
-        stores = stores.where((s) => s.name.toLowerCase().contains(kw) || s.address.toLowerCase().contains(kw)).toList();
+        filtered = filtered.where((s) => s.name.toLowerCase().contains(kw) || s.address.toLowerCase().contains(kw)).toList();
       }
       if (cityCtrl.text.isNotEmpty) {
         final ct = cityCtrl.text.toLowerCase();
-        stores = stores.where((s) => s.city.toLowerCase().contains(ct)).toList();
+        filtered = filtered.where((s) => s.city.toLowerCase().contains(ct)).toList();
       }
       if (statusFilter.isNotEmpty) {
-        stores = stores.where((s) => s.status == statusFilter).toList();
+        filtered = filtered.where((s) => s.status == statusFilter).toList();
       }
+      if (mounted) setState(() { stores = filtered; users = allUsers; loading = false; });
     } catch (e) {
-      errorText = e.toString();
+      if (mounted) setState(() { errorText = e.toString(); loading = false; });
     }
-    if (mounted) setState(() => loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return RefreshIndicator(
-      onRefresh: load,
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '店铺管理',
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+    if (loading) return const Center(child: CircularProgressIndicator());
+    if (errorText != null) return Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Icon(Icons.error_outline, size: 48, color: Colors.red), const SizedBox(height: 12),
+      Text(errorText!, style: const TextStyle(color: Colors.red)), const SizedBox(height: 16),
+      ElevatedButton(onPressed: load, child: const Text('重试')),
+    ])));
+    final grouped = _grouped;
+    return ListView(padding: const EdgeInsets.all(24), children: [
+      Text('店铺管理', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+      const SizedBox(height: 12),
+      Text('共 ${stores.length} 家店铺  ·  ${grouped.length} 位店主', style: const TextStyle(color: Colors.grey)),
+      const SizedBox(height: 12),
+      if (grouped.isEmpty)
+        const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('暂无店铺', style: TextStyle(color: Colors.grey, fontSize: 15))))
+      else
+        for (final entry in grouped.entries)
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFF7A8B3C).withAlpha(30),
+                child: Text(_userName(entry.key).isNotEmpty ? _userName(entry.key)[0].toUpperCase() : '?',
+                    style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF7A8B3C))),
+              ),
+              title: Text(_userName(entry.key), style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('${entry.value.length} 家店铺', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              initiallyExpanded: grouped.length <= 3,
+              children: entry.value.map((s) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Card(
+                  color: Colors.grey.shade50,
+                  margin: const EdgeInsets.only(bottom: 6),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Icon(Icons.store, size: 16, color: s.status == 'OPEN' ? Colors.green : Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                        _chip(s.status == 'OPEN' ? '营业中' : '已关闭', s.status == 'OPEN' ? Colors.green : Colors.red),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text('${s.city} ${s.district}  ·  ${s.address}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      const SizedBox(height: 6),
+                      Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                        TextButton.icon(onPressed: () => _showDialog(store: s), icon: const Icon(Icons.edit, size: 14), label: const Text('编辑', style: TextStyle(fontSize: 11))),
+                        const SizedBox(width: 2),
+                        if (s.status == 'OPEN')
+                          TextButton.icon(onPressed: () => _suspendStore(s), icon: const Icon(Icons.pause_circle_outline, size: 14, color: Colors.orange), label: const Text('停用', style: TextStyle(color: Colors.orange, fontSize: 11)))
+                        else
+                          TextButton.icon(onPressed: () => _resumeStore(s), icon: const Icon(Icons.play_circle_outline, size: 14, color: Colors.green), label: const Text('恢复', style: TextStyle(color: Colors.green, fontSize: 11))),
+                        const SizedBox(width: 2),
+                        TextButton.icon(onPressed: () => _delete(s), icon: const Icon(Icons.delete, size: 14, color: Colors.red), label: const Text('删除', style: TextStyle(color: Colors.red, fontSize: 11))),
+                      ]),
+                    ]),
+                  ),
                 ),
-              ),
-              FilledButton.icon(
-                onPressed: () => _showDialog(),
-                icon: const Icon(Icons.add),
-                label: const Text('添加店铺'),
-              ),
-            ],
+              )).toList(),
+            ),
           ),
-          const SizedBox(height: 12),
-          // 搜索栏
-          Row(children: [
-            Expanded(
-              child: TextField(
-                controller: keywordCtrl,
-                decoration: const InputDecoration(labelText: '搜索店铺', prefixIcon: Icon(Icons.search), isDense: true),
-                onSubmitted: (_) => load(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: cityCtrl,
-                decoration: const InputDecoration(labelText: '城市', prefixIcon: Icon(Icons.location_city), isDense: true),
-                onSubmitted: (_) => load(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // 状态筛选
-            DropdownButtonFormField<String>(
-              value: statusFilter.isEmpty ? null : statusFilter,
-              decoration: const InputDecoration(labelText: '状态', isDense: true),
-              items: const [
-                DropdownMenuItem(value: '', child: Text('全部')),
-                DropdownMenuItem(value: 'OPEN', child: Text('营业中')),
-                DropdownMenuItem(value: 'CLOSED', child: Text('已关闭')),
-              ],
-              onChanged: (v) { statusFilter = v ?? ''; load(); },
-            ),
-          ]),
-          const SizedBox(height: 12),
-          if (loading)
-            const Center(child: Padding(padding: EdgeInsets.all(28), child: CircularProgressIndicator())),
-          if (errorText != null)
-            Text(errorText!, style: TextStyle(color: theme.colorScheme.error)),
-          if (!loading && errorText == null && stores.isEmpty)
-            const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('暂无店铺'))),
-          if (!loading && errorText == null)
-            ...stores.map(
-              (store) => Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      CircleAvatar(
-                        backgroundColor: store.status == 'OPEN' ? Colors.green.withAlpha(30) : Colors.red.withAlpha(30),
-                        child: Icon(Icons.store, color: store.status == 'OPEN' ? Colors.green : Colors.red, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(store.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
-                      _statusChip(store.status),
-                    ]),
-                    const SizedBox(height: 10),
-                    Text('${store.city} ${store.district}  ·  ${store.address}', style: theme.textTheme.bodySmall),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      const Icon(Icons.star, size: 14, color: Colors.amber),
-                      const SizedBox(width: 2),
-                      Text('${store.rating.toStringAsFixed(1)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      if (store.phone.isNotEmpty) ...[const SizedBox(width: 12), Icon(Icons.phone, size: 12, color: theme.colorScheme.onSurfaceVariant), const SizedBox(width: 2), Text(store.phone, style: theme.textTheme.bodySmall)],
-                      if (store.featureTags.isNotEmpty) ...[const SizedBox(width: 12), Flexible(child: Text(store.featureTags, style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis))],
-                    ]),
-                    if (store.ownerUserId != null) ...[const SizedBox(height: 4), Text('店主ID: ${store.ownerUserId}', style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant))],
-                    const SizedBox(height: 8),
-                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      OutlinedButton.icon(onPressed: () => _showDialog(store: store), icon: const Icon(Icons.edit, size: 16), label: const Text('编辑')),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(onPressed: () => _delete(store), icon: const Icon(Icons.delete, size: 16, color: Colors.red), label: Text('删除', style: TextStyle(color: Colors.red))),
-                    ]),
-                  ]),
-                ),
-              ),
-            ),
-        ],
-      ),
+    ]);
+  }
+
+  Widget _chip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(10)),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 
-  Widget _statusChip(String status) {
-    final isOpen = status == 'OPEN';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: isOpen ? Colors.green.withAlpha(20) : Colors.red.withAlpha(20), borderRadius: BorderRadius.circular(10)),
-      child: Text(isOpen ? '营业中' : '已关闭', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isOpen ? Colors.green : Colors.red)),
+  Future<void> _suspendStore(PetStore s) async {
+    final reasonCtrl = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('停用店铺 — ${s.name}'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('请填写停用原因，将自动通知店长。', style: TextStyle(fontSize: 13, color: Colors.grey)),
+          const SizedBox(height: 12),
+          TextField(controller: reasonCtrl, maxLines: 3, decoration: const InputDecoration(hintText: '停用原因', border: OutlineInputBorder())),
+        ]),
+        actions: [
+          TextButton(onPressed: () { reasonCtrl.dispose(); Navigator.pop(context, false); }, child: const Text('取消')),
+          ElevatedButton(
+            onPressed: () { reasonCtrl.dispose(); Navigator.pop(context, true); },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+            child: const Text('确认停用'),
+          ),
+        ],
+      ),
     );
+    if (result != true) return;
+    try {
+      final reason = reasonCtrl.text.trim().isEmpty ? '管理员暂停营业' : reasonCtrl.text.trim();
+      await widget.apiClient.updateStore(s.id, {'status': 'CLOSED'});
+      // 发送通知给店长
+      if (s.ownerUserId.isNotEmpty) {
+        final uid = int.tryParse(s.ownerUserId);
+        if (uid != null) {
+          await widget.apiClient.createAnnouncement({
+            'title': '店铺停用通知 — ${s.name}',
+            'content': '您的店铺「${s.name}」已被管理员暂停营业。原因：$reason。如有疑问请联系平台客服。',
+            'targetUserId': uid,
+          });
+        }
+      }
+      await load();
+      if (mounted) showSuccess(context, '已停用并通知店长');
+    } catch (e) { if (mounted) showError(context, e.toString()); }
+  }
+
+  Future<void> _resumeStore(PetStore s) async {
+    try {
+      await widget.apiClient.updateStore(s.id, {'status': 'OPEN'});
+      if (s.ownerUserId.isNotEmpty) {
+        final uid = int.tryParse(s.ownerUserId);
+        if (uid != null) {
+          await widget.apiClient.createAnnouncement({
+            'title': '店铺恢复通知 — ${s.name}',
+            'content': '您的店铺「${s.name}」已恢复营业。',
+            'targetUserId': uid,
+          });
+        }
+      }
+      await load();
+      if (mounted) showSuccess(context, '已恢复营业');
+    } catch (e) { if (mounted) showError(context, e.toString()); }
   }
 
   Future<void> _showDialog({PetStore? store}) async {
@@ -369,7 +410,7 @@ class _StoreDialogState extends State<_StoreDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
         ),
-        FilledButton(
+        ElevatedButton(
           onPressed: () {
             final payload = {
               'name': nameCtrl.text.trim(),

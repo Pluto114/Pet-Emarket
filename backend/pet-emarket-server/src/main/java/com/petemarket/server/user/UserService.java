@@ -29,6 +29,9 @@ public class UserService {
 
     @Transactional
     public UserResponse create(UpsertUserRequest request) {
+        if (request.username() == null || request.username().isBlank()) {
+            throw new BusinessException("100001", "Username is required");
+        }
         if (userRepository.existsByUsername(request.username())) {
             throw new BusinessException("100004", "Username already exists");
         }
@@ -43,15 +46,22 @@ public class UserService {
     @Transactional
     public UserResponse update(Long id, UpsertUserRequest request, boolean adminUpdate) {
         UserAccount user = find(id);
-        user.setDisplayName(defaultText(request.displayName(), user.getDisplayName()));
-        user.setPhone(defaultText(request.phone(), user.getPhone()));
-        user.setEmail(defaultText(request.email(), user.getEmail()));
+        if (request.displayName() != null && !request.displayName().isBlank()) {
+            user.setDisplayName(request.displayName());
+        }
+        if (request.phone() != null) {
+            user.setPhone(request.phone());
+        }
+        if (request.email() != null) {
+            user.setEmail(request.email());
+        }
         if (request.password() != null && !request.password().isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(request.password()));
         }
         if (adminUpdate) {
             apply(user, request, false);
         }
+        userRepository.save(user);
         return UserResponse.from(user);
     }
 

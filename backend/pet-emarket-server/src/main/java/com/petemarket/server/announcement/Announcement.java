@@ -27,6 +27,8 @@ public class Announcement {
     private Boolean published = false;
 
     private Long createdBy;
+    private Long targetUserId;  // 指定通知用户：null=全员公告，非null=个人通知
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -42,6 +44,8 @@ public class Announcement {
     public void setPublished(Boolean p) { this.published = p; }
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long u) { this.createdBy = u; }
+    public Long getTargetUserId() { return targetUserId; }
+    public void setTargetUserId(Long u) { this.targetUserId = u; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

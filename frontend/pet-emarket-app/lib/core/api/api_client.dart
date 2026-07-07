@@ -579,7 +579,7 @@ class ApiClient {
     return (data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  Future<void> createAnnouncement(Map<String, String> body) async {
+  Future<void> createAnnouncement(Map<String, dynamic> body) async {
     await _request('POST', '/api/v1/announcements', body: body);
   }
 
