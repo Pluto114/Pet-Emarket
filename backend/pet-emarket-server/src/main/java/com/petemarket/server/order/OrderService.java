@@ -123,6 +123,7 @@ public class OrderService {
         PetOrder order = new PetOrder();
         order.setOrderNo("PE" + Instant.now().toEpochMilli());
         order.setUserId(currentUser.getId());
+        order.setPaymentDeadline(Instant.now().plusSeconds(15 * 60));  // 15分钟支付倒计时
         AddressSnapshot address = resolveAddress(currentUser, request);
         order.setReceiver(address.receiver());
         order.setPhone(address.phone());

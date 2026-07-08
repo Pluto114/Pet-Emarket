@@ -262,6 +262,9 @@ class OrderCard extends StatelessWidget {
           Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: sbg, borderRadius: BorderRadius.circular(6)),
               child: Text(order.statusName, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sc))),
         ]),
+        // 支付倒计时（仅待支付订单）
+        if (order.status == 0 && order.paymentDeadline.isNotEmpty)
+          _CountdownTimer(deadline: order.paymentDeadline),
         const SizedBox(height: 14),
         ...order.items.map((item) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
           Container(width: 64, height: 64, decoration: BoxDecoration(color: PawmartColors.primary50, borderRadius: BorderRadius.circular(10)),
@@ -416,3 +419,49 @@ class PaymentDialog extends StatelessWidget {
 }
 
 class _Log { final String desc, time; final int status; _Log(this.desc, this.time, this.status); }
+
+// 支付倒计时组件
+class _CountdownTimer extends StatefulWidget {
+  final String deadline;
+  const _CountdownTimer({required this.deadline});
+  @override State<_CountdownTimer> createState() => _CountdownTimerState();
+}
+
+class _CountdownTimerState extends State<_CountdownTimer> {
+  String _text = '';
+
+  @override void initState() { super.initState(); _tick(); }
+  void _tick() {
+    try {
+      final end = DateTime.parse(widget.deadline);
+      final now = DateTime.now();
+      final remain = end.difference(now);
+      if (mounted) setState(() {
+        if (remain.isNegative) {
+          _text = '已超时';
+        } else {
+          _text = '剩余 ${remain.inMinutes.toString().padLeft(2, '0')}:${(remain.inSeconds % 60).toString().padLeft(2, '0')}';
+        }
+      });
+      if (!remain.isNegative) Future.delayed(const Duration(seconds: 1), () { if (mounted) _tick(); });
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final expired = _text == '已超时';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: expired ? const Color(0xFFFDE0E0) : const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(expired ? Icons.timer_off : Icons.timer, size: 16, color: expired ? Colors.red : const Color(0xFFF57F17)),
+        const SizedBox(width: 6),
+        Text(_text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: expired ? Colors.red : const Color(0xFFF57F17))),
+      ]),
+    );
+  }
+}

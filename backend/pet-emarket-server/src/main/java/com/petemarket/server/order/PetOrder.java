@@ -50,6 +50,8 @@ public class PetOrder {
 
     private Instant paidAt;
 
+    private Instant paymentDeadline;  // 支付截止时间，创建时=now+15min，超期自动取消
+
     @Column(nullable = false)
     private Integer rewardPoints = 0;
 
@@ -187,6 +189,14 @@ public class PetOrder {
 
     public void setPaidAt(Instant paidAt) {
         this.paidAt = paidAt;
+    }
+
+    public Instant getPaymentDeadline() {
+        return paymentDeadline;
+    }
+
+    public void setPaymentDeadline(Instant deadline) {
+        this.paymentDeadline = deadline;
     }
 
     public Integer getRewardPoints() {

@@ -1,5 +1,6 @@
 package com.petemarket.server.order;
 
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,4 +23,6 @@ public interface OrderRepository extends JpaRepository<PetOrder, Long> {
             order by orderEntity.updatedAt desc
             """)
     List<PetOrder> findReviewedOrdersByProductId(@Param("productId") Long productId);
+
+    List<PetOrder> findByStatusAndPaymentDeadlineBefore(Integer status, Instant deadline);
 }

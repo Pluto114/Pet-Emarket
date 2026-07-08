@@ -33,11 +33,11 @@ public record OrderResponse(
         List<OrderItemResponse> items,
         List<OrderStatusLogResponse> statusLogs
 ) {
-    private static final long PAYMENT_TIMEOUT_SECONDS = 30 * 60;
+    private static final long PAYMENT_TIMEOUT_SECONDS = 15 * 60;
 
     public static OrderResponse from(PetOrder order) {
-        Instant deadline = null;
-        if (order.getStatus() != null && order.getStatus() == 0 && order.getCreatedAt() != null) {
+        Instant deadline = order.getPaymentDeadline();
+        if (deadline == null && order.getStatus() != null && order.getStatus() == 0 && order.getCreatedAt() != null) {
             deadline = order.getCreatedAt().plusSeconds(PAYMENT_TIMEOUT_SECONDS);
         }
         return new OrderResponse(
