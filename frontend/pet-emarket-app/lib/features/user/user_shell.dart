@@ -334,7 +334,10 @@ class _UserShellState extends State<UserShell> {
         child: Scaffold(
           backgroundColor: PawmartColors.surfaceBg,
           appBar: _buildAppBar(t, s, wide, w),
-          body: IndexedStack(index: _idx, children: pages),
+          body: MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(widget.sessionStore.textScale.clamp(1.0, 1.5))),
+            child: IndexedStack(index: _idx, children: pages),
+          ),
           bottomNavigationBar:
               wide
                   ? null

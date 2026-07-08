@@ -330,6 +330,8 @@ class _ProfileTabState extends State<ProfileTab> {
                   onTap: widget.onThemeToggle,
                 ),
                 const Divider(height: 1, indent: 52),
+                _fontSizeTile(),
+                const Divider(height: 1, indent: 52),
                 _settingsTile(
                   Icons.logout,
                   '退出登录',
@@ -529,6 +531,24 @@ class _ProfileTabState extends State<ProfileTab> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _fontSizeTile() {
+    final s = widget.sessionStore.textScale;
+    final labels = {1.0: '标准', 1.25: '大号', 1.5: '特大'};
+    return ListTile(
+      leading: const Icon(Icons.text_fields, color: PawmartColors.textSecondary),
+      title: const Text('字体大小'),
+      trailing: SegmentedButton<double>(
+        segments: const [
+          ButtonSegment(value: 1.0, label: Text('标准', style: TextStyle(fontSize: 11))),
+          ButtonSegment(value: 1.25, label: Text('大号', style: TextStyle(fontSize: 11))),
+          ButtonSegment(value: 1.5, label: Text('特大', style: TextStyle(fontSize: 11))),
+        ],
+        selected: {s},
+        onSelectionChanged: (v) => widget.sessionStore.setTextScale(v.first),
       ),
     );
   }

@@ -126,7 +126,12 @@ class _MerchantShellState extends State<MerchantShell> {
                           )
                           .toList(),
                 ),
-              Expanded(child: IndexedStack(index: selectedIndex, children: pages)),
+              Expanded(
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(widget.sessionStore.textScale.clamp(1.0, 1.5))),
+                  child: IndexedStack(index: selectedIndex, children: pages),
+                ),
+              ),
             ],
           ),
           bottomNavigationBar:
