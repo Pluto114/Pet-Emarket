@@ -147,22 +147,22 @@ public class ProductService {
     }
 
     private void apply(Product product, UpsertProductRequest request, Long storeId) {
-        product.setStoreId(storeId);
-        product.setName(request.name());
-        product.setType(request.type() == null ? ProductType.GOODS : request.type());
-        product.setCategory(defaultText(request.category(), "General"));
-        product.setPrice(request.price() == null ? BigDecimal.ZERO : request.price());
-        product.setStock(request.stock() == null ? 0 : Math.max(0, request.stock()));
-        product.setStatus(request.status() == null ? ProductStatus.DRAFT : request.status());
-        product.setCoverUrl(defaultText(request.coverUrl(), ""));
-        product.setDescription(defaultText(request.description(), ""));
-        product.setPetCode(defaultText(request.petCode(), ""));
-        product.setBreed(defaultText(request.breed(), ""));
-        product.setHealthStatus(defaultText(request.healthStatus(), ""));
-        product.setVaccineCertNo(defaultText(request.vaccineCertNo(), ""));
-        product.setQuarantineCertNo(defaultText(request.quarantineCertNo(), ""));
-        product.setTraceSource(defaultText(request.traceSource(), ""));
-        if (product.getType() == ProductType.PET_LIVE && product.getStock() > 1) {
+        if (storeId != null) product.setStoreId(storeId);
+        if (request.name() != null && !request.name().isBlank()) product.setName(request.name());
+        if (request.type() != null) product.setType(request.type());
+        if (request.category() != null) product.setCategory(request.category());
+        if (request.price() != null) product.setPrice(request.price());
+        if (request.stock() != null) product.setStock(Math.max(0, request.stock()));
+        if (request.status() != null) product.setStatus(request.status());
+        if (request.coverUrl() != null) product.setCoverUrl(request.coverUrl());
+        if (request.description() != null) product.setDescription(request.description());
+        if (request.petCode() != null) product.setPetCode(request.petCode());
+        if (request.breed() != null) product.setBreed(request.breed());
+        if (request.healthStatus() != null) product.setHealthStatus(request.healthStatus());
+        if (request.vaccineCertNo() != null) product.setVaccineCertNo(request.vaccineCertNo());
+        if (request.quarantineCertNo() != null) product.setQuarantineCertNo(request.quarantineCertNo());
+        if (request.traceSource() != null) product.setTraceSource(request.traceSource());
+        if (product.getType() == ProductType.PET_LIVE && product.getStock() != null && product.getStock() > 1) {
             product.setStock(1);
         }
         applyAuditDefaults(product);

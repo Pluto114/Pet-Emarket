@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../models/media_asset.dart';
 import '../../../models/product.dart';
 import '../../../models/store.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -174,7 +175,10 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
           for (final p in _pagedProducts)
             Card(
               margin: const EdgeInsets.only(bottom: 8),
-              child: Padding(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _showProductDetail(p),
+                child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
@@ -192,8 +196,7 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
                   ]),
                 ]),
               ),
-            ),
-
+            )),
         // Pagination
         if (_totalPages > 1) ...[
           const SizedBox(height: 8),
@@ -205,6 +208,41 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
         ],
       ],
     ]);
+  }
+
+  void _showProductDetail(Product p) {
+    showDialog(context: context, builder: (_) => AlertDialog(
+      title: Text(p.name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+      content: SizedBox(width: 500, child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        if (p.coverUrl.isNotEmpty)
+          ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(p.coverUrl, width: double.infinity, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(height: 120, decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)), child: const Center(child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey)))))
+        else
+          Container(height: 120, decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)), child: const Center(child: Icon(Icons.image, size: 40, color: Colors.grey))),
+        const SizedBox(height: 16),
+        _dr('类型', p.type == 'PET_LIVE' ? '活体宠物' : '周边商品'),
+        _dr('分类', p.category.isNotEmpty ? p.category : '未分类'),
+        _dr('价格', '¥${p.price.toStringAsFixed(2)}'),
+        _dr('库存', '${p.stock}'),
+        _dr('状态', p.status == 'ON_SALE' ? '在售' : p.status == 'DRAFT' ? '草稿' : p.status == 'OFF_SALE' ? '下架' : p.status),
+        if (p.description.isNotEmpty) ...[const SizedBox(height: 8), const Text('描述', style: TextStyle(fontSize: 12, color: Colors.grey)), const SizedBox(height: 4), Text(p.description, style: const TextStyle(fontSize: 14))],
+        if (p.isLivePet) ...[
+          const SizedBox(height: 16), const Divider(), const Text('活体宠物档案', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)), const SizedBox(height: 8),
+          if (p.livePet?['petCode']?.toString().isNotEmpty == true) _dr('宠物编号', p.livePet!['petCode'].toString()),
+          if (p.livePet?['breed']?.toString().isNotEmpty == true) _dr('品种', p.livePet!['breed'].toString()),
+          if (p.livePet?['healthStatus']?.toString().isNotEmpty == true) _dr('健康状态', p.livePet!['healthStatus'].toString()),
+          if (p.livePet?['vaccineCertNo']?.toString().isNotEmpty == true) _dr('疫苗证明', p.livePet!['vaccineCertNo'].toString()),
+          if (p.livePet?['quarantineCertNo']?.toString().isNotEmpty == true) _dr('检疫证明', p.livePet!['quarantineCertNo'].toString()),
+        ],
+      ]))),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('关闭'))],
+    ));
+  }
+
+  Widget _dr(String label, String value) {
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(width: 70, child: Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500))),
+      Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
+    ]));
   }
 
   Widget _chip(String label, Color color) {
@@ -391,7 +429,7 @@ class _MerchantProductPageState extends State<MerchantProductPage> {
   Future<void> _showDialog({Product? product}) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => _ProductDialog(product: product),
+      builder: (ctx) => _ProductDialog(product: product, apiClient: widget.apiClient),
     );
     if (result == null) return;
     // Attach selected storeId when creating new product
@@ -582,7 +620,8 @@ class _StoreChip extends StatelessWidget {
 
 class _ProductDialog extends StatefulWidget {
   final Product? product;
-  const _ProductDialog({this.product});
+  final dynamic apiClient;
+  const _ProductDialog({this.product, required this.apiClient});
   @override
   State<_ProductDialog> createState() => _ProductDialogState();
 }
@@ -618,6 +657,7 @@ class _ProductDialogState extends State<_ProductDialog> {
   );
   String type = 'GOODS';
   String status = 'ON_SALE';
+  bool _uploading = false;
 
   @override
   void initState() {
@@ -639,6 +679,36 @@ class _ProductDialogState extends State<_ProductDialog> {
     vaccineCtrl.dispose();
     quarantineCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadCover() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image, allowMultiple: false, withData: true);
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null || file.bytes!.isEmpty) {
+      if (mounted) showError(context, '无法读取文件');
+      return;
+    }
+    setState(() => _uploading = true);
+    try {
+      final media = await widget.apiClient.uploadMedia(
+        title: file.name,
+        mediaType: 'IMAGE',
+        fileName: file.name,
+        fileBytes: file.bytes!,
+        fileContentType: _imageContentType(file.name),
+      );
+      coverUrlCtrl.text = media.url;
+      if (mounted) showSuccess(context, '封面上传成功');
+    } catch (e) {
+      if (mounted) showError(context, e.toString());
+    }
+    if (mounted) setState(() => _uploading = false);
+  }
+
+  String _imageContentType(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    return switch (ext) { 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp', _ => 'image/jpeg' };
   }
 
   @override
@@ -725,6 +795,15 @@ class _ProductDialogState extends State<_ProductDialog> {
               TextField(
                 controller: coverUrlCtrl,
                 decoration: const InputDecoration(labelText: '封面图片 URL'),
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _uploading ? null : _pickAndUploadCover,
+                  icon: _uploading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.cloud_upload, size: 18),
+                  label: Text(_uploading ? '上传中…' : '选择本地上传'),
+                ),
               ),
               const SizedBox(height: 8),
               const Align(

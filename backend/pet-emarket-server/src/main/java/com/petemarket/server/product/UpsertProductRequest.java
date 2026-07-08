@@ -1,11 +1,10 @@
 package com.petemarket.server.product;
 
-import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 
 public record UpsertProductRequest(
         Long storeId,
-        @NotBlank String name,
+        String name,
         ProductType type,
         String category,
         BigDecimal price,

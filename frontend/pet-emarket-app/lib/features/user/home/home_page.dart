@@ -416,6 +416,26 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     ),
+                    // Prev / Next buttons
+                    Positioned(
+                      left: 4, top: 0, bottom: 0,
+                      child: Center(
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_left_rounded, size: 32, color: Colors.white70),
+                          onPressed: () => _pageCtrl.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 4, top: 0, bottom: 0,
+                      child: Center(
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_right_rounded, size: 32, color: Colors.white70),
+                          onPressed: () => _pageCtrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                        ),
+                      ),
+                    ),
+                    // Dots indicator
                     Positioned(
                       right: 20,
                       bottom: 20,
@@ -455,20 +475,17 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: Row(
                   children: [
-                    // Category chips (scrollable with visible scrollbar)
+                    // Category chips (horizontally scrollable, mouse wheel + touch)
                     Expanded(
-                      child: Scrollbar(
-                        thumbVisibility: true,
-                        thickness: 4,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: EdgeInsets.only(left: wide ? 40 : 16),
-                          child: Row(
-                            children: [
-                              for (final label in categories)
-                                _categoryChip(label, selectedCategory == label),
-                            ],
-                          ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.only(left: wide ? 40 : 16, right: 20),
+                        child: Row(
+                          children: [
+                            for (final label in categories)
+                              _categoryChip(label, selectedCategory == label),
+                            const SizedBox(width: 20), // extra space for visual breathing
+                          ],
                         ),
                       ),
                     ),

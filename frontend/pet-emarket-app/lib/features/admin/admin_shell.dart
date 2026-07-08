@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/session/session_store.dart';
+import 'product/product_manage_page.dart';
 import 'pet_audit/pet_audit_page.dart';
 import 'order/order_manage_page.dart';
 import 'refund/refund_audit_page.dart';
@@ -9,6 +10,7 @@ import 'user/user_manage_page.dart';
 import 'merchant/merchant_application_page.dart';
 import 'store/store_manage_page.dart';
 import 'media/media_manage_page.dart';
+import 'ad/ad_manage_page.dart';
 import 'announcement/announcement_manage_page.dart';
 import 'dashboard/dashboard_page.dart';
 
@@ -34,6 +36,7 @@ class _AdminShellState extends State<AdminShell> {
 
   static const menuItems = [
     _MenuItem(icon: Icons.dashboard, label: '仪表盘'),
+    _MenuItem(icon: Icons.inventory_2, label: '商品管理'),
     _MenuItem(icon: Icons.pets, label: '宠物审核'),
     _MenuItem(icon: Icons.receipt_long, label: '订单管理'),
     _MenuItem(icon: Icons.money_off, label: '退款审核'),
@@ -42,12 +45,17 @@ class _AdminShellState extends State<AdminShell> {
     _MenuItem(icon: Icons.assignment_ind, label: '商家审核'),
     _MenuItem(icon: Icons.videocam, label: '媒体管理'),
     _MenuItem(icon: Icons.campaign, label: '公告管理'),
+    _MenuItem(icon: Icons.auto_awesome, label: '广告管理'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final pages = [
       DashboardPage(
+        apiClient: widget.apiClient,
+        sessionStore: widget.sessionStore,
+      ),
+      ProductManagePage(
         apiClient: widget.apiClient,
         sessionStore: widget.sessionStore,
       ),
@@ -59,6 +67,7 @@ class _AdminShellState extends State<AdminShell> {
       MerchantApplicationPage(apiClient: widget.apiClient),
       MediaManagePage(apiClient: widget.apiClient),
       AnnouncementManagePage(apiClient: widget.apiClient),
+      const AdManagePage(),
     ];
 
     return LayoutBuilder(
